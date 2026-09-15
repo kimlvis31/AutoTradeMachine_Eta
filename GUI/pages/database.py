@@ -225,22 +225,24 @@ def setupPage(self):
         self.GUIOs["CURRENCYLIST_AUXBUTTON_SELECTALL"]  = button_typeA(**inst, groupOrder=1, xPos=13800, yPos=8000, width=1000, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SELECTALL'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_SELECTALL'])
         self.GUIOs["CURRENCYLIST_AUXBUTTON_RELEASEALL"] = button_typeA(**inst, groupOrder=1, xPos=14900, yPos=8000, width=1000, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RELEASEALL'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RELEASEALL'])
         self.GUIOs["CURRENCYLIST_SORTBYTITLETEXT"]                       = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SORTBY'), fontSize=80, textInteractable=False)
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"]              = switch_typeC(**inst,  groupOrder=1, xPos= 6000, yPos=7650, width=1500, height=250, style="styleB", name="INDEX",              text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX'),              fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]             = switch_typeC(**inst,  groupOrder=1, xPos= 7600, yPos=7650, width=1500, height=250, style="styleB", name="SYMBOL",             text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),             fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTINTERVAL"]      = switch_typeC(**inst,  groupOrder=1, xPos= 9200, yPos=7650, width=1600, height=250, style="styleB", name="FIRSTINTERVAL",      text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_KL"]    = switch_typeC(**inst,  groupOrder=1, xPos=10900, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_KL",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_DEPTH"] = switch_typeC(**inst,  groupOrder=1, xPos=12175, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_DEPTH", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_AT"]    = switch_typeC(**inst,  groupOrder=1, xPos=13450, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_AT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_AT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_MT"]    = switch_typeC(**inst,  groupOrder=1, xPos=14725, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_MT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_MT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"]              = switch_typeC(**inst,  groupOrder=1, xPos= 6000, yPos=7650, width=1300, height=250, style="styleB", name="INDEX",              text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX'),              fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]             = switch_typeC(**inst,  groupOrder=1, xPos= 7400, yPos=7650, width=1300, height=250, style="styleB", name="SYMBOL",             text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),             fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTINTERVAL"]      = switch_typeC(**inst,  groupOrder=1, xPos= 8800, yPos=7650, width=1300, height=250, style="styleB", name="FIRSTINTERVAL",      text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYCONTRACTTYPE"]       = switch_typeC(**inst,  groupOrder=1, xPos=10200, yPos=7650, width=1300, height=250, style="styleB", name="CONTRACTTYPE",       text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_CONTRACTTYPE'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_KL"]    = switch_typeC(**inst,  groupOrder=1, xPos=11600, yPos=7650, width=1000, height=250, style="styleB", name="AVAILABILITY_KL",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_DEPTH"] = switch_typeC(**inst,  groupOrder=1, xPos=12700, yPos=7650, width=1000, height=250, style="styleB", name="AVAILABILITY_DEPTH", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_AT"]    = switch_typeC(**inst,  groupOrder=1, xPos=13800, yPos=7650, width=1000, height=250, style="styleB", name="AVAILABILITY_AT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_AT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_MT"]    = switch_typeC(**inst,  groupOrder=1, xPos=14900, yPos=7650, width=1000, height=250, style="styleB", name="AVAILABILITY_MT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_MT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"].setStatus(status = True, callStatusUpdateFunction = False)
         self.puVar['currencies_lastSortBy'] = 'INDEX'
         
         #---List
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=4900, yPos=2550, width=11000, height=5000, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = True, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], 
-                                                                     elementWidths = (1000, 2250, 1000, 1000, 1375, 1375, 1375, 1375, 1500, 1500, 1500, 1500))
+                                                                     elementWidths = (1000, 2250, 1000, 1200, 900, 1100, 1100, 1100, 1100, 1500, 1500, 1500, 1500))
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS')},
+                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_CONTRACTTYPE')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH')},
@@ -1106,8 +1108,15 @@ def __generateAuxillaryFunctions(self):
                 if fdot_mt    is None: fdot_mt    = float('inf')
                 fdot = min(fdot_kl, fdot_depth, fdot_at, fdot_mt)
                 symbols_forSort.append((symbol, fdot))
+
+        #---[4-4]: Contract Type Sort
+        elif filter_sort == 'CONTRACTTYPE':     
+            symbols_forSort = []
+            for symbol in symbols_filtered:
+                currencies_symbol = currencies[symbol]
+                symbols_forSort.append((symbol, currencies_symbol['contractType']))
                 
-        #---[4-4]: Kline Availability Sort
+        #---[4-5]: Kline Availability Sort
         elif filter_sort == 'AVAILABILITY_KL':
             symbols_forSort = []
             for symbol in symbols_filtered:
@@ -1115,7 +1124,7 @@ def __generateAuxillaryFunctions(self):
                 avail = avail[0] if avail is not None else float('-inf')
                 symbols_forSort.append((symbol, avail))
 
-        #---[4-5]: Kline Availability Sort
+        #---[4-6]: Kline Availability Sort
         elif filter_sort == 'AVAILABILITY_DEPTH':
             symbols_forSort = []
             for symbol in symbols_filtered:
@@ -1123,7 +1132,7 @@ def __generateAuxillaryFunctions(self):
                 avail = avail[0] if avail is not None else float('-inf')
                 symbols_forSort.append((symbol, avail))
 
-        #---[4-6]: Kline Availability Sort
+        #---[4-7]: Kline Availability Sort
         elif filter_sort == 'AVAILABILITY_AT':
             symbols_forSort = []
             for symbol in symbols_filtered:
@@ -1131,7 +1140,7 @@ def __generateAuxillaryFunctions(self):
                 avail = avail[0] if avail is not None else float('-inf')
                 symbols_forSort.append((symbol, avail))
 
-        #---[4-7]: Kline Availability Sort
+        #---[4-8]: Kline Availability Sort
         elif filter_sort == 'AVAILABILITY_MT':
             symbols_forSort = []
             for symbol in symbols_filtered:
@@ -1139,10 +1148,11 @@ def __generateAuxillaryFunctions(self):
                 avail = avail[0] if avail is not None else float('-inf')
                 symbols_forSort.append((symbol, avail))
 
-        #---[4-8]: Sort
+        #---[4-9]: Sort
         if   filter_sort == 'INDEX':              symbols_filteredAndSorted = symbols_forSort
         elif filter_sort == 'SYMBOL':             symbols_filteredAndSorted = sorted(symbols_forSort)
         elif filter_sort == 'FIRSTINTERVAL':      symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1])]
+        elif filter_sort == 'CONTRACTTYPE':       symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1])]
         elif filter_sort == 'AVAILABILITY_KL':    symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1], reverse = True)]
         elif filter_sort == 'AVAILABILITY_DEPTH': symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1], reverse = True)]
         elif filter_sort == 'AVAILABILITY_AT':    symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1], reverse = True)]
@@ -1189,60 +1199,65 @@ def __generateAuxillaryFunctions(self):
             info_server = currencies_symbol['info_server']
             status = None if info_server is None else info_server['status']
             status_text, status_ts = statusToString(vm = vm, status = status)
+
+            #[2-5]: Contract Type
+            contractType_text = currencies_symbol['contractType']
+            contractType_ts   = [('all', 'DEFAULT'),]
             
-            #[2-5]: Collecting
+            #[2-6]: Collecting
             collecting = currencies_symbol['collecting']
             collecting_text, collecting_ts = collectingToString(collecting = collecting)
 
-            #[2-6]: Availability - Kline
+            #[2-7]: Availability - Kline
             avail_kl = currencies_availabilities_symbol['kline']
             avail_kl_text, avail_kl_ts = availabilityToString(availability = avail_kl, precision = 1)
 
-            #[2-7]: Availability - Depth
+            #[2-8]: Availability - Depth
             avail_depth = currencies_availabilities_symbol['depth']
             avail_depth_text, avail_depth_ts = availabilityToString(availability = avail_depth, precision = 1)
 
-            #[2-8]: Availability - AggTrade
+            #[2-9]: Availability - AggTrade
             avail_at = currencies_availabilities_symbol['aggTrade']
             avail_at_text, avail_at_ts = availabilityToString(availability = avail_at, precision = 1)
 
-            #[2-9]: Availability - Metric
+            #[2-10]: Availability - Metric
             avail_mt = currencies_availabilities_symbol['metric']
             avail_mt_text, avail_mt_ts = availabilityToString(availability = avail_mt, precision = 1)
 
-            #[2-10]: First Interval - Kline
+            #[2-11]: First Interval - Kline
             fi_kl = currencies_symbol['kline_firstOpenTS']
             fi_kl_text = firstIntervalToString(firstInterval = fi_kl)
             fi_kl_ts   = [('all', 'DEFAULT'),]
 
-            #[2-11]: First Interval - Depth
+            #[2-12]: First Interval - Depth
             fi_depth = currencies_symbol['depth_firstOpenTS']
             fi_depth_text = firstIntervalToString(firstInterval = fi_depth)
             fi_depth_ts   = [('all', 'DEFAULT'),]
 
-            #[2-12]: First Interval - AggTrade
+            #[2-13]: First Interval - AggTrade
             fi_at = currencies_symbol['aggTrade_firstOpenTS']
             fi_at_text = firstIntervalToString(firstInterval = fi_at)
             fi_at_ts   = [('all', 'DEFAULT'),]
 
-            #[2-13]: First Interval - Metric
+            #[2-14]: First Interval - Metric
             fi_mt = currencies_symbol['metric_firstOpenTS']
             fi_mt_text = firstIntervalToString(firstInterval = fi_mt)
             fi_mt_ts   = [('all', 'DEFAULT'),]
 
-            #[2-14]: Finally
-            sl[symbol] = [{'text': idx_text,         'textStyles': idx_ts,         'textAnchor': 'CENTER'},
-                          {'text': symbol_text,      'textStyles': symbol_ts,      'textAnchor': 'CENTER'},
-                          {'text': status_text,      'textStyles': status_ts,      'textAnchor': 'CENTER'},
-                          {'text': collecting_text,  'textStyles': collecting_ts,  'textAnchor': 'CENTER'},
-                          {'text': avail_kl_text,    'textStyles': avail_kl_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': avail_depth_text, 'textStyles': avail_depth_ts, 'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': avail_at_text,    'textStyles': avail_at_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': avail_mt_text,    'textStyles': avail_mt_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': fi_kl_text,       'textStyles': fi_kl_ts,       'textAnchor': 'CENTER'},
-                          {'text': fi_depth_text,    'textStyles': fi_depth_ts,    'textAnchor': 'CENTER'},
-                          {'text': fi_at_text,       'textStyles': fi_at_ts,       'textAnchor': 'CENTER'},
-                          {'text': fi_mt_text,       'textStyles': fi_mt_ts,       'textAnchor': 'CENTER'},
+            #[2-15]: Finally
+            sl[symbol] = [{'text': idx_text,          'textStyles': idx_ts,          'textAnchor': 'CENTER'},
+                          {'text': symbol_text,       'textStyles': symbol_ts,       'textAnchor': 'CENTER'},
+                          {'text': status_text,       'textStyles': status_ts,       'textAnchor': 'CENTER'},
+                          {'text': contractType_text, 'textStyles': contractType_ts, 'textAnchor': 'CENTER'},
+                          {'text': collecting_text,   'textStyles': collecting_ts,   'textAnchor': 'CENTER'},
+                          {'text': avail_kl_text,     'textStyles': avail_kl_ts,     'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': avail_depth_text,  'textStyles': avail_depth_ts,  'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': avail_at_text,     'textStyles': avail_at_ts,     'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': avail_mt_text,     'textStyles': avail_mt_ts,     'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': fi_kl_text,        'textStyles': fi_kl_ts,        'textAnchor': 'CENTER'},
+                          {'text': fi_depth_text,     'textStyles': fi_depth_ts,     'textAnchor': 'CENTER'},
+                          {'text': fi_at_text,        'textStyles': fi_at_ts,        'textAnchor': 'CENTER'},
+                          {'text': fi_mt_text,        'textStyles': fi_mt_ts,        'textAnchor': 'CENTER'},
                          ]
             
         #[3]: Update Selection Box & Apply Filter

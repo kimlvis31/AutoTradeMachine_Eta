@@ -36,27 +36,28 @@ _ASSETPRECISIONS_XS = {'USDT': 2, 'USDC': 2, 'BTC': 2}
 _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'tradable':                {'BASIC': None, 'TRADER': 2,    'DETAIL': 2},
                                          'tradeStatus':             {'BASIC': 2,    'TRADER': 3,    'DETAIL': 3},
                                          'reduceOnly':              {'BASIC': None, 'TRADER': 4,    'DETAIL': 4},
-                                         'leverage':                {'BASIC': 3,    'TRADER': None, 'DETAIL': 5},
-                                         'isolated':                {'BASIC': 4,    'TRADER': None, 'DETAIL': 6},
-                                         'quantity':                {'BASIC': 5,    'TRADER': None, 'DETAIL': 7},
-                                         'isolatedWalletBalance':   {'BASIC': None, 'TRADER': None, 'DETAIL': 8},
-                                         'positionInitialMargin':   {'BASIC': None, 'TRADER': None, 'DETAIL': 9},
-                                         'openOrderInitialMargin':  {'BASIC': None, 'TRADER': None, 'DETAIL': 10},
-                                         'maintenanceMargin':       {'BASIC': None, 'TRADER': None, 'DETAIL': 11},
-                                         'entryPrice':              {'BASIC': 6,    'TRADER': None, 'DETAIL': 12},
-                                         'currentPrice':            {'BASIC': 7,    'TRADER': None, 'DETAIL': 13},
-                                         'liquidationPrice':        {'BASIC': 8,    'TRADER': None, 'DETAIL': 14},
-                                         'unrealizedPNL':           {'BASIC': 9,    'TRADER': None, 'DETAIL': 15},
-                                         'assumedRatio':            {'BASIC': 10,   'TRADER': 8,    'DETAIL': 16},
-                                         'weightedAssumedRatio':    {'BASIC': None, 'TRADER': None, 'DETAIL': 17},
-                                         'allocatedBalance':        {'BASIC': 11,   'TRADER': None, 'DETAIL': 18},
-                                         'maxAllocatedBalance':     {'BASIC': None, 'TRADER': 9,    'DETAIL': 19},
-                                         'commitmentRate':          {'BASIC': 12,   'TRADER': None, 'DETAIL': 20},
-                                         'riskLevel':               {'BASIC': 13,   'TRADER': None, 'DETAIL': 21},
-                                         'currencyAnalysisCode':    {'BASIC': None, 'TRADER': 5,    'DETAIL': 22},
-                                         'tradeConfigurationCode':  {'BASIC': None, 'TRADER': 6,    'DETAIL': 23},
-                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 24},
-                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 11,   'DETAIL': 25}}
+                                         'contractType':            {'BASIC': 13,   'TRADER': 5,    'DETAIL': 5},
+                                         'leverage':                {'BASIC': 3,    'TRADER': None, 'DETAIL': 6},
+                                         'isolated':                {'BASIC': 4,    'TRADER': None, 'DETAIL': 7},
+                                         'quantity':                {'BASIC': 5,    'TRADER': None, 'DETAIL': 8},
+                                         'isolatedWalletBalance':   {'BASIC': None, 'TRADER': None, 'DETAIL': 9},
+                                         'positionInitialMargin':   {'BASIC': None, 'TRADER': None, 'DETAIL': 10},
+                                         'openOrderInitialMargin':  {'BASIC': None, 'TRADER': None, 'DETAIL': 11},
+                                         'maintenanceMargin':       {'BASIC': None, 'TRADER': None, 'DETAIL': 12},
+                                         'entryPrice':              {'BASIC': 6,    'TRADER': None, 'DETAIL': 13},
+                                         'currentPrice':            {'BASIC': 7,    'TRADER': None, 'DETAIL': 14},
+                                         'liquidationPrice':        {'BASIC': 8,    'TRADER': None, 'DETAIL': 15},
+                                         'unrealizedPNL':           {'BASIC': 9,    'TRADER': None, 'DETAIL': 16},
+                                         'assumedRatio':            {'BASIC': 10,   'TRADER': 9,    'DETAIL': 17},
+                                         'weightedAssumedRatio':    {'BASIC': None, 'TRADER': None, 'DETAIL': 18},
+                                         'allocatedBalance':        {'BASIC': 11,   'TRADER': None, 'DETAIL': 19},
+                                         'maxAllocatedBalance':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 20},
+                                         'commitmentRate':          {'BASIC': 12,   'TRADER': None, 'DETAIL': 21},
+                                         'riskLevel':               {'BASIC': 13,   'TRADER': None, 'DETAIL': 22},
+                                         'currencyAnalysisCode':    {'BASIC': None, 'TRADER': 6,    'DETAIL': 23},
+                                         'tradeConfigurationCode':  {'BASIC': None, 'TRADER': 7,    'DETAIL': 24},
+                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 11,   'DETAIL': 25},
+                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 12,   'DETAIL': 26}}
 
 _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES = {'LEVERAGE', 'UNREALIZEDPNL', 'COMMITMENTRATE', 'RISKLEVEL'}
 _PERIODICPOSITIONSSORTING_INTERVAL_NS         = 5e9
@@ -258,7 +259,8 @@ def setupPage(self):
                      'COMMITMENTRATE':       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_COMMITMENTRATE')},
                      'RISKLEVEL':            {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_RISKLEVEL')},
                      'CACODE':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_CACODE')},
-                     'TCCODE':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_TCCODE')}}
+                     'TCCODE':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_TCCODE')},
+                     'CONTRACTTYPE':         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_CONTRACTTYPE')}}
         self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].setSelectionList(selectionList = sortTypes, displayTargets = 'all')
         self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].setSelected(itemKey = 'INDEX', callSelectionUpdateFunction = False)
         #------Conditional
@@ -327,7 +329,8 @@ def setupPage(self):
                                                                                              800, #ASSUMED RATIO
                                                                                             1000, #ALLOCATED BALANCE
                                                                                              800, #COMMITMENT RATE
-                                                                                             800  #RISK LEVEL
+                                                                                             800, #RISK LEVEL
+                                                                                            1200  #CONTRACT TYPE
                                                                                             )) #10550
         self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},
@@ -342,7 +345,8 @@ def setupPage(self):
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ALLOCATEDBALANCE')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_COMMITMENTRATE')},
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_RISKLEVEL')}])
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_RISKLEVEL')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CONTRACTTYPE')}])
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONBUTTON"]       = button_typeA(**inst, groupOrder=1, xPos= 5100, yPos=450, width=10200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_FORCECLEARPOSITION'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_FORCECLEARPOSITION'])
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONSAFETYSWITCH"] = switch_typeB(**inst, groupOrder=2, xPos=15400, yPos=450, width=  500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_FORCECLEARPOSITIONSAFETYSWTICH'])
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONBUTTON"].deactivate()
@@ -354,6 +358,7 @@ def setupPage(self):
                                                                                                800, #TRADABLE
                                                                                                800, #TRADING
                                                                                                800, #REDUCE ONLY
+                                                                                              1500, #CONTRACT TYPE
                                                                                               1500, #CURRENCY ANALYSIS CODE
                                                                                               1500, #TRADE CONFIGURATION CODE
                                                                                                800, #ASSUMED RATIO
@@ -366,6 +371,7 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_REDUCEONLY')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CONTRACTTYPE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},
@@ -432,6 +438,7 @@ def setupPage(self):
                                                                                                550, #TRADABLE
                                                                                                550, #TRADING
                                                                                                550, #REDUCE ONLY
+                                                                                              1200, #CONTRACT TYPE
                                                                                                700, #LEVERAGE
                                                                                                700, #MARGIN MODE
                                                                                               1000, #QUANTITY
@@ -459,6 +466,7 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_REDUCEONLY')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CONTRACTTYPE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LEVERAGE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MARGINMODE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_QUANTITY')},
@@ -516,8 +524,9 @@ def __pageLoadFunction(self):
     self.pageAuxillaryFunctions['SETACCOUNTSLIST']()
     self.pageAuxillaryFunctions['ONACCOUNTSELECTIONUPDATE']()
     self.pageAuxillaryFunctions['DISPLAYASSETDATA']()
-    _displayMode = self.GUIOs["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
-    if (_displayMode == 'TRADER'): self.pageAuxillaryFunctions['SETTRADECONFIGURATIONSLIST']()
+    displayMode = self.GUIOs["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
+    if displayMode == 'TRADER':
+        self.pageAuxillaryFunctions['SETTRADECONFIGURATIONSLIST']()
     self.pageAuxillaryFunctions['SETPOSITIONSLIST']()
 #SETUP PAGE <LOAD> END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -2169,401 +2178,429 @@ def __generateAuxillaryFunctions(self):
 
     #<Positions>
     def __setPositionsList():
-        displayMode = self.GUIOs["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
-        localID     = self.puVar['accounts_selected']
-        if (localID == None):
-            if   (displayMode == 'BASIC'):  self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"].clearSelectionList()
-            elif (displayMode == 'TRADER'): self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].clearSelectionList()
-            elif (displayMode == 'DETAIL'): self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].clearSelectionList()
-        else:
-            if (displayMode == 'BASIC'):
-                positions = self.puVar['accounts'][localID]['positions']
-                nPositions = len(positions)
-                positions_selectionList = dict()
-                for positionIndex, symbol in enumerate(positions):
-                    _position = positions[symbol]
-                    #[0]: Index
-                    _index_str = "{:d} / {:d}".format(positionIndex+1, nPositions)
-                    #[1]: Symbol
-                    _symbol_str = symbol
-                    #[2]: Trading
-                    if (_position['tradeStatus'] == True): _trading_str = 'TRUE';  _trading_str_color = 'GREEN_LIGHT'
-                    else:                                  _trading_str = 'FALSE'; _trading_str_color = 'RED_LIGHT'
-                    #[3]: Leverage
-                    if (_position['leverage'] == None): _leverage_str = "-"
-                    else:                               _leverage_str = str(_position['leverage'])
-                    #[4]: Margin Mode
-                    if   (_position['isolated'] == True):  _marginMode_str = 'ISOLATED'
-                    elif (_position['isolated'] == False): _marginMode_str = 'CROSSED'
-                    elif (_position['isolated'] == None):  _marginMode_str = '-'
-                    #[5]: Quantity
-                    if (_position['quantity'] == None): _quantity_str = "-"
-                    else:                               _quantity_str = auxiliaries.floatToString(number = _position['quantity'], precision = _position['precisions']['quantity'])
-                    #[6]: Entry Price
-                    if (_position['entryPrice'] == None): _entryPrice_str = "-"
-                    else:                                 _entryPrice_str = auxiliaries.floatToString(number = _position['entryPrice'], precision = _position['precisions']['price'])
-                    #[7]: Current Price
-                    if (_position['currentPrice'] == None): _currentPrice_str = "-"; _currentPrice_str_color = 'DEFAULT'
-                    else:
-                        if (_position['entryPrice'] == None): _currentPrice_str = auxiliaries.floatToString(number = _position['currentPrice'], precision = _position['precisions']['price']); _currentPrice_str_color = 'DEFAULT'
-                        else:
-                            _pDifferencePerc = round((_position['currentPrice']/_position['entryPrice']-1)*100, 3)
-                            if   (_pDifferencePerc < 0):  _currentPrice_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _currentPrice_str_color = 'RED_LIGHT'
-                            elif (_pDifferencePerc == 0): _currentPrice_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _currentPrice_str_color = 'DEFAULT'
-                            elif (0 < _pDifferencePerc):  _currentPrice_str = "{:s} [+{:.3f} %]".format(auxiliaries.floatToString(number = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _currentPrice_str_color = 'GREEN_LIGHT'
-                    #[8]: Liquidation Price
-                    if (_position['liquidationPrice'] == None): _liquidationPrice_str = "-"
-                    else:                                       _liquidationPrice_str = auxiliaries.floatToString(number = _position['liquidationPrice'], precision = _position['precisions']['price'])
-                    #[9]: UnrealizedPNL
-                    if ((_position['unrealizedPNL'] == None) or (_position['positionInitialMargin'] == None) or (_position['positionInitialMargin'] == 0)):
-                        _unrealizedPNL_str = "-"; _unrealizedPNL_str_color = 'DEFAULT'
-                    else:                                         
-                        _roi = round(_position['unrealizedPNL']/_position['positionInitialMargin']*100, 3)
-                        if   (_position['unrealizedPNL'] < 0):  _unrealizedPNL_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _unrealizedPNL_str_color = 'RED_LIGHT'
-                        elif (_position['unrealizedPNL'] == 0): _unrealizedPNL_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _unrealizedPNL_str_color = 'DEFAULT'
-                        elif (0 < _position['unrealizedPNL']):  _unrealizedPNL_str = "{:s} [+{:.3f} %]".format(auxiliaries.floatToString(number = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _unrealizedPNL_str_color = 'GREEN_LIGHT'
-                    #[10]: Assumed Ratio
-                    if (_position['assumedRatio'] == None): _assumedRatio_str = "-"
-                    else:                                   _assumedRatio_str = "{:.3f} %".format(_position['assumedRatio']*100)
-                    #[11]: Allocated Balance
-                    if (_position['assumedRatio'] == None): _allocatedBalance_str = "-"
-                    else:                                   _allocatedBalance_str = auxiliaries.floatToString(number = _position['allocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[12]: Commitment Rate
-                    _cr = _position['commitmentRate']
-                    if (_cr == None): _commitmentRate_str = "N/A"; _commitmentRate_str_color = 'DEFAULT'
-                    else:
-                        _commitmentRate_str = "{:.3f} %".format(_cr*100)
-                        if   (0.00 <= _cr) and (_cr <  0.30): _commitmentRate_str_color = 'GREEN_DARK'
-                        elif (0.30 <= _cr) and (_cr <  0.50): _commitmentRate_str_color = 'GREEN_LIGHT'
-                        elif (0.50 <= _cr) and (_cr <  0.70): _commitmentRate_str_color = 'YELLOW'
-                        elif (0.70 <= _cr) and (_cr <  0.80): _commitmentRate_str_color = 'ORANGE_LIGHT'
-                        elif (0.80 <= _cr) and (_cr <  0.90): _commitmentRate_str_color = 'RED_LIGHT'
-                        elif (0.90 <= _cr) and (_cr <= 1.00): _commitmentRate_str_color = 'RED'
-                        else:                                 _commitmentRate_str_color = 'VIOLET_LIGHT'
-                    #[13]: Risk Level
-                    _rl = _position['riskLevel']
-                    if (_rl == None): _riskLevel_str = "N/A"; _riskLevel_str_color = 'DEFAULT'
-                    else:
-                        _riskLevel_str = "{:.3f} %".format(_rl*100)
-                        if   (0.00 <= _rl) and (_rl <  0.30): _riskLevel_str_color = 'GREEN_DARK'
-                        elif (0.30 <= _rl) and (_rl <  0.50): _riskLevel_str_color = 'GREEN_LIGHT'
-                        elif (0.50 <= _rl) and (_rl <  0.70): _riskLevel_str_color = 'ORANGE_LIGHT'
-                        elif (0.70 <= _rl) and (_rl <  0.90): _riskLevel_str_color = 'RED_LIGHT'
-                        elif (0.90 <= _rl) and (_rl <= 1.00): _riskLevel_str_color = 'RED'
-                    #Finally
-                    positions_selectionList[symbol] = [{'text': _index_str,},
-                                                       {'text': _symbol_str,},
-                                                       {'text': _trading_str, 'textStyles': [('all', _trading_str_color),]},
-                                                       {'text': _leverage_str,},
-                                                       {'text': _marginMode_str,},
-                                                       {'text': _quantity_str,},
-                                                       {'text': _entryPrice_str,},
-                                                       {'text': _currentPrice_str, 'textStyles': [('all', _currentPrice_str_color),]},
-                                                       {'text': _liquidationPrice_str,},
-                                                       {'text': _unrealizedPNL_str, 'textStyles': [('all', _unrealizedPNL_str_color),]},
-                                                       {'text': _assumedRatio_str,},
-                                                       {'text': _allocatedBalance_str,},
-                                                       {'text': _commitmentRate_str, 'textStyles': [('all', _commitmentRate_str_color),]},
-                                                       {'text': _riskLevel_str, 'textStyles': [('all', _riskLevel_str_color),],}]
-                self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"].setSelectionList(selectionList = positions_selectionList, displayTargets = 'all', keepSelected = False, callSelectionUpdateFunction = False)
-            elif (displayMode == 'TRADER'): 
-                positions = self.puVar['accounts'][localID]['positions']
-                nPositions = len(positions)
-                positions_selectionList = dict()
-                for positionIndex, symbol in enumerate(positions):
-                    _position = positions[symbol]
-                    #[0]: Index
-                    _index_str = "{:d} / {:d}".format(positionIndex+1, nPositions)
-                    #[1]: Symbol
-                    _symbol_str = symbol
-                    #[2]: Tradable
-                    if (_position['tradable'] == True): _tradable_str = 'TRUE';  _tradable_str_color = 'GREEN_LIGHT'
-                    else:                               _tradable_str = 'FALSE'; _tradable_str_color = 'RED_LIGHT'
-                    #[3]: Trading
-                    if (_position['tradeStatus'] == True): _trading_str = 'TRUE';  _trading_str_color = 'GREEN_LIGHT'
-                    else:                                  _trading_str = 'FALSE'; _trading_str_color = 'RED_LIGHT'
-                    #[4]: Reduce Only
-                    if (_position['reduceOnly'] == True): _reduceOnly_str = 'TRUE';  _reduceOnly_str_color = 'ORANGE_LIGHT'
-                    else:                                 _reduceOnly_str = 'FALSE'; _reduceOnly_str_color = 'GREEN_LIGHT'
-                    #[5]: Currency Analysis Code
-                    if (_position['currencyAnalysisCode'] == None): _currencyAnalysisCode_str = "-"
-                    else:                                           _currencyAnalysisCode_str = _position['currencyAnalysisCode']
-                    #[6]: Trade Configuration Code
-                    if (_position['tradeConfigurationCode'] == None): _tradeConfigurationCode_str = "-"
-                    else:                                             _tradeConfigurationCode_str = _position['tradeConfigurationCode']
-                    #[7]: Assumed Ratio
-                    _assumedRatio_str = "{:.3f} %".format(_position['assumedRatio']*100)
-                    #[8]: Max Allocated Balance
-                    if (_position['maxAllocatedBalance'] == float('inf')): _maxAllocatedBalance_str = 'INF'
-                    else:                                                  _maxAllocatedBalance_str = auxiliaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[9]: Trade Control
-                    _tradeControl_str = json.dumps(_position['tradeControlTracker'])
-                    #[10]: Abrupt Clearing Records
-                    if (len(_position['abruptClearingRecords']) == 0): _abruptClearingRecords_str = "-"
-                    else:                                              _abruptClearingRecords_str = str(_position['abruptClearingRecords'])
-                    #Finally
-                    positions_selectionList[symbol] = [{'text': _index_str},
-                                                       {'text': _symbol_str},
-                                                       {'text': _tradable_str, 'textStyles': [('all', _tradable_str_color),]},
-                                                       {'text': _trading_str, 'textStyles': [('all', _trading_str_color),]},
-                                                       {'text': _reduceOnly_str, 'textStyles': [('all', _reduceOnly_str_color),]},
-                                                       {'text': _currencyAnalysisCode_str},
-                                                       {'text': _tradeConfigurationCode_str},
-                                                       {'text': _assumedRatio_str},
-                                                       {'text': _maxAllocatedBalance_str},
-                                                       {'text': _tradeControl_str},
-                                                       {'text': _abruptClearingRecords_str}]
-                self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].setSelectionList(selectionList = positions_selectionList, displayTargets = 'all', keepSelected = False, callSelectionUpdateFunction = False)
-            elif (displayMode == 'DETAIL'): 
-                positions = self.puVar['accounts'][localID]['positions']
-                nPositions = len(positions)
-                positions_selectionList = dict()
-                for positionIndex, symbol in enumerate(positions):
-                    _position = positions[symbol]
-                    #[0]:  Index
-                    _index_str = "{:d} / {:d}".format(positionIndex+1, nPositions)
-                    #[1]:  Symbol
-                    _symbol_str = symbol
-                    #[2]:  Tradable
-                    if (_position['tradable'] == True): _tradable_str = 'TRUE';  _tradable_str_color = 'GREEN_LIGHT'
-                    else:                               _tradable_str = 'FALSE'; _tradable_str_color = 'RED_LIGHT'
-                    #[3]:  Trading
-                    if (_position['tradeStatus'] == True): _trading_str = 'TRUE';  _trading_str_color = 'GREEN_LIGHT'
-                    else:                                  _trading_str = 'FALSE'; _trading_str_color = 'RED_LIGHT'
-                    #[4]:  Reduce Only
-                    if (_position['reduceOnly'] == True): _reduceOnly_str = 'TRUE';  _reduceOnly_str_color = 'ORANGE_LIGHT'
-                    else:                                 _reduceOnly_str = 'FALSE'; _reduceOnly_str_color = 'GREEN_LIGHT'
-                    #[5]:  Leverage
-                    if (_position['leverage'] == None): _leverage_str = "-"
-                    else:                               _leverage_str = str(_position['leverage'])
-                    #[6]:  Margin Mode
-                    if   (_position['isolated'] == True):  _marginMode_str = 'ISOLATED'
-                    elif (_position['isolated'] == False): _marginMode_str = 'CROSSED'
-                    elif (_position['isolated'] == None):  _marginMode_str = '-'
-                    #[7]:  Quantity
-                    if (_position['quantity'] == None): _quantity_str = "-"
-                    else:                               _quantity_str = auxiliaries.floatToString(number = _position['quantity'], precision = _position['precisions']['quantity'])
-                    #[8]:  Isolated Wallet Balance
-                    if (_position['isolatedWalletBalance'] == None): _isolatedWalletBalance_str = "-"
-                    else:                                            _isolatedWalletBalance_str = auxiliaries.floatToString(number = _position['isolatedWalletBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[9]:  Position Initial Margin
-                    if (_position['positionInitialMargin'] == None): _positionInitialMargin_str = "-"
-                    else:                                            _positionInitialMargin_str = auxiliaries.floatToString(number = _position['positionInitialMargin'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[10]: Open Order Initial Margin
-                    if (_position['openOrderInitialMargin'] == None): _openOrderInitialMargin_str = "-"
-                    else:                                             _openOrderInitialMargin_str = auxiliaries.floatToString(number = _position['openOrderInitialMargin'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[11]: Maintenance Margin
-                    if (_position['maintenanceMargin'] == None): _maintenanceMargin_str = "-"
-                    else:                                        _maintenanceMargin_str = auxiliaries.floatToString(number = _position['maintenanceMargin'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[12]: Entry Price
-                    if (_position['entryPrice'] == None): _entryPrice_str = "-"
-                    else:                                 _entryPrice_str = auxiliaries.floatToString(number = _position['entryPrice'], precision = _position['precisions']['price'])
-                    #[13]: Current Price
-                    if (_position['currentPrice'] == None): _currentPrice_str = "-"; _currentPrice_str_color = 'DEFAULT'
-                    else:
-                        if (_position['entryPrice'] == None): _currentPrice_str = auxiliaries.floatToString(number = _position['currentPrice'], precision = _position['precisions']['price']); _currentPrice_str_color = 'DEFAULT'
-                        else:
-                            _pDifferencePerc = round((_position['currentPrice']/_position['entryPrice']-1)*100, 3)
-                            if   (_pDifferencePerc < 0):  _currentPrice_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _currentPrice_str_color = 'RED_LIGHT'
-                            elif (_pDifferencePerc == 0): _currentPrice_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _currentPrice_str_color = 'DEFAULT'
-                            elif (0 < _pDifferencePerc):  _currentPrice_str = "{:s} [+{:.3f} %]".format(auxiliaries.floatToString(number = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _currentPrice_str_color = 'GREEN_LIGHT'
-                    #[14]: Liquidation Price
-                    if (_position['liquidationPrice'] == None): _liquidationPrice_str = "-"
-                    else:                                       _liquidationPrice_str = auxiliaries.floatToString(number = _position['liquidationPrice'], precision = _position['precisions']['price'])
-                    #[15]: UnrealizedPNL
-                    if ((_position['unrealizedPNL'] == None) or (_position['positionInitialMargin'] == None) or (_position['positionInitialMargin'] == 0)):
-                        _unrealizedPNL_str = "-"; _unrealizedPNL_str_color = 'DEFAULT'
-                    else:                                         
-                        _roi = round(_position['unrealizedPNL']/_position['positionInitialMargin']*100, 3)
-                        if   (_position['unrealizedPNL'] < 0):  _unrealizedPNL_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _unrealizedPNL_str_color = 'RED_LIGHT'
-                        elif (_position['unrealizedPNL'] == 0): _unrealizedPNL_str = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _unrealizedPNL_str_color = 'DEFAULT'
-                        elif (0 < _position['unrealizedPNL']):  _unrealizedPNL_str = "{:s} [+{:.3f} %]".format(auxiliaries.floatToString(number = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _unrealizedPNL_str_color = 'GREEN_LIGHT'
-                    #[16]: Weighted Assumed Ratio
-                    _assumedRatio_str = "{:.3f} %".format(_position['assumedRatio']*100)
-                    #[17]: Weighted Assumed Ratio
-                    if (_position['weightedAssumedRatio'] == None): _weightedAssumedRatio_str = "N/A"
-                    else:                                           _weightedAssumedRatio_str = "{:.3f} %".format(_position['weightedAssumedRatio']*100)
-                    #[18]: Allocated Balance
-                    _allocatedBalance_str = auxiliaries.floatToString(number = _position['allocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[19]: Max Allocated Balance
-                    if (_position['maxAllocatedBalance'] == float('inf')): _maxAllocatedBalance_str = 'INF'
-                    else:                                                  _maxAllocatedBalance_str = auxiliaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[20]: Commitment Rate
-                    _cr = _position['commitmentRate']
-                    if (_cr == None): _commitmentRate_str = "N/A"; _commitmentRate_str_color = 'DEFAULT'
-                    else:
-                        _commitmentRate_str = "{:.3f} %".format(_cr*100)
-                        if   (0.00 <= _cr) and (_cr <  0.30): _commitmentRate_str_color = 'GREEN_DARK'
-                        elif (0.30 <= _cr) and (_cr <  0.50): _commitmentRate_str_color = 'GREEN_LIGHT'
-                        elif (0.50 <= _cr) and (_cr <  0.70): _commitmentRate_str_color = 'YELLOW'
-                        elif (0.70 <= _cr) and (_cr <  0.80): _commitmentRate_str_color = 'ORANGE_LIGHT'
-                        elif (0.80 <= _cr) and (_cr <  0.90): _commitmentRate_str_color = 'RED_LIGHT'
-                        elif (0.90 <= _cr) and (_cr <= 1.00): _commitmentRate_str_color = 'RED'
-                        else:                                 _commitmentRate_str_color = 'VIOLET_LIGHT'
-                    #[21]: Risk Level
-                    _rl = _position['riskLevel']
-                    if (_rl == None): _riskLevel_str = "N/A"; _riskLevel_str_color = 'DEFAULT'
-                    else:
-                        _riskLevel_str = "{:.3f} %".format(_rl*100)
-                        if   (0.00 <= _rl) and (_rl <  0.30): _riskLevel_str_color = 'GREEN_DARK'
-                        elif (0.30 <= _rl) and (_rl <  0.50): _riskLevel_str_color = 'GREEN_LIGHT'
-                        elif (0.50 <= _rl) and (_rl <  0.70): _riskLevel_str_color = 'ORANGE_LIGHT'
-                        elif (0.70 <= _rl) and (_rl <  0.90): _riskLevel_str_color = 'RED_LIGHT'
-                        elif (0.90 <= _rl) and (_rl <= 1.00): _riskLevel_str_color = 'RED'
-                    #[22]: Currency Analysis Code
-                    if (_position['currencyAnalysisCode'] == None): _currencyAnalysisCode_str = "-"
-                    else:                                           _currencyAnalysisCode_str = _position['currencyAnalysisCode']
-                    #[23]: Trade Configuration Code
-                    if (_position['tradeConfigurationCode'] == None): _tradeConfigurationCode_str = "-"
-                    else:                                             _tradeConfigurationCode_str = _position['tradeConfigurationCode']
-                    #[24]: Trade Control
-                    _tradeControl_str = json.dumps(_position['tradeControlTracker'])
-                    #[25]: Abrupt Clearing Records
-                    if (len(_position['abruptClearingRecords']) == 0): _abruptClearingRecords_str = "-"
-                    else:                                              _abruptClearingRecords_str = str(_position['abruptClearingRecords'])
-                    #Finally
-                    positions_selectionList[symbol] = [{'text': _index_str},
-                                                       {'text': _symbol_str},
-                                                       {'text': _tradable_str, 'textStyles': [('all', _tradable_str_color),]},
-                                                       {'text': _trading_str, 'textStyles': [('all', _trading_str_color),]},
-                                                       {'text': _reduceOnly_str, 'textStyles': [('all', _reduceOnly_str_color),]},
-                                                       {'text': _leverage_str,},
-                                                       {'text': _marginMode_str},
-                                                       {'text': _quantity_str},
-                                                       {'text': _isolatedWalletBalance_str},
-                                                       {'text': _positionInitialMargin_str},
-                                                       {'text': _openOrderInitialMargin_str},
-                                                       {'text': _maintenanceMargin_str},
-                                                       {'text': _entryPrice_str},
-                                                       {'text': _currentPrice_str, 'textStyles': [('all', _currentPrice_str_color),]},
-                                                       {'text': _liquidationPrice_str},
-                                                       {'text': _unrealizedPNL_str, 'textStyles': [('all', _unrealizedPNL_str_color),]},
-                                                       {'text': _assumedRatio_str},
-                                                       {'text': _weightedAssumedRatio_str},
-                                                       {'text': _allocatedBalance_str},
-                                                       {'text': _maxAllocatedBalance_str},
-                                                       {'text': _commitmentRate_str, 'textStyles': [('all', _commitmentRate_str_color),]},
-                                                       {'text': _riskLevel_str, 'textStyles': [('all', _riskLevel_str_color),],},
-                                                       {'text': _currencyAnalysisCode_str},
-                                                       {'text': _tradeConfigurationCode_str},
-                                                       {'text': _tradeControl_str},
-                                                       {'text': _abruptClearingRecords_str}]
-                self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].setSelectionList(selectionList = positions_selectionList, displayTargets = 'all', keepSelected = False, callSelectionUpdateFunction = False)
+        #[1]: Instances
+        puVar  = self.puVar
+        guios  = self.GUIOs
+        fn_fts = auxiliaries.floatToString
+
+        #[2]: Display Mode & Account Selected
+        displayMode = guios["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
+        localID     = puVar['accounts_selected']
+
+        #[3]: No Account Selection Handling
+        if localID is None:
+            if   displayMode == 'BASIC':  guios["POSITIONS_BASICMODESELECTIONBOX"].clearSelectionList()
+            elif displayMode == 'TRADER': guios["POSITIONS_TRADERMODESELECTIONBOX"].clearSelectionList()
+            elif displayMode == 'DETAIL': guios["POSITIONS_DETAILMODESELECTIONBOX"].clearSelectionList()
+            return
+
+        #[4]: Account Selected - List Set
+        positions  = puVar['accounts'][localID]['positions']
+        nPositions = len(positions)
+        selList    = dict()
+        #---[4-1]: BASIC Mode
+        if displayMode == 'BASIC':
+            for posIdx, symbol in enumerate(positions):
+                #[4-1-1]: Instances
+                pos = positions[symbol]
+                price_prec = pos['precisions']['price']
+                qty_prec   = pos['precisions']['quantity']
+                quote_prec = _ASSETPRECISIONS_XS[pos['quoteAsset']]
+                #[4-1-2]: Index
+                index_str = f"{posIdx + 1} / {nPositions}"
+                #[4-1-3]: Symbol
+                symbol_str = symbol
+                #[4-1-4]: Trading
+                if pos['tradeStatus']: trading_str, trading_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                  trading_str, trading_str_color = 'FALSE', 'RED_LIGHT'
+                #[4-1-5]: Leverage
+                leverage_str = "-" if pos['leverage'] is None else str(pos['leverage'])
+                #[4-1-6]: Margin Mode
+                if   pos['isolated'] is True:  marginMode_str = 'ISOLATED'
+                elif pos['isolated'] is False: marginMode_str = 'CROSSED'
+                else:                          marginMode_str = '-'
+                #[4-1-7]: Quantity
+                if (q := pos['quantity']) is None: quantity_str = "-"
+                else:                              quantity_str = fn_fts(number=q, precision=qty_prec)
+                #[4-1-8]: Entry Price
+                if (ep := pos['entryPrice']) is None: entryPrice_str = "-"
+                else:                                 entryPrice_str = fn_fts(number=ep, precision=price_prec)
+                #[4-1-8]: Current Price
+                cp = pos['currentPrice']
+                if cp is None:
+                    currentPrice_str, currentPrice_str_color = "-", 'DEFAULT'
+                elif ep is None:
+                    currentPrice_str = fn_fts(number=cp, precision=price_prec)
+                    currentPrice_str_color = 'DEFAULT'
+                else:
+                    pDifferencePerc = round((cp / ep - 1) * 100, 3)
+                    cp_formatted = fn_fts(number=cp, precision=price_prec)
+                    if   pDifferencePerc < 0:  currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'RED_LIGHT'
+                    elif pDifferencePerc == 0: currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'DEFAULT'
+                    else:                      currentPrice_str, currentPrice_str_color = f"{cp_formatted} [+{pDifferencePerc:.3f} %]", 'GREEN_LIGHT'
+                #[4-1-9]: Liquidation Price
+                if (lp := pos['liquidationPrice']) is None: liquidationPrice_str = "-"
+                else:                                       liquidationPrice_str = fn_fts(number=lp, precision=price_prec)
+                #[4-1-10]: UnrealizedPNL
+                pnl = pos['unrealizedPNL']
+                pim = pos['positionInitialMargin']
+                if pnl is None or pim is None or pim == 0:
+                    unrealizedPNL_str, unrealizedPNL_str_color = "-", 'DEFAULT'
+                else:                                         
+                    roi = round((pnl / pim) * 100, 3)
+                    pnl_formatted = fn_fts(number=pnl, precision=quote_prec)
+                    if   pnl < 0:  unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'RED_LIGHT'
+                    elif pnl == 0: unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'DEFAULT'
+                    else:          unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [+{roi:.3f} %]", 'GREEN_LIGHT'
+                #[4-1-11]: Assumed Ratio
+                if (ar := pos['assumedRatio']) is None: assumedRatio_str = "-"
+                else:                                   assumedRatio_str = f"{ar * 100:.3f} %"
+                #[4-1-12]: Allocated Balance
+                if (ab := pos['allocatedBalance']) is None: allocatedBalance_str = "-"
+                else:                                       allocatedBalance_str = fn_fts(number=ab, precision=quote_prec)
+                #[4-1-13]: Commitment Rate
+                cr = pos['commitmentRate']
+                if cr is None:
+                    commitmentRate_str, commitmentRate_str_color = "N/A", 'DEFAULT'
+                else:
+                    commitmentRate_str = f"{cr * 100:.3f} %"
+                    if   0.00 <= cr < 0.30: commitmentRate_str_color = 'GREEN_DARK'
+                    elif 0.30 <= cr < 0.50: commitmentRate_str_color = 'GREEN_LIGHT'
+                    elif 0.50 <= cr < 0.70: commitmentRate_str_color = 'YELLOW'
+                    elif 0.70 <= cr < 0.80: commitmentRate_str_color = 'ORANGE_LIGHT'
+                    elif 0.80 <= cr < 0.90: commitmentRate_str_color = 'RED_LIGHT'
+                    elif 0.90 <= cr <= 1.0: commitmentRate_str_color = 'RED'
+                    else:                   commitmentRate_str_color = 'VIOLET_LIGHT'
+                #[4-1-14]: Risk Level
+                rl = pos['riskLevel']
+                if rl is None:
+                    riskLevel_str, riskLevel_str_color = "N/A", 'DEFAULT'
+                else:
+                    riskLevel_str = f"{rl * 100:.3f} %"
+                    if   0.00 <= rl < 0.30: riskLevel_str_color = 'GREEN_DARK'
+                    elif 0.30 <= rl < 0.50: riskLevel_str_color = 'GREEN_LIGHT'
+                    elif 0.50 <= rl < 0.70: riskLevel_str_color = 'ORANGE_LIGHT'
+                    elif 0.70 <= rl < 0.90: riskLevel_str_color = 'RED_LIGHT'
+                    elif 0.90 <= rl <= 1.0: riskLevel_str_color = 'RED'
+                    else:                   riskLevel_str_color = 'VIOLET_LIGHT'
+                #[4-1-15]: Contract Type
+                contractType_str = pos['contractType']
+                #[4-1-16]: Finally
+                selList[symbol] = [{'text': index_str},
+                                   {'text': symbol_str},
+                                   {'text': trading_str,          'textStyles': [('all', trading_str_color)]},
+                                   {'text': leverage_str},
+                                   {'text': marginMode_str},
+                                   {'text': quantity_str},
+                                   {'text': entryPrice_str},
+                                   {'text': currentPrice_str,     'textStyles': [('all', currentPrice_str_color)]},
+                                   {'text': liquidationPrice_str},
+                                   {'text': unrealizedPNL_str,    'textStyles': [('all', unrealizedPNL_str_color)]},
+                                   {'text': assumedRatio_str},
+                                   {'text': allocatedBalance_str},
+                                   {'text': commitmentRate_str,   'textStyles': [('all', commitmentRate_str_color)]},
+                                   {'text': riskLevel_str,        'textStyles': [('all', riskLevel_str_color)]},
+                                   {'text': contractType_str},
+                                   ]
+
+        #---[4-2]: TRADER Mode
+        elif displayMode == 'TRADER': 
+            for posIdx, symbol in enumerate(positions):
+                #[4-2-1]: Instances
+                pos = positions[symbol]
+                quote_prec = _ASSETPRECISIONS_XS[pos['quoteAsset']]
+                #[4-2-2]: Index
+                index_str = f"{posIdx + 1} / {nPositions}"
+                #[4-2-3]: Symbol
+                symbol_str = symbol
+                #[4-2-4]: Tradable
+                if pos['tradable'] is True: tradable_str, tradable_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                       tradable_str, tradable_str_color = 'FALSE', 'RED_LIGHT'
+                #[4-2-5]: Trading
+                if pos['tradeStatus'] is True: trading_str, trading_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                          trading_str, trading_str_color = 'FALSE', 'RED_LIGHT'
+                #[4-2-6]: Reduce Only
+                if pos['reduceOnly'] is True: reduceOnly_str, reduceOnly_str_color = 'TRUE', 'ORANGE_LIGHT'
+                else:                         reduceOnly_str, reduceOnly_str_color = 'FALSE', 'GREEN_LIGHT'
+                #[4-2-7]: Contract Type
+                contractType_str = pos['contractType']
+                #[4-2-8]: Currency Analysis Code
+                if (cac := pos['currencyAnalysisCode']) is None: currencyAnalysisCode_str = "-"
+                else:                                            currencyAnalysisCode_str = cac
+                #[4-2-9]: Trade Configuration Code
+                if (tcc := pos['tradeConfigurationCode']) is None: tradeConfigurationCode_str = "-"
+                else:                                              tradeConfigurationCode_str = tcc
+                #[4-2-10]: Assumed Ratio
+                assumedRatio_str = f"{pos['assumedRatio'] * 100:.3f} %"
+                #[4-2-11]: Max Allocated Balance
+                if (mab := pos['maxAllocatedBalance']) == float('inf'): maxAllocatedBalance_str = 'INF'
+                else:                                                   maxAllocatedBalance_str = fn_fts(number=mab, precision=quote_prec)
+                #[4-2-12]: Trade Control
+                tradeControl_str = json.dumps(pos['tradeControlTracker'])
+                #[4-2-13]: Abrupt Clearing Records
+                if not (acr := pos['abruptClearingRecords']): abruptClearingRecords_str = "-"
+                else:                                         abruptClearingRecords_str = str(acr)
+                #[4-2-14]: Finally
+                selList[symbol] = [{'text': index_str},
+                                   {'text': symbol_str},
+                                   {'text': tradable_str,               'textStyles': [('all', tradable_str_color)]},
+                                   {'text': trading_str,                'textStyles': [('all', trading_str_color)]},
+                                   {'text': reduceOnly_str,             'textStyles': [('all', reduceOnly_str_color)]},
+                                   {'text': contractType_str},
+                                   {'text': currencyAnalysisCode_str},
+                                   {'text': tradeConfigurationCode_str},
+                                   {'text': assumedRatio_str},
+                                   {'text': maxAllocatedBalance_str},
+                                   {'text': tradeControl_str},
+                                   {'text': abruptClearingRecords_str}]
+
+        #---[4-3]: DETAIL Mode
+        elif displayMode == 'DETAIL':
+            for posIdx, symbol in enumerate(positions):
+                #[4-3-1]: Instances
+                pos = positions[symbol]
+                price_prec = pos['precisions']['price']
+                qty_prec   = pos['precisions']['quantity']
+                quote_prec = _ASSETPRECISIONS_XS[pos['quoteAsset']]
+                #[4-3-2]: Index
+                index_str = f"{posIdx + 1} / {nPositions}"
+                #[4-3-3]: Symbol
+                symbol_str = symbol
+                #[4-3-4]: Tradable
+                if pos['tradable'] is True: tradable_str, tradable_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                       tradable_str, tradable_str_color = 'FALSE', 'RED_LIGHT'
+                #[4-3-5]: Trading
+                if pos['tradeStatus'] is True: trading_str, trading_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                          trading_str, trading_str_color = 'FALSE', 'RED_LIGHT'
+                #[4-3-6]: Reduce Only
+                if pos['reduceOnly'] is True: reduceOnly_str, reduceOnly_str_color = 'TRUE', 'ORANGE_LIGHT'
+                else:                         reduceOnly_str, reduceOnly_str_color = 'FALSE', 'GREEN_LIGHT'
+                #[4-3-7]: Contract Type
+                contractType_str = pos['contractType']
+                #[4-3-8]: Leverage
+                leverage_str = "-" if pos['leverage'] is None else str(pos['leverage'])
+                #[4-3-9]: Margin Mode
+                if   pos['isolated'] is True:  marginMode_str = 'ISOLATED'
+                elif pos['isolated'] is False: marginMode_str = 'CROSSED'
+                else:                          marginMode_str = '-'
+                #[4-3-10]: Quantity
+                if (q := pos['quantity']) is None: quantity_str = "-"
+                else:                              quantity_str = fn_fts(number=q, precision=qty_prec)
+                #[4-3-11]: Isolated Wallet Balance
+                if (iwb := pos['isolatedWalletBalance']) is None: isolatedWalletBalance_str = "-"
+                else:                                             isolatedWalletBalance_str = fn_fts(number=iwb, precision=quote_prec)
+                #[4-3-12]: Position Initial Margin
+                if (pim := pos['positionInitialMargin']) is None: positionInitialMargin_str = "-"
+                else:                                             positionInitialMargin_str = fn_fts(number=pim, precision=quote_prec)
+                #[4-3-13]: Open Order Initial Margin
+                if (ooim := pos['openOrderInitialMargin']) is None: openOrderInitialMargin_str = "-"
+                else:                                               openOrderInitialMargin_str = fn_fts(number=ooim, precision=quote_prec)
+                #[4-3-14]: Maintenance Margin
+                if (mm := pos['maintenanceMargin']) is None: maintenanceMargin_str = "-"
+                else:                                        maintenanceMargin_str = fn_fts(number=mm, precision=quote_prec)
+                #[4-3-15]: Entry Price
+                if (ep := pos['entryPrice']) is None: entryPrice_str = "-"
+                else:                                 entryPrice_str = fn_fts(number=ep, precision=price_prec)
+                #[4-3-16]: Current Price
+                cp = pos['currentPrice']
+                if cp is None:
+                    currentPrice_str, currentPrice_str_color = "-", 'DEFAULT'
+                elif ep is None:
+                    currentPrice_str, currentPrice_str_color = fn_fts(number=cp, precision=price_prec), 'DEFAULT'
+                else:
+                    pDifferencePerc = round((cp / ep - 1) * 100, 3)
+                    cp_formatted = fn_fts(number=cp, precision=price_prec)
+                    if   pDifferencePerc < 0:  currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'RED_LIGHT'
+                    elif pDifferencePerc == 0: currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'DEFAULT'
+                    else:                      currentPrice_str, currentPrice_str_color = f"{cp_formatted} [+{pDifferencePerc:.3f} %]", 'GREEN_LIGHT'
+                #[4-3-17]: Liquidation Price
+                if (lp := pos['liquidationPrice']) is None: liquidationPrice_str = "-"
+                else:                                       liquidationPrice_str = fn_fts(number=lp, precision=price_prec)
+                #[4-3-18]: UnrealizedPNL
+                pnl = pos['unrealizedPNL']
+                pim_pnl = pos['positionInitialMargin']
+                if pnl is None or pim_pnl is None or pim_pnl == 0:
+                    unrealizedPNL_str, unrealizedPNL_str_color = "-", 'DEFAULT'
+                else:                                         
+                    roi = round((pnl / pim_pnl) * 100, 3)
+                    pnl_formatted = fn_fts(number=pnl, precision=quote_prec)
+                    if   pnl < 0:  unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'RED_LIGHT'
+                    elif pnl == 0: unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'DEFAULT'
+                    else:          unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [+{roi:.3f} %]", 'GREEN_LIGHT'
+                #[4-3-19]: Assumed Ratio
+                assumedRatio_str = f"{pos['assumedRatio'] * 100:.3f} %"
+                #[4-3-20]: Weighted Assumed Ratio
+                if (war := pos['weightedAssumedRatio']) is None: weightedAssumedRatio_str = "N/A"
+                else:                                            weightedAssumedRatio_str = f"{war * 100:.3f} %"
+                #[4-3-21]: Allocated Balance
+                allocatedBalance_str = fn_fts(number=pos['allocatedBalance'], precision=quote_prec)
+                #[4-3-22]: Max Allocated Balance
+                if (mab := pos['maxAllocatedBalance']) == float('inf'): maxAllocatedBalance_str = 'INF'
+                else:                                                   maxAllocatedBalance_str = fn_fts(number=mab, precision=quote_prec)
+                #[4-3-23]: Commitment Rate
+                cr = pos['commitmentRate']
+                if cr is None:
+                    commitmentRate_str, commitmentRate_str_color = "N/A", 'DEFAULT'
+                else:
+                    commitmentRate_str = f"{cr * 100:.3f} %"
+                    if   0.00 <= cr < 0.30: commitmentRate_str_color = 'GREEN_DARK'
+                    elif 0.30 <= cr < 0.50: commitmentRate_str_color = 'GREEN_LIGHT'
+                    elif 0.50 <= cr < 0.70: commitmentRate_str_color = 'YELLOW'
+                    elif 0.70 <= cr < 0.80: commitmentRate_str_color = 'ORANGE_LIGHT'
+                    elif 0.80 <= cr < 0.90: commitmentRate_str_color = 'RED_LIGHT'
+                    elif 0.90 <= cr <= 1.0: commitmentRate_str_color = 'RED'
+                    else:                   commitmentRate_str_color = 'VIOLET_LIGHT'
+                #[4-3-24]: Risk Level
+                rl = pos['riskLevel']
+                if rl is None:
+                    riskLevel_str, riskLevel_str_color = "N/A", 'DEFAULT'
+                else:
+                    riskLevel_str = f"{rl * 100:.3f} %"
+                    if   0.00 <= rl < 0.30: riskLevel_str_color = 'GREEN_DARK'
+                    elif 0.30 <= rl < 0.50: riskLevel_str_color = 'GREEN_LIGHT'
+                    elif 0.50 <= rl < 0.70: riskLevel_str_color = 'ORANGE_LIGHT'
+                    elif 0.70 <= rl < 0.90: riskLevel_str_color = 'RED_LIGHT'
+                    elif 0.90 <= rl <= 1.0: riskLevel_str_color = 'RED'
+                    else:                   riskLevel_str_color = 'VIOLET_LIGHT'
+                #[4-3-25]: Currency Analysis Code
+                if (cac := pos['currencyAnalysisCode']) is None: currencyAnalysisCode_str = "-"
+                else:                                            currencyAnalysisCode_str = cac
+                #[4-3-26]: Trade Configuration Code
+                if (tcc := pos['tradeConfigurationCode']) is None: tradeConfigurationCode_str = "-"
+                else:                                              tradeConfigurationCode_str = tcc
+                #[4-3-27]: Trade Control
+                tradeControl_str = json.dumps(pos['tradeControlTracker'])
+                #[4-3-28]: Abrupt Clearing Records
+                if not (acr := pos['abruptClearingRecords']): abruptClearingRecords_str = "-"
+                else:                                         abruptClearingRecords_str = str(acr)
+                #[4-3-29]: Finally
+                selList[symbol] = [{'text': index_str},
+                                   {'text': symbol_str},
+                                   {'text': tradable_str,               'textStyles': [('all', tradable_str_color)]},
+                                   {'text': trading_str,                'textStyles': [('all', trading_str_color)]},
+                                   {'text': reduceOnly_str,             'textStyles': [('all', reduceOnly_str_color)]},
+                                   {'text': contractType_str},
+                                   {'text': leverage_str},
+                                   {'text': marginMode_str},
+                                   {'text': quantity_str},
+                                   {'text': isolatedWalletBalance_str},
+                                   {'text': positionInitialMargin_str},
+                                   {'text': openOrderInitialMargin_str},
+                                   {'text': maintenanceMargin_str},
+                                   {'text': entryPrice_str},
+                                   {'text': currentPrice_str,           'textStyles': [('all', currentPrice_str_color)]},
+                                   {'text': liquidationPrice_str},
+                                   {'text': unrealizedPNL_str,          'textStyles': [('all', unrealizedPNL_str_color)]},
+                                   {'text': assumedRatio_str},
+                                   {'text': weightedAssumedRatio_str},
+                                   {'text': allocatedBalance_str},
+                                   {'text': maxAllocatedBalance_str},
+                                   {'text': commitmentRate_str,         'textStyles': [('all', commitmentRate_str_color)]},
+                                   {'text': riskLevel_str,              'textStyles': [('all', riskLevel_str_color)]},
+                                   {'text': currencyAnalysisCode_str},
+                                   {'text': tradeConfigurationCode_str},
+                                   {'text': tradeControl_str},
+                                   {'text': abruptClearingRecords_str}]
+            
+        #[5]: Finally
+        guios[f"POSITIONS_{displayMode}MODESELECTIONBOX"].setSelectionList(selectionList = selList, displayTargets = 'all', keepSelected = False, callSelectionUpdateFunction = False)
         self.pageAuxillaryFunctions['APPLYPOSITIONSLISTFILTER']()
     def __applyPositionsListFilter(resetViewPosition = True):
-        displayMode = self.GUIOs["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
-        localID     = self.puVar['accounts_selected']
-        if (localID != None):
-            positions = self.puVar['accounts'][localID]['positions']
-            #Filter Parameters
-            searchText                         = self.GUIOs["POSITIONS_SEARCHTEXTINPUTBOX"].getText()
-            searchType                         = self.GUIOs["POSITIONS_SEARCHTYPESELECTIONBOX"].getSelected()
-            sortType                           = self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].getSelected()
-            conditionType_tradeStatus          = self.GUIOs["POSITIONS_TRADESTATUSFILTERSELECTIONBOX"].getSelected()
-            conditionType_tradable             = self.GUIOs["POSITIONS_TRADABLEFILTERSELECTIONBOX"].getSelected()
-            conditionType_quantity             = self.GUIOs["POSITIONS_QUANTITYFILTERSELECTIONBOX"].getSelected()
-            conditionType_assumedRatio         = self.GUIOs["POSITIONS_ASSUMEDRATIOFILTERSELECTIONBOX"].getSelected()
-            conditionType_allocatedBalance     = self.GUIOs["POSITIONS_ALLOCATEDBALANCEFILTERSELECTIONBOX"].getSelected()
-            conditionType_currencyAnalysisCode = self.GUIOs["POSITIONS_CURRENCYANALYSISCODEFILTERSELECTIONBOX"].getSelected()
-            #Filtering
-            _filtered = list(positions.keys())
-            #---[1]: Condition Filtering - Trade Status
-            if   (conditionType_tradeStatus == 'ALL'):   pass
-            elif (conditionType_tradeStatus == 'TRUE'):  _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['tradeStatus'] == True)]
-            elif (conditionType_tradeStatus == 'FALSE'): _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['tradeStatus'] == False)]
-            #---[2]: Condition Filtering - Tradable
-            if   (conditionType_tradable == 'ALL'):   pass
-            elif (conditionType_tradable == 'TRUE'):  _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['tradable'] == True)]
-            elif (conditionType_tradable == 'FALSE'): _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['tradable'] == False)]
-            #---[3]: Condition Filtering - Quantity
-            if   (conditionType_quantity == 'ALL'):     pass
-            elif (conditionType_quantity == 'NONZERO'): _filtered = [_symbol for _symbol in _filtered if ((positions[_symbol]['quantity'] != None) and (positions[_symbol]['quantity'] != 0))]
-            elif (conditionType_quantity == 'ZERO'):    _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['quantity'] == 0)]
-            #---[4]: Condition Filtering - Assumed Balance
-            if   (conditionType_assumedRatio == 'ALL'):     pass
-            elif (conditionType_assumedRatio == 'NONZERO'): _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['assumedRatio'] != 0)]
-            elif (conditionType_assumedRatio == 'ZERO'):    _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['assumedRatio'] == 0)]
-            #---[5]: Condition Filtering - Allocated Balance
-            if   (conditionType_allocatedBalance == 'ALL'):     pass
-            elif (conditionType_allocatedBalance == 'NONZERO'): _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['allocatedBalance'] != 0)]
-            elif (conditionType_allocatedBalance == 'ZERO'):    _filtered = [_symbol for _symbol in _filtered if (positions[_symbol]['allocatedBalance'] == 0)]
-            #---[6]: Condition Filtering - Currency Analysis Code
-            if   (conditionType_currencyAnalysisCode == 'ALL'):     pass
-            elif (conditionType_currencyAnalysisCode == 'NONZERO'): _filtered = [_symbol for _symbol in _filtered if (0 < len([_caCode for _caCode in self.puVar['currencyAnalysis'] if (self.puVar['currencyAnalysis'][_caCode]['currencySymbol'] == _symbol)]))]
-            elif (conditionType_currencyAnalysisCode == 'ZERO'):    _filtered = [_symbol for _symbol in _filtered if (len([_caCode for _caCode in self.puVar['currencyAnalysis'] if (self.puVar['currencyAnalysis'][_caCode]['currencySymbol'] == _symbol)]) == 0)]
-            #---[7]: Text Filtering
-            if (searchText != ""):
-                if   (searchType == 'SYMBOL'): _filtered = [_symbol for _symbol in _filtered if (searchText in _symbol)]
-                elif (searchType == 'CACODE'): _filtered = [_symbol for _symbol in _filtered if ((positions[_symbol]['currencyAnalysisCode']   != None) and (searchText in positions[_symbol]['currencyAnalysisCode']))]
-                elif (searchType == 'TCCODE'): _filtered = [_symbol for _symbol in _filtered if ((positions[_symbol]['tradeConfigurationCode'] != None) and (searchText in positions[_symbol]['tradeConfigurationCode']))]
-            #---[8]: Sorting
-            if   (sortType == 'INDEX'): pass
-            elif (sortType == 'SYMBOL'): _filtered.sort()
-            elif (sortType == 'LEVERAGE'): 
-                _forSort = list()
-                for _symbol in _filtered:
-                    _leverage = positions[_symbol]['leverage']
-                    if (_leverage == None): _forSort.append((_symbol, float('-inf')))
-                    else:                   _forSort.append((_symbol, _leverage))
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'UNREALIZEDPNL'):
-                _forSort = list()
-                for _symbol in _filtered:
-                    _unrealizedPNL = positions[_symbol]['unrealizedPNL']
-                    _quantity      = positions[_symbol]['quantity']
-                    if ((_quantity == None) or (_quantity == 0) or (_unrealizedPNL == None)): _forSort.append((_symbol, float('-inf')))
-                    else:                                                                     _forSort.append((_symbol, _unrealizedPNL))
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'ASSUMEDRATIO'): 
-                _forSort = [(_symbol, positions[_symbol]['assumedRatio']) for _symbol in _filtered]
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'WEIGHTEDASSUMEDRATIO'):
-                _forSort = list()
-                for _symbol in _filtered:
-                    _weightedAssumedRatio = positions[_symbol]['weightedAssumedRatio']
-                    if (_weightedAssumedRatio == None): _forSort.append((_symbol, float('-inf')))
-                    else:                               _forSort.append((_symbol, _weightedAssumedRatio))
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'ALLOCATEDBALANCE'): 
-                _forSort = [(_symbol, positions[_symbol]['allocatedBalance']) for _symbol in _filtered]
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'COMMITMENTRATE'): 
-                _forSort = list()
-                for _symbol in _filtered:
-                    _commitmentRate = positions[_symbol]['commitmentRate']
-                    if (_commitmentRate == None): _forSort.append((_symbol, float('-inf')))
-                    else:                         _forSort.append((_symbol, _commitmentRate))
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'RISKLEVEL'):
-                _forSort = list()
-                for _symbol in _filtered:
-                    _riskLevel = positions[_symbol]['riskLevel']
-                    if (_riskLevel == None): _forSort.append((_symbol, float('-inf')))
-                    else:                    _forSort.append((_symbol, _riskLevel))
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'CACODE'): 
-                _forSort = [[_symbol, positions[_symbol]['currencyAnalysisCode']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = ""
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'TCCODE'): 
-                _forSort = [[_symbol, positions[_symbol]['tradeConfigurationCode']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = ""
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            #Finally
-            if (displayMode == 'BASIC'):  self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"].setDisplayTargets(displayTargets  = _filtered, resetViewPosition = resetViewPosition)
-            if (displayMode == 'TRADER'): self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].setDisplayTargets(displayTargets = _filtered, resetViewPosition = resetViewPosition)
-            if (displayMode == 'DETAIL'): self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].setDisplayTargets(displayTargets = _filtered, resetViewPosition = resetViewPosition)
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        displayMode = guios["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
+        localID     = puVar['accounts_selected']
+        if not localID:
+            return
+        positions = puVar['accounts'][localID]['positions']
+
+        #[2]: Filter Parameters
+        searchText                         = guios["POSITIONS_SEARCHTEXTINPUTBOX"].getText()
+        searchType                         = guios["POSITIONS_SEARCHTYPESELECTIONBOX"].getSelected()
+        sortType                           = guios["POSITIONS_SORTBYSELECTIONBOX"].getSelected()
+        conditionType_tradeStatus          = guios["POSITIONS_TRADESTATUSFILTERSELECTIONBOX"].getSelected()
+        conditionType_tradable             = guios["POSITIONS_TRADABLEFILTERSELECTIONBOX"].getSelected()
+        conditionType_quantity             = guios["POSITIONS_QUANTITYFILTERSELECTIONBOX"].getSelected()
+        conditionType_assumedRatio         = guios["POSITIONS_ASSUMEDRATIOFILTERSELECTIONBOX"].getSelected()
+        conditionType_allocatedBalance     = guios["POSITIONS_ALLOCATEDBALANCEFILTERSELECTIONBOX"].getSelected()
+        conditionType_currencyAnalysisCode = guios["POSITIONS_CURRENCYANALYSISCODEFILTERSELECTIONBOX"].getSelected()
+
+        #[3]: Filtering
+        filtered = list(positions.keys())
+        #---[3-1]: Condition Filtering - Trade Status
+        if   conditionType_tradeStatus == 'ALL':   pass
+        elif conditionType_tradeStatus == 'TRUE':  filtered = [s for s in filtered if positions[s]['tradeStatus'] is True]
+        elif conditionType_tradeStatus == 'FALSE': filtered = [s for s in filtered if positions[s]['tradeStatus'] is False]
+        #---[3-2]: Condition Filtering - Tradable
+        if   conditionType_tradable == 'ALL':   pass
+        elif conditionType_tradable == 'TRUE':  filtered = [s for s in filtered if positions[s]['tradable'] is True]
+        elif conditionType_tradable == 'FALSE': filtered = [s for s in filtered if positions[s]['tradable'] is False]
+        #---[3-3]: Condition Filtering - Quantity
+        if   conditionType_quantity == 'ALL':     pass
+        elif conditionType_quantity == 'NONZERO': filtered = [s for s in filtered if (q := positions[s]['quantity']) is not None and q != 0]
+        elif conditionType_quantity == 'ZERO':    filtered = [s for s in filtered if positions[s]['quantity'] == 0]
+        #---[3-4]: Condition Filtering - Assumed Balance
+        if   conditionType_assumedRatio == 'ALL':     pass
+        elif conditionType_assumedRatio == 'NONZERO': filtered = [s for s in filtered if positions[s]['assumedRatio'] != 0]
+        elif conditionType_assumedRatio == 'ZERO':    filtered = [s for s in filtered if positions[s]['assumedRatio'] == 0]
+        #---[3-5]: Condition Filtering - Allocated Balance
+        if   conditionType_allocatedBalance == 'ALL':     pass
+        elif conditionType_allocatedBalance == 'NONZERO': filtered = [s for s in filtered if positions[s]['allocatedBalance'] != 0]
+        elif conditionType_allocatedBalance == 'ZERO':    filtered = [s for s in filtered if positions[s]['allocatedBalance'] == 0]
+        #---[3-6]: Condition Filtering - Currency Analysis Code
+        analyzed_symbols = {ca['currencySymbol'] for ca in puVar['currencyAnalysis'].values()}
+        if   conditionType_currencyAnalysisCode == 'ALL':     pass
+        elif conditionType_currencyAnalysisCode == 'NONZERO': filtered = [s for s in filtered if s in analyzed_symbols]
+        elif conditionType_currencyAnalysisCode == 'ZERO':    filtered = [s for s in filtered if s not in analyzed_symbols]
+        #---[3-7]: Text Filtering
+        if searchText:
+            if   searchType == 'SYMBOL': filtered = [s for s in filtered if searchText in s]
+            elif searchType == 'CACODE': filtered = [s for s in filtered if (val := positions[s]['currencyAnalysisCode'])   is not None and searchText in val]
+            elif searchType == 'TCCODE': filtered = [s for s in filtered if (val := positions[s]['tradeConfigurationCode']) is not None and searchText in val]
+
+        #[4]: Sorting
+        #---[4-1]: Index Sort
+        if sortType == 'INDEX': 
+            pass
+        #---[4-2]: Symbol Sort
+        elif sortType == 'SYMBOL': 
+            filtered.sort()
+        #---[4-3]: Leverage Sort
+        elif sortType == 'LEVERAGE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['leverage']) is not None else float('-inf'), reverse=True)
+        #---[4-4]: Unrealized PNL Sort
+        elif sortType == 'UNREALIZEDPNL':
+            filtered.sort(key=lambda s: val if ((q := positions[s]['quantity']) is not None and q != 0 and (val := positions[s]['unrealizedPNL']) is not None) else float('-inf'), reverse=True)
+        #---[4-5]: Assumed Ratio Sort
+        elif sortType == 'ASSUMEDRATIO': 
+            filtered.sort(key=lambda s: positions[s]['assumedRatio'], reverse=True)
+        #---[4-6]: Weighted Assumed Ratio Sort
+        elif sortType == 'WEIGHTEDASSUMEDRATIO':
+            filtered.sort(key=lambda s: val if (val := positions[s]['weightedAssumedRatio']) is not None else float('-inf'), reverse=True)
+        #---[4-7]: Allocated Balance Sort
+        elif sortType == 'ALLOCATEDBALANCE': 
+            filtered.sort(key=lambda s: positions[s]['allocatedBalance'], reverse=True)
+        #---[4-8]: Commitment Rate Sort
+        elif sortType == 'COMMITMENTRATE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['commitmentRate']) is not None else float('-inf'), reverse=True)
+        #---[4-9]: Risk Level Sort
+        elif sortType == 'RISKLEVEL':
+            filtered.sort(key=lambda s: val if (val := positions[s]['riskLevel']) is not None else float('-inf'), reverse=True)
+        #---[4-10]: Currency Analysis Code (CACODE) Sort
+        elif sortType == 'CACODE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['currencyAnalysisCode']) is not None else "")
+        #---[4-11]: Trade Configuration Code (TCCODE) Sort
+        elif sortType == 'TCCODE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['tradeConfigurationCode']) is not None else "")
+        #---[4-12]: Contract Type Sort
+        elif sortType == 'CONTRACTTYPE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['contractType']) is not None else "")
+
+        #[5]: Finally
+        if displayMode == 'BASIC':  guios["POSITIONS_BASICMODESELECTIONBOX"].setDisplayTargets(displayTargets  = filtered, resetViewPosition = resetViewPosition)
+        if displayMode == 'TRADER': guios["POSITIONS_TRADERMODESELECTIONBOX"].setDisplayTargets(displayTargets = filtered, resetViewPosition = resetViewPosition)
+        if displayMode == 'DETAIL': guios["POSITIONS_DETAILMODESELECTIONBOX"].setDisplayTargets(displayTargets = filtered, resetViewPosition = resetViewPosition)
     def __onPositionSelectionUpdate():
         _displayMode = self.GUIOs["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
         if (_displayMode == 'BASIC'):

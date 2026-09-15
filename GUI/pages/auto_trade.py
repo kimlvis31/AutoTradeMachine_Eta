@@ -142,23 +142,26 @@ def setupPage(self):
         self.GUIOs["MARKET_BLOCKTITLE"] = passiveGraphics_wrapperTypeB(**inst, groupOrder=1, xPos=100, yPos=8350, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKTITLE_MARKET'), fontSize = 100)
         #---Filter
         self.GUIOs["MARKET_BLOCKSUBTITLE_FILTER"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CURRENCIES'), fontSize = 80)
-        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7800, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SEARCH'), fontSize=80, textInteractable=False)
-        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"]       = textInputBox_typeA(**inst, groupOrder=1, xPos= 900, yPos=7800, width=2800, height=250, style="styleA", text="",                                                                     fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"]      = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGTRUE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"]     = switch_typeC(**inst,       groupOrder=1, xPos=1950, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGFALSE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE'])
-        self.GUIOs["MARKET&FILTER_SORTBYTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7100, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SORTBY'),       fontSize=80, textInteractable    =False)
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"]         = switch_typeC(**inst,       groupOrder=1, xPos= 900, yPos=7100, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_ID'),           fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"]     = switch_typeC(**inst,       groupOrder=1, xPos=1700, yPos=7100, width= 800, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SYMBOL'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"] = switch_typeC(**inst,       groupOrder=1, xPos=2600, yPos=7100, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_FIRSTKLINE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE'])
+        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7800, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SEARCH'), fontSize=80, textInteractable=False)
+        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"]         = textInputBox_typeA(**inst, groupOrder=1, xPos= 900, yPos=7800, width=2800, height=250, style="styleA", text="",                                                                     fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"]        = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGTRUE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"]       = switch_typeC(**inst,       groupOrder=1, xPos=1950, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGFALSE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE'])
+        self.GUIOs["MARKET&FILTER_SORTBYTITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7100, width= 600, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SORTBY'),       fontSize=80, textInteractable    =False)
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"]           = switch_typeC(**inst,       groupOrder=1, xPos= 800, yPos=7100, width= 400, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_ID'),           fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"]       = switch_typeC(**inst,       groupOrder=1, xPos=1300, yPos=7100, width= 600, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SYMBOL'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"]   = switch_typeC(**inst,       groupOrder=1, xPos=2000, yPos=7100, width= 900, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_FIRSTKLINE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"] = switch_typeC(**inst,       groupOrder=1, xPos=3000, yPos=7100, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_CONTRACTTYPE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYCONTRACTTYPE'])
         self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         #---Currencies
         self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6750, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_NCURRENCIES'), fontSize=80, textInteractable=False)
         self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=6750, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=False)
-        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=2850, width=3600, height=3800, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=2850, width=3600, height=3800, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], 
+                                                                          elementWidths = (600, 1000, 600, 1150, 1500))
         self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_INDEX')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_SYMBOL')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS')},
-                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_FIRSTKLINE')}])
+                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_FIRSTKLINE')},
+                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_CONTRACTTYPE')}])
         #---Information
         self.GUIOs["MARKET&INFORMATION_KLINEDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2500, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_KLINE'),    fontSize=80, textInteractable=True)
         self.GUIOs["MARKET&INFORMATION_KLINEDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=2500, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
@@ -470,26 +473,40 @@ def __generateObjectFunctions(self):
         if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].setStatus(status = False, callStatusUpdateFunction = False)
         self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
     def __onSwitchStatusUpdate_Market_Filter_SortByID(objInstance, **kwargs):
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus() == False):        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status         = True,  callStatusUpdateFunction = False)
-        else:                                                                               self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+        guios = self.GUIOs
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus():       guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status       = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus():   guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status   = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].getStatus(): guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].setStatus(status = False, callStatusUpdateFunction = False)
+        if not guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus():       guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status           = True,  callStatusUpdateFunction = False)
+        else: self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
     def __onSwitchStatusUpdate_Market_Filter_SortBySymbol(objInstance, **kwargs):
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()         == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status         = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus() == False):    self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = True,  callStatusUpdateFunction = False)
-        else:                                                                               self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+        guios = self.GUIOs
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus():           guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status           = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus():   guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status   = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].getStatus(): guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].setStatus(status = False, callStatusUpdateFunction = False)
+        if not guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus():   guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status       = True,  callStatusUpdateFunction = False)
+        else: self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
     def __onSwitchStatusUpdate_Market_Filter_SortByFirstKline(objInstance, **kwargs):
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus() == True):      self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()     == True):      self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status         = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == False): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = True,  callStatusUpdateFunction = False)
-        else:                                                                                self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
-    objFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT']               = __onTextUpdate_Market_Filter_SearchText
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE']      = __onSwitchStatusUpdate_Market_Filter_TradingTrue
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE']     = __onSwitchStatusUpdate_Market_Filter_TradingFalse
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID']         = __onSwitchStatusUpdate_Market_Filter_SortByID
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL']     = __onSwitchStatusUpdate_Market_Filter_SortBySymbol
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE'] = __onSwitchStatusUpdate_Market_Filter_SortByFirstKline
+        guios = self.GUIOs
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus():         guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status       = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus():             guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status           = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].getStatus():   guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].setStatus(status = False, callStatusUpdateFunction = False)
+        if not guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus(): guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status   = True,  callStatusUpdateFunction = False)
+        else: self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onSwitchStatusUpdate_Market_Filter_SortByContractType(objInstance, **kwargs):
+        guios = self.GUIOs
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus():           guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status       = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus():               guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status           = False, callStatusUpdateFunction = False)
+        if guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus():       guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status   = False, callStatusUpdateFunction = False)
+        if not guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].getStatus(): guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].setStatus(status = True,  callStatusUpdateFunction = False)
+        else: self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    objFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT']                 = __onTextUpdate_Market_Filter_SearchText
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE']        = __onSwitchStatusUpdate_Market_Filter_TradingTrue
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE']       = __onSwitchStatusUpdate_Market_Filter_TradingFalse
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID']           = __onSwitchStatusUpdate_Market_Filter_SortByID
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL']       = __onSwitchStatusUpdate_Market_Filter_SortBySymbol
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE']   = __onSwitchStatusUpdate_Market_Filter_SortByFirstKline
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYCONTRACTTYPE'] = __onSwitchStatusUpdate_Market_Filter_SortByContractType
 
     #<Market&Currencies>
     def __onSelectionUpdate_Market_Filter_CurrencySelection(objInstance, **kwargs):
@@ -1174,67 +1191,96 @@ def __generateAuxillaryFunctions(self):
 
     #<Market&Filter>
     def __onCurrencyFilterUpdate():
-        #Localize filter settings
-        filter_symbol = self.GUIOs["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"].getText()
+        #[1]: Instances
+        currencies = self.puVar['currencies']
+        guios      = self.GUIOs
+
+        #[2]: Filter Read
+        filter_symbol = guios["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"].getText()
         filter_trading = None
-        if   (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].getStatus()  == True): filter_trading = True
-        elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"].getStatus() == True): filter_trading = False
+        if   guios["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].getStatus():  filter_trading = True
+        elif guios["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"].getStatus(): filter_trading = False
         filter_sort = None
-        if   (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()         == True): filter_sort = 'id'
-        elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): filter_sort = 'symbol'
-        elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): filter_sort = 'firstKline'
-        #Filter symbols
-        symbols = list(self.puVar['currencies'].keys())
-        symbols_filtered = list()
-        for symbol in symbols:
-            testFailed = False
-            #Symbol Filter
-            if not(filter_symbol in symbol): testFailed = True
-            #Status Filter
-            if (filter_trading == True):
-                if not((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
-            elif (filter_trading == False):
-                if ((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
-            #If all tests passed
-            if (testFailed == False): symbols_filtered.append(symbol)
-        #Symbols Sorting
-        symbols_forSort = list()
+        if   guios["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus():           filter_sort = 'id'
+        elif guios["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus():       filter_sort = 'symbol'
+        elif guios["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus():   filter_sort = 'firstKline'
+        elif guios["MARKET&FILTER_FILTERSWITCH_SORTBYCONTRACTTYPE"].getStatus(): filter_sort = 'contractType'
+
+        #[3]: Filtering
+        symbols_filtered = []
+        for symbol in list(currencies.keys()):
+            #[3-1]: Currency
+            currency = currencies[symbol]
+
+            #[3-2]: Symbol Check
+            if filter_symbol and filter_symbol not in symbol:
+                continue
+
+            #[3-3]: Status Check
+            info_s     = currency['info_server']
+            is_trading = bool(info_s and info_s.get('status') == 'TRADING')
+            if isinstance(filter_trading, bool) and filter_trading != is_trading:
+                continue
+
+            #[3-4]: Finally
+            symbols_filtered.append(symbol)
+
+        #[4]: Sorting
+        symbols_forSort = []
         for symbol in symbols_filtered:
-            firstKlineOpenTS = self.puVar['currencies'][symbol]['kline_firstOpenTS']
-            if (firstKlineOpenTS == None): symbol_forSort = (symbol, float('inf'))
-            else:                          symbol_forSort = (symbol, firstKlineOpenTS)
-            symbols_forSort.append(symbol_forSort)
-        if   (filter_sort == 'symbol'):     symbols_forSort.sort(key = lambda x: x[0])
-        elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[1])
-        #Finally
+            currency = currencies[symbol]
+            fkot = currency['kline_firstOpenTS']
+            ct   = currency['contractType']
+            symbols_forSort.append((symbol,
+                                    fkot if fkot else float('inf'),
+                                    ct
+                                    ))
+        if   filter_sort == 'symbol':       symbols_forSort.sort(key = lambda x: x[0])
+        elif filter_sort == 'firstKline':   symbols_forSort.sort(key = lambda x: x[1])
+        elif filter_sort == 'contractType': symbols_forSort.sort(key = lambda x: x[2])
+
+        #[5]: Finally
         symbols_filteredAndSorted = [symbol_forSort[0] for symbol_forSort in symbols_forSort]
-        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
-        _nCurrencies_total    = len(self.puVar['currencies'])
-        _nCurrencies_filtered = len(symbols_filteredAndSorted)
-        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"].updateText(text = "{:d} / {:d}".format(_nCurrencies_filtered, _nCurrencies_total))
+        guios["MARKET&CURRENCIES_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
+        nCurrencies_total    = len(currencies)
+        nCurrencies_filtered = len(symbols_filteredAndSorted)
+        guios["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"].updateText(text = f"{nCurrencies_filtered:d} / {nCurrencies_total:d}")
     auxFunctions['ONCURRENCYFILTERUPDATE'] = __onCurrencyFilterUpdate
 
     #<Market&Currencies>
     def __setCurrencyList():
-        #Format and update the selectionBox object
-        currencies_selectionList = dict()
-        _nCurrencies = len(self.puVar['currencies'])
-        for _cIndex, _symbol in enumerate(self.puVar['currencies']):
-            if (self.puVar['currencies'][_symbol]['info_server'] == None): _status_str = "-"; _status_str_color = 'BLUE_DARK'
-            else:
-                currencyStatus = self.puVar['currencies'][_symbol]['info_server']['status']
-                if   (currencyStatus == 'TRADING'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_TRADING');  _status_str_color = 'GREEN_LIGHT'
-                elif (currencyStatus == 'SETTLING'): _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_SETTLING'); _status_str_color = 'RED_LIGHT'
-                elif (currencyStatus == 'REMOVED'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_REMOVED');  _status_str_color = 'RED_DARK'
-                else:                                _status_str = currencyStatus;                                                                _status_str_color = 'ORANGE_LIGHT'
-            firstOpenTS = self.puVar['currencies'][_symbol]['kline_firstOpenTS']
-            if (firstOpenTS == None): firstOpenTS_str = "-"
-            else:                     firstOpenTS_str = datetime.fromtimestamp(self.puVar['currencies'][_symbol]['kline_firstOpenTS'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-            currencies_selectionList[_symbol] = [{'text': "{:d} / {:d}".format(_cIndex+1, _nCurrencies), 'textStyles': [('all', 'DEFAULT'),],         'textAnchor': 'CENTER'},
-                                                 {'text': _symbol,                                       'textStyles': [('all', 'DEFAULT'),],         'textAnchor': 'CENTER'},
-                                                 {'text': _status_str,                                   'textStyles': [('all', _status_str_color),], 'textAnchor': 'CENTER'},
-                                                 {'text': firstOpenTS_str,                               'textStyles': [('all', 'DEFAULT'),],         'textAnchor': 'CENTER'}]
-        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].setSelectionList(selectionList = currencies_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+        #[1]: Instances
+        currencies = self.puVar['currencies']
+        guios      = self.GUIOs
+        func_gtp   = self.visualManager.getTextPack
+
+        #[2]: Selection Box Update
+        selList     = dict()
+        nCurrencies = len(currencies)
+        for cIndex, (symbol, currency) in enumerate(currencies.items()):
+            #[2-1]: Status
+            info_s = currency['info_server']
+            if info_s:
+                status = info_s['status']
+                if   status == 'TRADING':  status_str = func_gtp('AUTOTRADE:MARKET&CURRENCIES_STATUS_TRADING');  status_str_color = 'GREEN_LIGHT'
+                elif status == 'SETTLING': status_str = func_gtp('AUTOTRADE:MARKET&CURRENCIES_STATUS_SETTLING'); status_str_color = 'RED_LIGHT'
+                elif status == 'REMOVED':  status_str = func_gtp('AUTOTRADE:MARKET&CURRENCIES_STATUS_REMOVED');  status_str_color = 'RED_DARK'
+                else:                      status_str = status;                                                  status_str_color = 'ORANGE_LIGHT'
+            else: status_str = "-"; status_str_color = 'BLUE_DARK'
+            #[2-2]: First Open Kline Timestamp
+            fkot     = currency['kline_firstOpenTS']
+            fkot_str = datetime.fromtimestamp(fkot, tz=timezone.utc).strftime("%Y/%m/%d %H:%M") if fkot else "-"
+            #[2-3]: Contract Type
+            ct_str = currency['contractType']
+            #[2-4]: Finally
+            selList[symbol] = [{'text': f"{cIndex+1:d} / {nCurrencies:d}", 'textStyles': [('all', 'DEFAULT'),],        'textAnchor': 'CENTER'},
+                               {'text': symbol,                            'textStyles': [('all', 'DEFAULT'),],        'textAnchor': 'CENTER'},
+                               {'text': status_str,                        'textStyles': [('all', status_str_color),], 'textAnchor': 'CENTER'},
+                               {'text': fkot_str,                          'textStyles': [('all', 'DEFAULT'),],        'textAnchor': 'CENTER'},
+                               {'text': ct_str,                            'textStyles': [('all', 'DEFAULT'),],        'textAnchor': 'CENTER'}]
+        guios["MARKET&CURRENCIES_SELECTIONBOX"].setSelectionList(selectionList = selList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+
+        #[3]: Apply Filter
         self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
     auxFunctions['SETCURRENCYLIST'] = __setCurrencyList
 

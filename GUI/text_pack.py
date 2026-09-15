@@ -151,6 +151,8 @@ if (True):
                                                     'KOR': "TC 코드"}
     TEXTPACK['ACCOUNTS:POSITIONS_SORTBY_PRIORITY'] = {'ENG': "PRIORITY",
                                                       'KOR': "우선순위"}
+    TEXTPACK['ACCOUNTS:POSITIONS_SORTBY_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                          'KOR': "계약"}
     TEXTPACK['ACCOUNTS:POSITIONS_TRADESTATUSFILTER'] = {'ENG': "TRADE STATUS",
                                                         'KOR': "거래 상태"}
     TEXTPACK['ACCOUNTS:POSITIONS_TRADABLEFILTER'] = {'ENG': "TRADABLE",
@@ -177,6 +179,8 @@ if (True):
                                                 'KOR': "인덱스"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_SYMBOL'] = {'ENG': "SYMBOL",
                                                 'KOR': "심볼"}
+    TEXTPACK['ACCOUNTS:POSITIONS_ST_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                      'KOR': "계약"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_TRADING'] = {'ENG': "TRADING",
                                                  'KOR': "거래중"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_TRADABLE'] = {'ENG': "TRADABLE",
@@ -187,12 +191,10 @@ if (True):
                                                               'KOR': "CA 코드"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE'] = {'ENG': "TC CODE",
                                                                 'KOR': "TC 코드"}
-
     TEXTPACK['ACCOUNTS:POSITIONS_ST_TRADECONTROL'] = {'ENG': "TRADE CONTROL",
                                                       'KOR': "트레이드 컨트롤"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_ABRUPTCLEARINGRECORDS'] = {'ENG': "ACR",
                                                                'KOR': "ACR"}
-
     TEXTPACK['ACCOUNTS:POSITIONS_ST_QUANTITY'] = {'ENG': "QUANTITY",
                                                   'KOR': "보유수"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_ENTRYPRICE'] = {'ENG': "ENTRY",
@@ -369,6 +371,8 @@ if (True):
                                                   'KOR': "심볼"}
     TEXTPACK['AUTOTRADE:MARKET&FILTER_FIRSTKLINE'] = {'ENG': "FIRST KLINE",
                                                       'KOR': "최초 KLINE"}
+    TEXTPACK['AUTOTRADE:MARKET&FILTER_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                        'KOR': "계약"}
     TEXTPACK['AUTOTRADE:MARKET&CURRENCIES_NCURRENCIES'] = {'ENG': "N SYMBOLS",
                                                            'KOR': "종목 수"}
     TEXTPACK['AUTOTRADE:MARKET&CURRENCIES_INDEX'] = {'ENG': "INDEX",
@@ -379,6 +383,8 @@ if (True):
                                                       'KOR': "상태"}
     TEXTPACK['AUTOTRADE:MARKET&CURRENCIES_FIRSTKLINE'] = {'ENG': "FIRST KLINE",
                                                           'KOR': "최초 KLINE"}
+    TEXTPACK['AUTOTRADE:MARKET&CURRENCIES_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                            'KOR': "계약"}
     TEXTPACK['AUTOTRADE:MARKET&CURRENCIES_STATUS_TRADING'] = {'ENG': "TRADING",
                                                               'KOR': "거래중"}
     TEXTPACK['AUTOTRADE:MARKET&CURRENCIES_STATUS_SETTLING'] = {'ENG': "SETTLING",
@@ -816,6 +822,8 @@ if (True):
                                               'KOR': "심볼"}
     TEXTPACK['MARKET:CURRENCYLIST_FIRSTKLINE'] = {'ENG': "FIRST KLINE",
                                                   'KOR': "최초 KLINE"}
+    TEXTPACK['MARKET:CURRENCYLIST_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                    'KOR': "계약"}
     #---List & Information
     TEXTPACK['MARKET:CURRENCYLIST_INDEX'] = {'ENG': "INDEX",
                                              'KOR': "인덱스"}
@@ -976,6 +984,8 @@ if (True):
                                                                    'KOR': "최대 할당액"}
     TEXTPACK['SIMULATION:POSITIONS_SORTBY_FIRSTKLINE'] = {'ENG': "FIRST KLINE",
                                                           'KOR': "최초 KLINE"}
+    TEXTPACK['SIMULATION:POSITIONS_SORTBY_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                            'KOR': "계약"}
     TEXTPACK['SIMULATION:POSITIONS_TRADABLEFILTER'] = {'ENG': "TRADABLE",
                                                        'KOR': "거래 가능"}
     TEXTPACK['SIMULATION:POSITIONS_FILTER_ALL'] = {'ENG': "ALL",
@@ -1020,6 +1030,8 @@ if (True):
                                                         'KOR': "마켓 상태"}
     TEXTPACK['SIMULATION:POSITIONS_ST_MINNOTIONAL'] = {'ENG': "MIN NOTIONAL",
                                                        'KOR': "최소 가치"}
+    TEXTPACK['SIMULATION:POSITIONS_ST_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                        'KOR': "계약"}
     TEXTPACK['SIMULATION:POSITIONS_MARKETSTATUS_TRADING'] = {'ENG': "TRADING",
                                                              'KOR': "거래중"}
     TEXTPACK['SIMULATION:POSITIONS_MARKETSTATUS_SETTLING'] = {'ENG': "SETTLING",
@@ -1507,6 +1519,8 @@ if (True):
                                                'KOR': "인덱스"}
     TEXTPACK['DATABASE:CURRENCYLIST_SYMBOL'] = {'ENG': "SYMBOL",
                                                 'KOR': "심볼"}
+    TEXTPACK['DATABASE:CURRENCYLIST_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                      'KOR': "계약"}
     TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL'] = {'ENG': "FIRST INTERVAL",
                                                        'KOR': "최초 데이터"}
     TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_KL'] = {'ENG': "AVAIL_KL",
@@ -1537,6 +1551,8 @@ if (True):
                                                           'KOR': "최초 MT"}
     TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING'] = {'ENG': "COLLECTING",
                                                     'KOR': "수집중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_CONTRACTTYPE'] = {'ENG': "CONTRACT",
+                                                      'KOR': "계약"}
     TEXTPACK['DATABASE:CURRENCYLIST_REFETCHDUMMY'] = {'ENG': "REFETCH DUMMY",
                                                       'KOR': "더미 재수집"}
     TEXTPACK['DATABASE:CURRENCYLIST_RESET'] = {'ENG': "RESET",

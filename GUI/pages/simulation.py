@@ -209,7 +209,8 @@ def setupPage(self):
                               'ASSUMEDRATIO':         {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_SORTBY_ASSUMEDRATIO')},
                               'WEIGHTEDASSUMEDRATIO': {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_SORTBY_WEIGHTEDASSUMEDRATIO')},
                               'MAXALLOCATEDBALANCE':  {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_SORTBY_MAXALLOCATEDBALANCE')},
-                              'FIRSTKLINE':           {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_SORTBY_FIRSTKLINE')}}
+                              'FIRSTKLINE':           {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_SORTBY_FIRSTKLINE')},
+                              'CONTRACTTYPE':         {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_SORTBY_CONTRACTTYPE')}}
         self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].setSelectionList(selectionList = positionsSortTypes, displayTargets = 'all')
         self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].setSelected(itemKey = 'INDEX', callSelectionUpdateFunction = False)
         self.GUIOs["POSITIONS_TRADABLEFILTERTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=12400, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:POSITIONS_TRADABLEFILTER'), fontSize=80, textInteractable=False)
@@ -227,19 +228,20 @@ def setupPage(self):
         self.GUIOs["POSITIONS_RELEASEALLBUTTON"]              = button_typeA(**inst,  groupOrder=1, xPos=14700, yPos=7650, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:POSITIONS_RELEASEALL'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_RELEASEALL'])
         self.GUIOs["POSITIONS_RELEASEALLBUTTON"].deactivate()
         self.GUIOs["POSITIONS_SETUPSELECTIONBOX"]             = selectionBox_typeC(**inst, groupOrder=2, xPos=5800, yPos=2500, width=10100, height=5050, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                                   elementWidths = (750,  #Index
-                                                                                                    1300, #Symbol
-                                                                                                    1100, #CAC Code
-                                                                                                    1100, #TC Code
-                                                                                                    700,  #Margin Mode
-                                                                                                    700,  #Leverage
-                                                                                                    700,  #Assumed Ratio
-                                                                                                    700,  #Weighted Assumed Ratio
-                                                                                                    1000, #Max Allocated Balance
-                                                                                                    1000, #First Kline
-                                                                                                    800,  #Tradable
+                                                                                   elementWidths = (750,   #Index
+                                                                                                    1300,  #Symbol
+                                                                                                    1100,  #CAC Code
+                                                                                                    1100,  #TC Code
+                                                                                                    700,   #Margin Mode
+                                                                                                    700,   #Leverage
+                                                                                                    700,   #Assumed Ratio
+                                                                                                    700,   #Weighted Assumed Ratio
+                                                                                                    1000,  #Max Allocated Balance
+                                                                                                    1000,  #First Kline
+                                                                                                    800,   #Tradable
                                                                                                     1000,  #Market Status
-                                                                                                    1000), #Min Notional
+                                                                                                    1000,  #Min Notional
+                                                                                                    1200), #Contract Type
                                                                                    name = "SETUP")
         self.GUIOs["POSITIONS_SELECTEDSIMSELECTIONBOX"]       = selectionBox_typeC(**inst, groupOrder=2, xPos=5800, yPos=2500, width=10100, height=5400, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
                                                                                    elementWidths = (750,  #Index
@@ -266,7 +268,8 @@ def setupPage(self):
                                                                                    {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_FIRSTKLINE')},
                                                                                    {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_TRADABLE')},
                                                                                    {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_MARKETSTATUS')},
-                                                                                   {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_MINNOTIONAL')}])
+                                                                                   {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_MINNOTIONAL')},
+                                                                                   {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_CONTRACTTYPE')}])
         self.GUIOs["POSITIONS_SELECTEDSIMSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_INDEX')},
                                                                                          {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_SYMBOL')},
                                                                                          {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_CURRENCYANALYSISCONFIGURATIONCODE')},
@@ -433,7 +436,8 @@ def __pageLoadFunction(self):
                 if currency[f'{t}s_availableRanges']: drs[t] = currency[f'{t}s_availableRanges'].copy()
                 else:                                 drs[t] = None
                 foTSs[t] = currency[f'{t}_firstOpenTS']
-            ss_positions[symbol] = {'quoteAsset':                        currency['quoteAsset'],
+            ss_positions[symbol] = {'contractType':                      currency['contractType'],
+                                    'quoteAsset':                        currency['quoteAsset'],
                                     'precisions':                        currency['precisions'].copy(),
                                     'dataRanges':                        drs,
                                     'currencyAnalysisConfigurationCode': None,
@@ -644,7 +648,8 @@ def __generateObjectFunctions(self):
         positions = dict()
         for symbol in positions_tradable:
             ss_position = puVar['simulationSetup_positions'][symbol]
-            positions[symbol] = {'quoteAsset':                        ss_position['quoteAsset'],
+            positions[symbol] = {'contractType':                      ss_position['contractType'],
+                                 'quoteAsset':                        ss_position['quoteAsset'],
                                  'precisions':                        ss_position['precisions'].copy(),
                                  'dataRanges':                        {t: drs.copy() if drs is not None else None for t, drs in ss_position['dataRanges'].items()},
                                  'currencyAnalysisConfigurationCode': ss_position['currencyAnalysisConfigurationCode'],
@@ -979,7 +984,8 @@ def __generateAuxillaryFunctions(self):
                     foTSs[t] = currency[f'{t}_firstOpenTS']
 
                 #[3-2-3]: New Setup Position
-                ss_positions[symbol] = {'quoteAsset':                        currency['quoteAsset'],
+                ss_positions[symbol] = {'contractType':                      currency['contractType'],
+                                        'quoteAsset':                        currency['quoteAsset'],
                                         'precisions':                        currency['precisions'].copy(),
                                         'dataRanges':                        drs,
                                         'currencyAnalysisConfigurationCode': None,
@@ -1546,7 +1552,8 @@ def __generateAuxillaryFunctions(self):
         for pIndex, symbol in enumerate(ss_positions):
             #[2-1]: Instances
             ss_position = ss_positions[symbol]
-            sInfo       = currencies[symbol]['info_server']
+            currency    = currencies[symbol]
+            sInfo       = currency['info_server']
 
             #[2-2]: Display Texts
             #---[2-2-1]:  Index
@@ -1603,6 +1610,8 @@ def __generateAuxillaryFunctions(self):
                     break
                 if minNotional is None: minNotional_str = "-"
                 else:                   minNotional_str = minNotional
+            #---[2-2-14]: Contract Type
+            contractType_str = currency['contractType']
 
             #[2-3]: Selection Box Item
             sList[symbol] = [{'text': index_str},
@@ -1617,7 +1626,8 @@ def __generateAuxillaryFunctions(self):
                              {'text': firstKline_str},
                              {'text': tradable_str, 'textStyles': [('all', tradable_str_color),]},
                              {'text': status_str,   'textStyles': [('all', status_str_color),]},
-                             {'text': minNotional_str}]
+                             {'text': minNotional_str},
+                             {'text': contractType_str}]
         guios["POSITIONS_SETUPSELECTIONBOX"].setSelectionList(selectionList               = sList, 
                                                               displayTargets              = 'all', 
                                                               callSelectionUpdateFunction = True)
@@ -1695,78 +1705,79 @@ def __generateAuxillaryFunctions(self):
         #[3]: Apply Filter
         pafs['ONPOSITIONSFILTERUPDATE']()
     def __onPositionsFilterUpdate():
-        if (self.puVar['simulation_selected'] == None): _positions = self.puVar['simulationSetup_positions']
-        else:                                           _positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
-        #Filter Parameters
-        searchText             = self.GUIOs["POSITIONS_SEARCHTEXTINPUTBOX"].getText()
-        searchType             = self.GUIOs["POSITIONS_SEARCHTYPESELECTIONBOX"].getSelected()
-        sortType               = self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].getSelected()
-        conditionType_tradable = self.GUIOs["POSITIONS_TRADABLEFILTERSELECTIONBOX"].getSelected()
-        #Filtering
-        _filtered = list(_positions.keys())
+        #[1]: Instances
+        puVar     = self.puVar
+        guios     = self.GUIOs
+        sim_sel   = puVar['simulation_selected']
+        positions = puVar['simulations'][sim_sel]['positions'] if sim_sel else puVar['simulationSetup_positions']
+
+        #[2]: Filter Parameters
+        searchText             = guios["POSITIONS_SEARCHTEXTINPUTBOX"].getText()
+        searchType             = guios["POSITIONS_SEARCHTYPESELECTIONBOX"].getSelected()
+        sortType               = guios["POSITIONS_SORTBYSELECTIONBOX"].getSelected()
+        conditionType_tradable = guios["POSITIONS_TRADABLEFILTERSELECTIONBOX"].getSelected()
+
+        #[3]: Filtering
+        filtered = list(positions.keys())
         #---[1]: Condition Filtering - Trade Status
-        if   (conditionType_tradable == 'ALL'):   pass
-        elif (conditionType_tradable == 'TRUE'):  _filtered = [_symbol for _symbol in _filtered if (_positions[_symbol]['tradable'] == True)]
-        elif (conditionType_tradable == 'FALSE'): _filtered = [_symbol for _symbol in _filtered if (_positions[_symbol]['tradable'] == False)]
+        if   conditionType_tradable == 'ALL':   pass
+        elif conditionType_tradable == 'TRUE':  filtered = [symbol for symbol in filtered if     positions[symbol]['tradable']]
+        elif conditionType_tradable == 'FALSE': filtered = [symbol for symbol in filtered if not positions[symbol]['tradable']]
         #---[2]: Text Filtering
-        if (searchText != ""): 
-            if (searchType == 'SYMBOL'):  _filtered = [_symbol for _symbol in _filtered if (searchText in _symbol)]
-            if (searchType == 'TCCODE'):  _filtered = [_symbol for _symbol in _filtered if ((_positions[_symbol]['tradeConfigurationCode']            != None) and (searchText in _positions[_symbol]['tradeConfigurationCode']))]
-            if (searchType == 'CACCODE'): _filtered = [_symbol for _symbol in _filtered if ((_positions[_symbol]['currencyAnalysisConfigurationCode'] != None) and (searchText in _positions[_symbol]['currencyAnalysisConfigurationCode']))]
-        #---[3]: Sorting
-        if   (sortType == 'INDEX'): pass
-        elif (sortType == 'SYMBOL'): _filtered.sort()
-        elif (sortType == 'CACCODE'): 
-            _forSort = [[_symbol, _positions[_symbol]['currencyAnalysisConfigurationCode']] for _symbol in _filtered]
-            for i in range (len(_forSort)): 
-                if (_forSort[i][1] == None): _forSort[i][1] = ""
-            _forSort.sort(key = lambda x: x[1])
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        elif (sortType == 'TCCODE'):
-            _forSort = [[_symbol, _positions[_symbol]['tradeConfigurationCode']] for _symbol in _filtered]
-            for i in range (len(_forSort)): 
-                if (_forSort[i][1] == None): _forSort[i][1] = ""
-            _forSort.sort(key = lambda x: x[1])
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        elif (sortType == 'MARGINMODE'):
-            _forSort = [[_symbol, _positions[_symbol]['isolated']] for _symbol in _filtered]
-            for i in range (len(_forSort)): 
-                if   (_forSort[i][1] == True):  _forSort[i][1] = 0
-                elif (_forSort[i][1] == False): _forSort[i][1] = 1
-                elif (_forSort[i][1] == None):  _forSort[i][1] = 2
-            _forSort.sort(key = lambda x: x[1])
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        elif (sortType == 'LEVERAGE'):
-            _forSort = [[_symbol, _positions[_symbol]['leverage']] for _symbol in _filtered]
-            for i in range (len(_forSort)): 
-                if (_forSort[i][1] == None): _forSort[i][1] = 0
-            _forSort.sort(key = lambda x: x[1], reverse = True)
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        elif (sortType == 'ASSUMEDRATIO'): 
-            _forSort = [[_symbol, _positions[_symbol]['assumedRatio']] for _symbol in _filtered]
-            _forSort.sort(key = lambda x: x[1], reverse = True)
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        elif (sortType == 'WEIGHTEDASSUMEDRATIO'):
-            _forSort = [[_symbol, _positions[_symbol]['weightedAssumedRatio']] for _symbol in _filtered]
-            for i in range (len(_forSort)): 
-                if (_forSort[i][1] == None): _forSort[i][1] = 0
-            _forSort.sort(key = lambda x: x[1], reverse = True)
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        elif (sortType == 'MAXALLOCATEDBALANCE'): 
-            _forSort = [[_symbol, _positions[_symbol]['maxAllocatedBalance']] for _symbol in _filtered]
-            for i in range (len(_forSort)): 
-                if (_forSort[i][1] == None): _forSort[i][1] = -1
-            _forSort.sort(key = lambda x: x[1])
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        elif (sortType == 'FIRSTKLINE'): 
-            _forSort = [[_symbol, _positions[_symbol]['firstOpenTSs']['kline']] for _symbol in _filtered]
-            for i in range (len(_forSort)): 
-                if (_forSort[i][1] == None): _forSort[i][1] = float('inf')
-            _forSort.sort(key = lambda x: x[1])
-            _filtered = [_sortPair[0] for _sortPair in _forSort]
-        #Finally
-        if (self.puVar['simulation_selected'] is None): self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets       = _filtered, resetViewPosition = False)
-        else:                                           self.GUIOs["POSITIONS_SELECTEDSIMSELECTIONBOX"].setDisplayTargets(displayTargets = _filtered, resetViewPosition = False)
+        if searchText: 
+            if searchType == 'SYMBOL':  filtered = [symbol for symbol in filtered if searchText in symbol]
+            if searchType == 'TCCODE':  filtered = [symbol for symbol in filtered if positions[symbol]['tradeConfigurationCode']            and searchText in positions[symbol]['tradeConfigurationCode']]
+            if searchType == 'CACCODE': filtered = [symbol for symbol in filtered if positions[symbol]['currencyAnalysisConfigurationCode'] and searchText in positions[symbol]['currencyAnalysisConfigurationCode']]
+
+        #[4]: Sorting
+        #---[4-1]: Index Sort
+        if sortType == 'INDEX': 
+            pass
+        
+        #---[4-2]: Symbol Sort
+        elif sortType == 'SYMBOL': 
+            filtered.sort()
+            
+        #---[4-3]: CAC Code Sort
+        elif sortType == 'CACCODE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['currencyAnalysisConfigurationCode']) is not None else "")
+            
+        #---[4-4]: TC Code Sort
+        elif sortType == 'TCCODE':
+            filtered.sort(key=lambda s: val if (val := positions[s]['tradeConfigurationCode']) is not None else "")
+            
+        #---[4-5]: Margin Mode Sort
+        elif sortType == 'MARGINMODE':
+            margin_map = {True: 0, False: 1, None: 2}
+            filtered.sort(key=lambda s: margin_map.get(positions[s]['isolated'], 2))
+            
+        #---[4-6]: Leverage Sort
+        elif sortType == 'LEVERAGE':
+            filtered.sort(key=lambda s: val if (val := positions[s]['leverage']) is not None else 0, reverse=True)
+            
+        #---[4-7]: Assumed Ratio Sort
+        elif sortType == 'ASSUMEDRATIO': 
+            filtered.sort(key=lambda s: positions[s]['assumedRatio'], reverse=True)
+            
+        #---[4-8]: Weighted Assumed Ratio Sort
+        elif sortType == 'WEIGHTEDASSUMEDRATIO':
+            filtered.sort(key=lambda s: val if (val := positions[s]['weightedAssumedRatio']) is not None else 0, reverse=True)
+            
+        #---[4-9]: Max Allocated Balance Sort
+        elif sortType == 'MAXALLOCATEDBALANCE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['maxAllocatedBalance']) is not None else -1)
+            
+        #---[4-10]: First Kline Sort
+        elif sortType == 'FIRSTKLINE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['firstOpenTSs']['kline']) is not None else float('inf'))
+            
+        #---[4-11]: Contract Type Sort
+        elif sortType == 'CONTRACTTYPE': 
+            filtered.sort(key=lambda s: val if (val := positions[s]['contractType']) is not None else "")
+
+        #[5]: Finally
+        if puVar['simulation_selected']: guios["POSITIONS_SELECTEDSIMSELECTIONBOX"].setDisplayTargets(displayTargets = filtered, resetViewPosition = False)
+        else:                            guios["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets       = filtered, resetViewPosition = False)
     def __updateSelectedPositionsDisplay():
         _positionSymbols_selected = self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].getSelected()
         _nPositionSymbols_selected = len(_positionSymbols_selected)
