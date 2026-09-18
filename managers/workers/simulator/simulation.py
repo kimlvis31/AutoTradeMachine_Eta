@@ -6,6 +6,7 @@ import auxiliaries_trade
 import neural_networks
 import constants
 import teffunctions
+from managers.workers.trade_manager.account import Account
 
 #Python Modules
 import time
@@ -17,110 +18,105 @@ import traceback
 import numpy
 from collections import deque
 
-#Constants
+
+
+#External Constants
 _IPC_THREADTYPE_MT         = ipc._THREADTYPE_MT
 _IPC_THREADTYPE_AT         = ipc._THREADTYPE_AT
 _IPC_PRD_INVALIDADDRESS    = ipc._PRD_INVALIDADDRESS
 _IPC_FAR_INVALIDFUNCTIONID = ipc._FAR_INVALIDFUNCTIONID
 
-KLINDEX_OPENTIME         =  0
-KLINDEX_CLOSETIME        =  1
-KLINDEX_OPENPRICE        =  2
-KLINDEX_HIGHPRICE        =  3
-KLINDEX_LOWPRICE         =  4
-KLINDEX_CLOSEPRICE       =  5
-KLINDEX_NTRADES          =  6
-KLINDEX_VOLBASE          =  7
-KLINDEX_VOLQUOTE         =  8
-KLINDEX_VOLBASETAKERBUY  =  9
-KLINDEX_VOLQUOTETAKERBUY = 10
-KLINDEX_CLOSED           = 11
-KLINDEX_SOURCE           = 12
+FORMATTEDDATATYPE_FETCHED    = constants.FORMATTEDDATATYPE_FETCHED
+FORMATTEDDATATYPE_EMPTY      = constants.FORMATTEDDATATYPE_EMPTY
+FORMATTEDDATATYPE_DUMMY      = constants.FORMATTEDDATATYPE_DUMMY
+FORMATTEDDATATYPE_STREAMED   = constants.FORMATTEDDATATYPE_STREAMED
+FORMATTEDDATATYPE_INCOMPLETE = constants.FORMATTEDDATATYPE_INCOMPLETE
+KLINDEX_OPENTIME              = constants.KLINDEX_OPENTIME
+KLINDEX_CLOSETIME             = constants.KLINDEX_CLOSETIME
+KLINDEX_OPENPRICE             = constants.KLINDEX_OPENPRICE
+KLINDEX_HIGHPRICE             = constants.KLINDEX_HIGHPRICE
+KLINDEX_LOWPRICE              = constants.KLINDEX_LOWPRICE
+KLINDEX_CLOSEPRICE            = constants.KLINDEX_CLOSEPRICE
+KLINDEX_NTRADES               = constants.KLINDEX_NTRADES
+KLINDEX_VOLBASE               = constants.KLINDEX_VOLBASE
+KLINDEX_VOLQUOTE              = constants.KLINDEX_VOLQUOTE
+KLINDEX_VOLBASETAKERBUY       = constants.KLINDEX_VOLBASETAKERBUY
+KLINDEX_VOLQUOTETAKERBUY      = constants.KLINDEX_VOLQUOTETAKERBUY
+KLINDEX_CLOSED                = constants.KLINDEX_CLOSED
+KLINDEX_SOURCE                = constants.KLINDEX_SOURCE
+DEPTHINDEX_OPENTIME           = constants.DEPTHINDEX_OPENTIME
+DEPTHINDEX_CLOSETIME          = constants.DEPTHINDEX_CLOSETIME
+DEPTHINDEX_BIDS5              = constants.DEPTHINDEX_BIDS5
+DEPTHINDEX_BIDS4              = constants.DEPTHINDEX_BIDS4
+DEPTHINDEX_BIDS3              = constants.DEPTHINDEX_BIDS3
+DEPTHINDEX_BIDS2              = constants.DEPTHINDEX_BIDS2
+DEPTHINDEX_BIDS1              = constants.DEPTHINDEX_BIDS1
+DEPTHINDEX_BIDS0              = constants.DEPTHINDEX_BIDS0
+DEPTHINDEX_ASKS0              = constants.DEPTHINDEX_ASKS0
+DEPTHINDEX_ASKS1              = constants.DEPTHINDEX_ASKS1
+DEPTHINDEX_ASKS2              = constants.DEPTHINDEX_ASKS2
+DEPTHINDEX_ASKS3              = constants.DEPTHINDEX_ASKS3
+DEPTHINDEX_ASKS4              = constants.DEPTHINDEX_ASKS4
+DEPTHINDEX_ASKS5              = constants.DEPTHINDEX_ASKS5
+DEPTHINDEX_CLOSED             = constants.DEPTHINDEX_CLOSED
+DEPTHINDEX_SOURCE             = constants.DEPTHINDEX_SOURCE
+ATINDEX_OPENTIME              = constants.ATINDEX_OPENTIME
+ATINDEX_CLOSETIME             = constants.ATINDEX_CLOSETIME
+ATINDEX_QUANTITYBUY           = constants.ATINDEX_QUANTITYBUY
+ATINDEX_QUANTITYSELL          = constants.ATINDEX_QUANTITYSELL
+ATINDEX_NTRADESBUY            = constants.ATINDEX_NTRADESBUY
+ATINDEX_NTRADESSELL           = constants.ATINDEX_NTRADESSELL
+ATINDEX_NOTIONALBUY           = constants.ATINDEX_NOTIONALBUY
+ATINDEX_NOTIONALSELL          = constants.ATINDEX_NOTIONALSELL
+ATINDEX_CLOSED                = constants.ATINDEX_CLOSED
+ATINDEX_SOURCE                = constants.ATINDEX_SOURCE
+METRICINDEX_OPENTIME          = constants.METRICINDEX_OPENTIME
+METRICINDEX_CLOSETIME         = constants.METRICINDEX_CLOSETIME
+METRICINDEX_OPENINTEREST      = constants.METRICINDEX_OPENINTEREST
+METRICINDEX_OPENINTERESTVALUE = constants.METRICINDEX_OPENINTERESTVALUE
+METRICINDEX_LONGSHORTRATIO    = constants.METRICINDEX_LONGSHORTRATIO
+METRICINDEX_CLOSED            = constants.METRICINDEX_CLOSED
+METRICINDEX_SOURCE            = constants.METRICINDEX_SOURCE
+DEPTHBINS = constants.DEPTHBINS
+COMMONDATAINDEXES = constants.COMMONDATAINDEXES
 
-DEPTHINDEX_OPENTIME  = 0
-DEPTHINDEX_CLOSETIME = 1
-DEPTHINDEX_BIDS5     = 2
-DEPTHINDEX_BIDS4     = 3 
-DEPTHINDEX_BIDS3     = 4
-DEPTHINDEX_BIDS2     = 5 
-DEPTHINDEX_BIDS1     = 6 
-DEPTHINDEX_BIDS0     = 7 
-DEPTHINDEX_ASKS0     = 8 
-DEPTHINDEX_ASKS1     = 9 
-DEPTHINDEX_ASKS2     = 10 
-DEPTHINDEX_ASKS3     = 11
-DEPTHINDEX_ASKS4     = 12
-DEPTHINDEX_ASKS5     = 13
-DEPTHINDEX_CLOSED    = 14
-DEPTHINDEX_SOURCE    = 15
-
-ATINDEX_OPENTIME     = 0
-ATINDEX_CLOSETIME    = 1
-ATINDEX_QUANTITYBUY  = 2
-ATINDEX_QUANTITYSELL = 3
-ATINDEX_NTRADESBUY   = 4
-ATINDEX_NTRADESSELL  = 5
-ATINDEX_NOTIONALBUY  = 6
-ATINDEX_NOTIONALSELL = 7
-ATINDEX_CLOSED       = 8
-ATINDEX_SOURCE       = 9
-
-METRICINDEX_OPENTIME          = 0
-METRICINDEX_CLOSETIME         = 1
-METRICINDEX_OPENINTEREST      = 2
-METRICINDEX_OPENINTERESTVALUE = 3
-METRICINDEX_LONGSHORTRATIO    = 4
-METRICINDEX_CLOSED            = 5
-METRICINDEX_SOURCE            = 6
-
-FORMATTEDDATATYPE_FETCHED    = 0
-FORMATTEDDATATYPE_EMPTY      = 1
-FORMATTEDDATATYPE_DUMMY      = 2
-FORMATTEDDATATYPE_STREAMED   = 3
-FORMATTEDDATATYPE_INCOMPLETE = 4
-
-COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME,  'metric': METRICINDEX_OPENTIME},
-                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME, 'metric': METRICINDEX_CLOSETIME},
-                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED,    'metric': METRICINDEX_CLOSED},
-                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE,    'metric': METRICINDEX_SOURCE}}
-
-KLINE_INTERVAL_ID_1m  = 0
-KLINE_INTERVAL_ID_3m  = 1
-KLINE_INTERVAL_ID_5m  = 2
-KLINE_INTERVAL_ID_15m = 3
-KLINE_INTERVAL_ID_30m = 4
-KLINE_INTERVAL_ID_1h  = 5
-KLINE_INTERVAL_ID_2h  = 6
-KLINE_INTERVAL_ID_4h  = 7
-KLINE_INTERVAL_ID_6h  = 8
-KLINE_INTERVAL_ID_8h  = 9
-KLINE_INTERVAL_ID_12h = 10
-KLINE_INTERVAL_ID_1d  = 11
-KLINE_INTERVAL_ID_3d  = 12
-KLINE_INTERVAL_ID_1W  = 13
-KLINE_INTERVAL_ID_1M  = 14
-
+KLINE_INTERVAL_ID_1m  = constants.KLINE_INTERVAL_ID_1m
+KLINE_INTERVAL_ID_3m  = constants.KLINE_INTERVAL_ID_3m
+KLINE_INTERVAL_ID_5m  = constants.KLINE_INTERVAL_ID_5m
+KLINE_INTERVAL_ID_15m = constants.KLINE_INTERVAL_ID_15m
+KLINE_INTERVAL_ID_30m = constants.KLINE_INTERVAL_ID_30m
+KLINE_INTERVAL_ID_1h  = constants.KLINE_INTERVAL_ID_1h
+KLINE_INTERVAL_ID_2h  = constants.KLINE_INTERVAL_ID_2h
+KLINE_INTERVAL_ID_4h  = constants.KLINE_INTERVAL_ID_4h
+KLINE_INTERVAL_ID_6h  = constants.KLINE_INTERVAL_ID_6h
+KLINE_INTERVAL_ID_8h  = constants.KLINE_INTERVAL_ID_8h
+KLINE_INTERVAL_ID_12h = constants.KLINE_INTERVAL_ID_12h
+KLINE_INTERVAL_ID_1d  = constants.KLINE_INTERVAL_ID_1d
+KLINE_INTERVAL_ID_3d  = constants.KLINE_INTERVAL_ID_3d
+KLINE_INTERVAL_ID_1W  = constants.KLINE_INTERVAL_ID_1W
+KLINE_INTERVAL_ID_1M  = constants.KLINE_INTERVAL_ID_1M
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
 
-_DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None,                   True, FORMATTEDDATATYPE_DUMMY),
-                'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
-                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY),
-                'metric':   (None, None, None,                                                       True, FORMATTEDDATATYPE_DUMMY)}
+DUMMYFRAMES = constants.DUMMYFRAMES
 
+
+
+#Internal Constants
 _FETCHCHUNKSIZE    = 1440
 _PROCESSTIMEOUT_NS = 100e6
-
-_MARKETTRADINGFEE          = 0.0005
+_TRADINGFEE = {'PERPETUAL':         {'LIMIT':  {'USDT': 0.0002, 'USDC': 0.0000, 'DEFAULT': 0.0002},
+                                     'MARKET': {'USDT': 0.0005, 'USDC': 0.0004, 'DEFAULT': 0.0005},},
+               'TRADIFI_PERPETUAL': {'LIMIT':  {'USDT': 0.0000, 'USDC': 0.0000, 'DEFAULT': 0.0000},
+                                     'MARKET': {'USDT': 0.0004, 'USDC': 0.0004, 'DEFAULT': 0.0005},}
+              }
 _MARKETOPENLOSSRATE        = 0.0015
 _BASEASSETALLOCATABLERATIO = 0.95
 _ASSETPRECISIONS = {'USDT': 8,
                     'USDC': 8}
-
-KLINTERVAL   = constants.KLINTERVAL
-KLINTERVAL_S = constants.KLINTERVAL_S
-
 PERIODICREPORT_INTERVALID = auxiliaries.KLINE_INTERVAL_ID_1h
+
+
 
 class Simulation:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -145,6 +141,7 @@ class Simulation:
         #---[2-2]: Simulation Control
         self.__assets    = None
         self.__positions = None
+        self.__orders    = dict()
 
         #---[2-3]: Data Control
         self.__data_raw            = dict()
@@ -305,8 +302,10 @@ class Simulation:
         #[5]: Format Positions
         sc_positions = dict()
         sRange       = self.__simulationRange
+        func_gitct   = auxiliaries_trade.getInitializedTradeControlTracker
         func_gnitt   = auxiliaries.getNextIntervalTickTimestamp
         for symbol, position_def in self.__positions_def.items():
+            #[5-1]: Generation Range Determination
             drs_min = None
             drs_max = None
             for t in ('kline', 'depth', 'aggTrade', 'metric'):
@@ -323,6 +322,7 @@ class Simulation:
             else:
                 gr = (func_gnitt(intervalID = KLINTERVAL, timestamp = max(drs_min, sRange[0]), nTicks = 0),
                       func_gnitt(intervalID = KLINTERVAL, timestamp = min(drs_max, sRange[1]), nTicks = 1)-1)
+            #[5-2]: Position Data
             sc_position = {#Base
                            'quantity':                0,
                            'entryPrice':              None,
@@ -338,9 +338,14 @@ class Simulation:
                            #Risk Management
                            'commitmentRate': None,
                            'riskLevel':      None,
+                           #Variation Tracking
+                           '_quantity_new':      0,
+                           '_entryPrice_new':    None,
+                           '_liquidationReport': None,
                            #Trade Control
-                           'tradeControlTracker': {'slExited':   None,
-                                                   'teff_model': dict()},
+                           'tradeControlTracker':   func_gitct(),
+                           '_tradeHandlers':        deque(),
+                           '_orderCreationRequest': None,
                            #Generation Range
                            'GR': gr,
                            #Analysis Export
@@ -365,11 +370,14 @@ class Simulation:
             for iID, cac_iID in cac_all.items():
                 if not cac_iID['NNA_Master']:
                     continue
-                for lIdx in range (constants.NLINES_NNA):
-                    lActive = cac_iID.get(f'NNA_{lIdx}_LineActive', False)
-                    if not lActive: continue
-                    nnCode = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
-                    nns[nnCode] = None
+                lIdx   = 0
+                laCode = f'NNA_{lIdx}_LineActive'
+                while laCode in cac_iID:
+                    if cac_iID[laCode]:
+                        nnCode = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
+                        nns[nnCode] = None
+                    lIdx += 1
+                    laCode = f'NNA_{lIdx}_LineActive'
         if nns:
             for nnCode in nns:
                 rID = func_sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
@@ -606,6 +614,7 @@ class Simulation:
 
 
     #Simulation Process ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #---L1: Simulation Process Main
     def process(self):
         #[1]: Status Check
         status     = self.__status
@@ -633,25 +642,68 @@ class Simulation:
             return
         naTarget = self.__nextAnalysisTarget
         laTarget = self.__lastAnalysisTarget
-        func_gnitt       = auxiliaries.getNextIntervalTickTimestamp
-        func_psot        = self.__performSimulationOnTarget
-        func_uCompletion = self.__updateCompletion
+        positions = self.__positions
+        func_hkls   = self.__handleKlines
+        func_pths   = self.__processTradeHandlers
+        func_pts    = self.__processTrades
+        func_uAcc   = self.__updateAccount
+        func_rOrder = self.__removeOrder
+        func_ga     = self.__generateAnalysis
+        func_hars   = self.__handleAnalysisResults
+        func_uwbta  = self.__updateWalletBalanceTrendAnalysis
+        func_upr    = self.__updatePeriodicReport
+        func_gnitt  = auxiliaries.getNextIntervalTickTimestamp
         t_begin_ns   = time.perf_counter_ns()
         t_elapsed_ns = 0
         while naTarget <= lp and t_elapsed_ns < _PROCESSTIMEOUT_NS:
-            #[3-1]: Perform Analysis & Timer Update
-            func_psot(atTS = naTarget)
+            #[3-1]: Perform Simulation
+            #---[3-1-1]: Klines Handling & Trade Handlers Processing (OCR Generation)
+            func_hkls(timestamp = naTarget)
+            #---[3-1-2]: Trade Processing & Account Update
+            updateAccount = True
+            for symbol, position in positions.items():
+                #[3-1-2-1]: Generation Range Check
+                gr_symbol = position['GR']
+                if gr_symbol is None or not (gr_symbol[0] <= naTarget <= gr_symbol[1]):
+                    continue
+                #[3-1-2-2]: Process Loop
+                while True:
+                    #[3-1-2-2-1]: Trade Handlers Processing (OCR & Order Generation)
+                    func_pths(symbol = symbol, timestamp = naTarget)
+                    #[3-1-2-2-2]: Trades Processing (OCR & Orders Processing) & Account Update
+                    if not func_pts(symbol = symbol, timestamp = naTarget):
+                        break
+                    func_uAcc(timestamp = naTarget)
+                    updateAccount = False
+            if updateAccount:
+                func_uAcc(timestamp = naTarget)
+            #---[3-1-4]: OCR & Trade Handlers Clearing
+            for symbol, position in positions.items():
+                ocr = position['_orderCreationRequest']
+                if ocr is not None and ocr['result'] is None:
+                    func_rOrder(orderCode = ocr['orderCode'])
+                    position['_orderCreationRequest'] = None
+                    self.__allocateBalance
+                position['_tradeHandlers'].clear()
+            
+            #---[3-1-5]: Analysis Generation & Handling
+            func_hars(timestamp = naTarget, linearizedAnalyses = func_ga(timestamp = naTarget))
+            #---[3-1-6]: Wallet Balance Trend Analysis & Periodic Report Update
+            func_uwbta(timestamp = naTarget)
+            func_upr(timestamp   = naTarget)
+
+            #[3-2]: Timer Update
             t_elapsed_ns = time.perf_counter_ns()-t_begin_ns
 
-            #[3-2]: Fetch Requests Dispatch
+            #[3-3]: Fetch Requests Dispatch
             if naTarget == nfPoint:
                 self.__sendMarketDataFetchRequests()
                 nfPoint = self.__data_nextFetchPoint
 
-            #[3-3]: Next Analysis Target & Completion Update
+            #[3-4]: Next Analysis Target & Completion Update
             naTarget = func_gnitt(intervalID = KLINTERVAL, timestamp = naTarget, nTicks = 1)
 
-            #[3-4]: Completion Check
+            #[3-5]: Completion Check
             if naTarget == laTarget:
                 self.__procStatus        = 'SAVING'
                 self.__simulationSummary = self.__generateSimulationSummary()
@@ -675,7 +727,7 @@ class Simulation:
 
         #[4]: Completion Update
         completion_new = round(((naTarget-1)-sRange[0]+1)/(sRange[1]-sRange[0]+1), 5)
-        func_uCompletion(completion = completion_new)
+        self.__updateCompletion(completion = completion_new)
 
     def __prepareData(self, range_beg, range_end):
         #[1]: Instances
@@ -705,227 +757,299 @@ class Simulation:
                     if not (gr_symbol[0] <= ts <= gr_symbol[1]):
                         continue
                     ts_close = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1
-                    dRaw_symbol_target[ts] = (ts, ts_close)+_DUMMYFRAMES[target]
+                    dRaw_symbol_target[ts] = (ts, ts_close)+DUMMYFRAMES[target]
                     dTSs_symbol_raw_target.append(ts)
                 dTSs_symbol_raw[target] = deque(sorted(dTSs_symbol_raw_target))
 
         #[3]: Last Prepared Update
         self.__data_lastPrepared = range_end
 
-    def __copyTradeControlTracker(self, tradeControlTracker):
-        tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
-                          'teff_model': tradeControlTracker['teff_model'].copy()}
-        return tcTracker_copy
-
-    def __performSimulationOnTarget(self, atTS):
+    def __handleKlines(self, timestamp):
         #[1]: Instances
-        aExport       = self.__analysisExport
-        positions_def = self.__positions_def
-        positions     = self.__positions
-        assets        = self.__assets
-        pReports      = self.__periodicReports
-        simAnalyzers  = self.__analyzers
-        aKwargs       = self.__analysisKwargs
-        dRaw = self.__data_raw
-        dAgg = self.__data_agg
-        dTSs = self.__data_timestamps
-        lcas = self.__lastClosedAggregations
-        lTSs = self.__lastClosedAggregations_timestamps
-        aggregators    = self.__aggregators
-        func_aGen      = analyzers.analysisGenerator
-        func_lAnalysis = analyzers.linearizeAnalysis
-        func_gnitt     = auxiliaries.getNextIntervalTickTimestamp
-        func_handleKline = self.__handleKline
-        func_handleAR    = self.__handleAnalysisResult
+        positions = self.__positions
+        dRaw      = self.__data_raw
 
-        #[2]: Update Account
-        self.__updateAccount(timestamp = atTS)
-
-        #[3]: Generate Analysis and Handle Generated Analysis Results
+        #[2]: Generate Analysis and Handle Generated Analysis Results
         for symbol, position in positions.items():
-            #[3-1]: Instances
-            gr_symbol = position['GR']
-            if gr_symbol is None or not (gr_symbol[0] <= atTS <= gr_symbol[1]):
-                continue
-            position_def    = positions_def[symbol]
-            precisions      = position_def['precisions']
-            dRaw_symbol     = dRaw[symbol]
-            dAgg_symbol     = dAgg[symbol]
-            dTSs_symbol     = dTSs[symbol]
-            dTSs_symbol_raw = dTSs_symbol['raw']
-            lcas_symbol     = lcas[symbol]
-            lTSs_symbol     = lTSs[symbol]
-            analyzer        = simAnalyzers[position_def['currencyAnalysisConfigurationCode']]
-            aKwargs_symbol  = aKwargs[symbol]
-            aParams         = analyzer['analysisParams']
-            atp_sorted      = analyzer['analysisToProcess_sorted']
+            #[2-1]: Instances
+            position_def = self.__positions_def[symbol]
+            position     = self.__positions[symbol]
+            tc           = self.__tradeConfigurations[position_def['tradeConfigurationCode']]
+            precisions   = position_def['precisions']
+            kline     = dRaw[symbol]['kline'][timestamp]
 
-            #[3-2]: Analysis Generation
-            bdRawTS_remove_min = None
-            for iID in dAgg_symbol:
-                #[3-2-1]: Instances
-                aggTS = func_gnitt(intervalID = iID, timestamp = atTS, nTicks = 0)
-                dAgg_symbol_iID    = dAgg_symbol[iID]
-                dTSs_symbol_iID    = dTSs_symbol[iID]
-                lcas_symbol_iID    = lcas_symbol[iID]
-                lTSs_symbol_iID    = lTSs_symbol[iID]
-                aParams_iID        = aParams[iID]
-                atp_sorted_iID     = atp_sorted[iID]
-                aKwargs_symbol_iID = aKwargs_symbol[iID]
+            #[2-2]: Force Exit Check
+            tradeHandler_checkList = {'FSLIMMED': None,
+                                      'FSLCLOSE': None}
+            if position['quantity'] != 0 and not (kline[KLINDEX_OPENPRICE] is None or kline[KLINDEX_LOWPRICE] is None or kline[KLINDEX_HIGHPRICE] is None or kline[KLINDEX_CLOSEPRICE] is None):
+                #FSL IMMED
+                if tc['fullStopLossImmediate'] is not None:
+                    #<SHORT>
+                    if position['quantity'] < 0:
+                        price_FSL = round(position['entryPrice']*(1+tc['fullStopLossImmediate']), precisions['price'])
+                        if price_FSL <= kline[KLINDEX_HIGHPRICE]: 
+                            tradeHandler_checkList['FSLIMMED'] = ('BUY', price_FSL)
+                    #<LONG>
+                    elif 0 < position['quantity']:
+                        price_FSL = round(position['entryPrice']*(1-tc['fullStopLossImmediate']), precisions['price'])
+                        if kline[KLINDEX_LOWPRICE] <= price_FSL: 
+                            tradeHandler_checkList['FSLIMMED'] = ('SELL', price_FSL)
+                #FSL CLOSE
+                if tc['fullStopLossClose'] is not None:
+                    #<SHORT>
+                    if position['quantity'] < 0:
+                        price_FSL = round(position['entryPrice']*(1+tc['fullStopLossClose']), precisions['price'])
+                        if price_FSL <= kline[KLINDEX_CLOSEPRICE]: 
+                            tradeHandler_checkList['FSLCLOSE'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
+                    #<LONG>
+                    elif 0 < position['quantity']:
+                        price_FSL = round(position['entryPrice']*(1-tc['fullStopLossClose']), precisions['price'])
+                        if kline[KLINDEX_CLOSEPRICE] <= price_FSL: 
+                            tradeHandler_checkList['FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
 
-                #[3-2-2]: Aggregation
-                for target in ('kline', 'depth', 'aggTrade', 'metric'):
-                    dRaw_symbol_target     = dRaw_symbol[target]
-                    dAgg_symbol_iID_target = dAgg_symbol_iID[target]
-                    dTSs_symbol_iID_target = dTSs_symbol_iID[target]
-                    lcas_symbol_iID_target = lcas_symbol_iID[target]
-                    lTSs_symbol_iID_target = lTSs_symbol_iID[target]
-                    aggregator = aggregators[target]
-                    if aggTS not in dAgg_symbol_iID_target:
-                        dTSs_symbol_iID_target.append(aggTS)
-                    aggregator(dataRaw        = dRaw_symbol_target,
-                                dataAgg        = dAgg_symbol_iID_target,
-                                lastClosedAggs = lcas_symbol_iID_target,
-                                rawOpenTS      = atTS,
-                                aggOpenTS      = aggTS,
-                                aggIntervalID  = iID,
-                                precisions     = precisions)
-                    if aggTS in lcas_symbol_iID_target:
-                        if not lTSs_symbol_iID_target or lTSs_symbol_iID_target[-1] != aggTS:
-                            lTSs_symbol_iID_target.append(aggTS)
-
-                #[3-2-3]: Analysis Generation
-                nAR_keeps    = dict()
-                nBD_keep_max = 1
-                for aType, aCode in atp_sorted_iID:
-                    dAgg_symbol_iID_aCode = dAgg_symbol_iID[aCode]
-                    dTSs_symbol_iID_aCode = dTSs_symbol_iID[aCode]
-                    if aggTS not in dAgg_symbol_iID_aCode:
-                        dTSs_symbol_iID_aCode.append(aggTS)
-                    nAR_keep, nBD_keep = func_aGen(analysisType    = aType,
-                                                   timestamp       = aggTS,
-                                                   analysisResults = dAgg_symbol_iID_aCode,
-                                                   **aKwargs_symbol_iID,
-                                                   **aParams_iID[aCode])
-                    nAR_keeps[aCode] = nAR_keep+1
-                    if nBD_keep_max < nBD_keep: nBD_keep_max = nBD_keep 
-                nBD_keep_max += 1
-
-                #[3-2-4]: Memory Optimization (Analysis & Aggregated Base Data)
-                #---[3-2-4-1]: Analysis
-                for aCode, nAr_keep in nAR_keeps.items():
-                    arTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nAr_keep-1))-1
-                    dAgg_symbol_iID_aCode = dAgg_symbol_iID[aCode]
-                    dTSs_symbol_iID_aCode = dTSs_symbol_iID[aCode]
-                    while dTSs_symbol_iID_aCode and dTSs_symbol_iID_aCode[0] <= arTS_remove_min:
-                        ts_remove = dTSs_symbol_iID_aCode.popleft()
-                        del dAgg_symbol_iID_aCode[ts_remove]
-                #---[3-2-4-2]: Base Data
-                bdTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nBD_keep_max-1))-1
-                for target in ('kline', 'depth', 'aggTrade', 'metric'):
-                    dAgg_symbol_iID_target = dAgg_symbol_iID[target]
-                    dTSs_symbol_iID_target = dTSs_symbol_iID[target]
-                    lcas_symbol_iID_target = lcas_symbol_iID[target]
-                    lTSs_symbol_iID_target = lTSs_symbol_iID[target]
-                    #[3-2-4-2-1]: Last Aggregated Data
-                    while dTSs_symbol_iID_target and dTSs_symbol_iID_target[0] <= bdTS_remove_min:
-                        ts_remove = dTSs_symbol_iID_target.popleft()
-                        del dAgg_symbol_iID_target[ts_remove]
-                    #[3-2-4-2-2]: Last Closed Aggregation
-                    while lTSs_symbol_iID_target and lTSs_symbol_iID_target[0] <= bdTS_remove_min:
-                        ts_remove = lTSs_symbol_iID_target.popleft()
-                        del lcas_symbol_iID_target[ts_remove]
-                if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
-
-            #[3-3]: Memory Optimization (Raw Base Data)
-            for target in ('kline', 'depth', 'aggTrade', 'metric'):
-                dRaw_target     = dRaw_symbol[target]
-                dTSs_raw_target = dTSs_symbol_raw[target]
-                while dTSs_raw_target and dTSs_raw_target[0] <= bdRawTS_remove_min:
-                    ts_remove = dTSs_raw_target.popleft()
-                    del dRaw_target[ts_remove]
-
-            #[3-4]: New Kline Handling
-            func_handleKline(positionSymbol = symbol, 
-                             timestamp      = atTS, 
-                             kline          = dRaw_symbol['kline'][atTS])
-
-            #[3-5]: Analysis Result Linearization
-            aLinearized = func_lAnalysis(dataRaw        = dRaw_symbol,
-                                         dataAggregated = dAgg_symbol, 
-                                         analysisPairs  = atp_sorted, 
-                                         timestamp      = atTS)
-
-            #[3-6]: Analysis Handling
-            func_handleAR(positionSymbol     = symbol, 
-                          linearizedAnalysis = aLinearized, 
-                          timestamp          = atTS)
-
-            #[3-7]: Analysis Export
-            if aExport:
-                ae = position['AE']
-                #[3-7-1]: Index Identifiers
-                if ae['indexIdentifier'] is None: 
-                    ae_keys = sorted(aLinearized)
-                    ae_ii   = {k: i for i, k in enumerate(ae_keys)}
-                    ae['indexIdentifier']        = ae_ii
-                    ae['linearizedAnalysisKeys'] = ae_keys
-                #[3-7-2]: Tuplization & Appending
-                aLinearized_tuple = tuple(aLinearized[laKey] for laKey in ae['linearizedAnalysisKeys'])
-                position['AE']['data'].append(aLinearized_tuple)
-                
-        #[4]: Wallet Balance Trend Analysis Update
-        for assetName, asset in assets.items():
-            #[4-1]: Instances
-            wbta          = asset['WBTA']
-            walletBalance = asset['walletBalance']
-            #[4-2]: First Balance Update Check
-            if wbta['firstUpdatedTS'] is None:
-                if walletBalance != wbta['initialWalletBalance']:
-                    wbta['firstUpdatedTS'] = atTS
-            #[4-3]: Counter & Sums Update
-            if wbta['firstUpdatedTS'] is None: continue
-            x = (atTS - wbta['firstUpdatedTS'])/KLINTERVAL_S
-            y = math.log(walletBalance) if 0 < walletBalance else 0.0
-            wbta['count']  += 1
-            wbta['sum_x']  += x
-            wbta['sum_xx'] += x**2
-            wbta['sum_y']  += y
-            wbta['sum_yy'] += y**2
-            wbta['sum_xy'] += x*y
-            #[4-4]: Balance History
-            wbta['minimumWalletBalance'] = min(wbta['minimumWalletBalance'], walletBalance)
-            wbta['maximumWalletBalance'] = max(wbta['maximumWalletBalance'], walletBalance)
-            wbta['finalWalletBalance']   = walletBalance
-
-        #[5]: Periodic Report Update
-        for assetName, asset in assets.items():
-            #[5-1]: Instances & Daily Report Formatting (If needed)
-            pReport_TS = self.__formatPeriodicReport(timestamp = atTS)
-            pReport    = pReports[pReport_TS][assetName]
-            #[5-2]: Wallet Balance
-            walletBalance = asset['walletBalance']
-            pReport['walletBalance_min'] = min(pReport['walletBalance_min'], walletBalance)
-            pReport['walletBalance_max'] = max(pReport['walletBalance_max'], walletBalance)
-            pReport['walletBalance_close'] = walletBalance
-            #[5-3]: Margin Balance
-            marginBalance = asset['marginBalance']
-            pReport['marginBalance_min'] = min(pReport['marginBalance_min'], marginBalance)
-            pReport['marginBalance_max'] = max(pReport['marginBalance_max'], marginBalance)
-            pReport['marginBalance_close'] = marginBalance
-            #[5-4]: Commitment Rate
-            if asset['commitmentRate'] is None: commitmentRate = 0
-            else:                               commitmentRate = asset['commitmentRate']
-            pReport['commitmentRate_min'] = min(pReport['commitmentRate_min'], commitmentRate)
-            pReport['commitmentRate_max'] = max(pReport['commitmentRate_max'], commitmentRate)
-            pReport['commitmentRate_close'] = commitmentRate
-            #[5-5]: Risk Level
-            if asset['riskLevel'] is None: riskLevel = 0
-            else:                          riskLevel = asset['riskLevel']
-            pReport['riskLevel_min'] = min(pReport['riskLevel_min'], riskLevel)
-            pReport['riskLevel_max'] = max(pReport['riskLevel_max'], riskLevel)
-            pReport['riskLevel_close'] = riskLevel
+            #[2-3]: Trade Handlers Execution
+            tradeHandlers = []
+            if   tradeHandler_checkList['FSLIMMED'] is not None: tradeHandlers = ['FSLIMMED',]
+            elif tradeHandler_checkList['FSLCLOSE'] is not None: tradeHandlers = ['FSLCLOSE',]
     
+            #[2-4]: Finally
+            position_ths = position['_tradeHandlers']
+            for thType in tradeHandlers:
+                side, price = tradeHandler_checkList[thType]
+                th = {'type':      thType,
+                      'orderType': 'MARKET',
+                      'side':      side,
+                      'tefVal':    None,
+                      'timestamp': kline[KLINDEX_OPENTIME],
+                      'price':     price}
+                position_ths.append(th)
+
+    def __processTradeHandlers(self, symbol, timestamp):
+        #[1]: Instances
+        position     = self.__positions[symbol]
+        position_def = self.__positions_def[symbol]
+        asset        = self.__assets[position_def['quoteAsset']]
+        tc           = self.__tradeConfigurations[position_def['tradeConfigurationCode']]
+        tradeHandlers = position['_tradeHandlers']
+        precisions    = position_def['precisions']
+
+        #[2]: OCR Check
+        if position['_orderCreationRequest'] is not None: 
+            return
+        
+        #[3]: Trade Handlers Processing
+        while tradeHandlers:
+            #[3-1]: Trade Handler
+            th = tradeHandlers.popleft()
+            th_type      = th['type']
+            th_orderType = th['orderType']
+            th_side      = th['side']
+            th_tefVal    = th['tefVal']
+            th_timestamp = th['timestamp']
+            th_price     = th['price']
+
+            #[3-2]: Handling
+            #---[3-2-1]: ENTRY
+            if th_type == 'ENTRY':
+                #[3-2-1-1]: Balance Commitment Check
+                balance_allocated = position['allocatedBalance'] or self.__allocateBalance(symbol = symbol, apply = False)
+                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice'] is not None else 0
+                balance_toCommit  = balance_allocated*abs(th_tefVal)
+                balance_toEnter   = balance_toCommit-balance_committed
+                if not (0 < balance_toEnter): 
+                    continue
+                
+                balance_toEnter_eff = min(balance_toEnter, asset['availableBalance'])
+                if not (0 < balance_toEnter_eff): 
+                    continue
+
+                #[3-2-1-2]: Quantity Determination
+                quantity_minUnit = pow(10, -precisions['quantity'])
+                quantity         = round(int((balance_toEnter_eff/position['currentPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                if quantity <= 0: 
+                    continue
+
+                #[3-2-1-3]: Side Confirm
+                if not ((position['quantity'] <= 0 and th_side == 'SELL') or \
+                        (0 <= position['quantity'] and th_side == 'BUY')): 
+                    continue
+
+                #[3-2-1-4]: Finally
+                self.__allocateBalance(symbol = symbol, apply = True)
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = 'ENTRY',
+                                                     orderType       = th_orderType,
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     price           = th_price,
+                                                     tcTrackerUpdate = None)
+                return
+                
+            #---[3-2-2]: CLEAR
+            elif th_type == 'CLEAR':
+                #[3-2-2-1]: Quantity Determination
+                quantity = round(abs(position['quantity']), precisions['quantity'])
+                if not 0 < quantity: 
+                    continue
+
+                #[3-2-2-2]: Side Confirm
+                if not ((position['quantity'] < 0 and th_side == 'BUY') or \
+                        (0 < position['quantity'] and th_side == 'SELL')): 
+                    continue
+
+                #[3-2-2-3]: Finally
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = 'CLEAR',
+                                                     orderType       = th_orderType,
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     price           = th_price,
+                                                     tcTrackerUpdate = None)
+                return
+                
+            #---[3-2-3]: EXIT
+            elif th_type == 'EXIT':
+                #[3-2-3-1]: Balance Commitment Check
+                balance_allocated = position['allocatedBalance'] or self.__allocateBalance(symbol = symbol, apply = False)
+                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice'] is not None else 0
+                balance_toCommit  = balance_allocated*abs(th_tefVal)
+                balance_toEnter   = balance_toCommit-balance_committed
+                if not (balance_toEnter < 0): 
+                    continue
+
+                #[3-2-3-2]: Quantity Determination
+                if th_tefVal == 0.0:
+                    quantity = abs(position['quantity'])
+                else:
+                    quantity_minUnit = pow(10, -precisions['quantity'])
+                    quantity         = round(int((-balance_toEnter/position['entryPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                if quantity < 0: 
+                    continue
+                if quantity == 0: 
+                    continue
+
+                #[3-2-3-3]: Side Confirm
+                if not ((position['quantity'] < 0 and th_side == 'BUY') or \
+                        (0 < position['quantity'] and th_side == 'SELL')): 
+                    continue
+
+                #[3-2-3-4]: Finally
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = 'EXIT',
+                                                     orderType       = th_orderType,
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     price           = th_price,
+                                                     tcTrackerUpdate = None)
+                return
+
+            #---[3-2-4]: FSLIMMED & FSLCLOSE
+            elif th_type == 'FSLIMMED' or th_type == 'FSLCLOSE':
+                #[3-2-4-1]: Quantity Determination
+                quantity = round(abs(position['quantity']), precisions['quantity'])
+                if not (0 < quantity): 
+                    continue
+
+                #[3-2-4-2]: Side Confirm
+                if not ((position['quantity'] < 0 and th_side == 'BUY') or \
+                        (0 < position['quantity'] and th_side == 'SELL')): 
+                    continue
+
+                #[3-2-4-3]: Finally
+                if   position['quantity'] < 0: slTriggeredSide = 'SHORT'
+                elif 0 < position['quantity']: slTriggeredSide = 'LONG'
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = th_type,
+                                                     orderType       = th_orderType,
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     price           = th_price,
+                                                     tcTrackerUpdate = {'slExited': {'onComplete': (slTriggeredSide, th_timestamp), 
+                                                                                     'onPartial':  (slTriggeredSide, th_timestamp), 
+                                                                                     'onFail':     (slTriggeredSide, th_timestamp)}})
+                return
+            
+    def __processTrades(self, symbol, timestamp):
+        #[1]: Instances
+        position       = self.__positions[symbol]
+        position_def   = self.__positions_def[symbol]
+        orders         = self.__orders
+        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = timestamp, nTicks = -1)
+        ocr            = position['_orderCreationRequest']
+        price_liq      = position['liquidationPrice']
+        precisions     = position_def['precisions']
+        dRaw_symbol    = self.__data_raw[symbol]
+        kline          = dRaw_symbol['kline'][timestamp]
+        depth_prev     = dRaw_symbol['depth'].get(timestamp_prev, None)
+        processTarget  = None
+
+        #[2]: Kline Check
+        if (kline[KLINDEX_OPENPRICE] is None or kline[KLINDEX_LOWPRICE] is None or kline[KLINDEX_HIGHPRICE] is None or kline[KLINDEX_CLOSEPRICE] is None):
+            return
+            
+        #[3]: Liquidation Check
+        liquidation = None
+        if price_liq is not None:
+            if   position['quantity'] < 0 and (price_liq <= kline[KLINDEX_HIGHPRICE]): liquidation = (price_liq - kline[KLINDEX_OPENPRICE])
+            elif 0 < position['quantity'] and (kline[KLINDEX_LOWPRICE] <= price_liq):  liquidation = (kline[KLINDEX_OPENPRICE] - price_liq)
+
+        #[4]: Order Check
+        order                    = None if ocr is None else orders.get(ocr['orderCode'], None) 
+        order_execution_distance = None
+        if order is not None:
+            o_side      = order['side']
+            o_orderType = order['orderType']
+            o_quantity  = order['quantity']
+            o_price     = order['price']
+            o_recompare = order['recompare']
+            if o_orderType == 'LIMIT':
+                if   o_side == 'BUY'  and (kline[KLINDEX_LOWPRICE] < o_price):  order_execution_distance = max(0, kline[KLINDEX_OPENPRICE] - o_price)
+                elif o_side == 'SELL' and (o_price < kline[KLINDEX_HIGHPRICE]): order_execution_distance = max(0, o_price - kline[KLINDEX_OPENPRICE])
+            elif o_orderType == 'MARKET':
+                if o_recompare: 
+                    if   o_side == 'BUY':  order_execution_distance = max(0, kline[KLINDEX_OPENPRICE] - o_price)
+                    elif o_side == 'SELL': order_execution_distance = max(0, o_price - kline[KLINDEX_OPENPRICE])
+                else: 
+                    order_execution_distance = 0
+
+        #[5]: Process Target Determination
+        if liquidation is None:
+            if order_execution_distance is not None: processTarget = 'ORDER'
+        else:
+            if order_execution_distance is None: processTarget = 'LIQUIDATION'
+            else:                                processTarget = 'ORDER' if order_execution_distance < liquidation else 'LIQUIDATION'
+
+        #[6]: Target Processing
+        #---[6-1]: Liquidation
+        if processTarget == 'LIQUIDATION': 
+            self.__liquidatePosition(timestamp = timestamp, symbol = symbol)
+            return True
+
+        #---[6-2]: Order
+        elif processTarget == 'ORDER':
+            #[6-2-1]: Trade Parameters Determination
+            if   o_orderType == 'LIMIT':  t_price = o_price
+            elif o_orderType == 'MARKET': t_price = auxiliaries_trade.getSlippedPrice(side            = o_side,
+                                                                                      quantity        = o_quantity,
+                                                                                      reference_price = o_price,
+                                                                                      depth_prev      = depth_prev,
+                                                                                      precision_price = precisions['price'])
+
+            #[6-2-2]: Simulated Trade Processing
+            self.__processTrade(timestamp = timestamp,
+                                symbol    = symbol,
+                                side      = o_side,
+                                orderType = o_orderType,
+                                quantity  = o_quantity,
+                                price     = t_price)
+
+            #[6-2-3]: Clear Order
+            del orders[ocr['orderCode']]
+            return True
+
+        #[7]: If No Trades Are Processed, Return False
+        return False
+            
     def __updateAccount(self, timestamp):
         #[1]: Instances
         assets_def    = self.__assets_def
@@ -933,15 +1057,31 @@ class Simulation:
         positions_def = self.__positions_def
         positions     = self.__positions
         dRaw          = self.__data_raw
+        func_rlr         = self.__readLiquidationReport
+        func_ct          = self.__checkTrade
+        func_rab         = self.__releaseAllocatedBalance
         get_mmraa        = auxiliaries_trade.getMaintenanceMarginRateAndAmount
         compute_liqPrice = auxiliaries_trade.computeLiquidationPrice
 
         #[2]: Update Positions
         for symbol, position in positions.items():
+            #[2-1]: Instances
             position_def = positions_def[symbol]
             kl           = dRaw[symbol]['kline'].get(timestamp, None)
             kl_cp        = None if kl is None else kl[KLINDEX_CLOSEPRICE]
             cp           = position['currentPrice'] if kl_cp is None else kl_cp
+
+            #[2-2]: Liquidation & OCR Check
+            if not func_rlr(symbol = symbol):
+                func_ct(symbol         = symbol, 
+                        quantity_new   = position['_quantity_new'], 
+                        entryPrice_new = position['_entryPrice_new'])
+            position['quantity']   = position['_quantity_new']
+            position['entryPrice'] = position['_entryPrice_new']
+            if position['quantity'] == 0 and 0 < position['allocatedBalance']:
+                func_rab(symbol = symbol)
+
+            #[2-3]: Computed Values
             if cp is None:
                 position['positionInitialMargin'] = None
                 position['maintenanceMargin']     = None
@@ -962,13 +1102,11 @@ class Simulation:
         #[3]: Update Assets
         for assetName, asset in assets.items():
             asset_def = assets_def[assetName]
-            asset['isolatedPositionInitialMargin'] = sum(pim                                   for symbol in asset_def['_positionSymbols_isolated'] if (pim  := positions[symbol]['positionInitialMargin']) is not None)
-            asset['crossPositionInitialMargin']    = sum(pim                                   for symbol in asset_def['_positionSymbols_crossed']  if (pim  := positions[symbol]['positionInitialMargin']) is not None)
-            asset['crossMaintenanceMargin']        = sum(mm                                    for symbol in asset_def['_positionSymbols_crossed']  if (mm   := positions[symbol]['maintenanceMargin'])     is not None)
-            asset['isolatedUnrealizedPNL']         = sum(uPNL                                  for symbol in asset_def['_positionSymbols_isolated'] if (uPNL := positions[symbol]['unrealizedPNL'])         is not None)
-            asset['crossUnrealizedPNL']            = sum(uPNL                                  for symbol in asset_def['_positionSymbols_crossed']  if (uPNL := positions[symbol]['unrealizedPNL'])         is not None)
-            asset['assumedRatio']                  = sum(positions_def[symbol]['assumedRatio'] for symbol in asset_def['_positionSymbols'])
-            asset['weightedAssumedRatio']          = sum(waRatio                               for symbol in asset_def['_positionSymbols']          if (waRatio := positions_def[symbol]['weightedAssumedRatio']) is not None)
+            asset['isolatedPositionInitialMargin'] = sum(pim  for symbol in asset_def['_positionSymbols_isolated'] if (pim  := positions[symbol]['positionInitialMargin']) is not None)
+            asset['crossPositionInitialMargin']    = sum(pim  for symbol in asset_def['_positionSymbols_crossed']  if (pim  := positions[symbol]['positionInitialMargin']) is not None)
+            asset['crossMaintenanceMargin']        = sum(mm   for symbol in asset_def['_positionSymbols_crossed']  if (mm   := positions[symbol]['maintenanceMargin'])     is not None)
+            asset['isolatedUnrealizedPNL']         = sum(uPNL for symbol in asset_def['_positionSymbols_isolated'] if (uPNL := positions[symbol]['unrealizedPNL'])         is not None)
+            asset['crossUnrealizedPNL']            = sum(uPNL for symbol in asset_def['_positionSymbols_crossed']  if (uPNL := positions[symbol]['unrealizedPNL'])         is not None)
             asset['walletBalance']      = asset['crossWalletBalance']+asset['isolatedWalletBalance']
             asset['unrealizedPNL']      = asset['isolatedUnrealizedPNL']+asset['crossUnrealizedPNL']
             asset['marginBalance']      = asset['walletBalance']+asset['unrealizedPNL']
@@ -1065,440 +1203,302 @@ class Simulation:
             else: 
                 riskLevel_average = None
             asset['riskLevel'] = riskLevel_average
+
+    def __generateAnalysis(self, timestamp):
+        #[1]: Instances
+        aExport       = self.__analysisExport
+        positions_def = self.__positions_def
+        positions     = self.__positions
+        simAnalyzers  = self.__analyzers
+        aKwargs       = self.__analysisKwargs
+        dRaw = self.__data_raw
+        dAgg = self.__data_agg
+        dTSs = self.__data_timestamps
+        lcas = self.__lastClosedAggregations
+        lTSs = self.__lastClosedAggregations_timestamps
+        aggregators    = self.__aggregators
+        func_aGen      = analyzers.analysisGenerator
+        func_lAnalysis = analyzers.linearizeAnalysis
+        func_gnitt     = auxiliaries.getNextIntervalTickTimestamp
+        las = dict()
+
+        #[2]: Generate Analysis and Handle Generated Analysis Results
+        for symbol, position in positions.items():
+            #[2-1]: Instances
+            gr_symbol = position['GR']
+            if gr_symbol is None or not (gr_symbol[0] <= timestamp <= gr_symbol[1]):
+                continue
+            position_def    = positions_def[symbol]
+            precisions      = position_def['precisions']
+            dRaw_symbol     = dRaw[symbol]
+            dAgg_symbol     = dAgg[symbol]
+            dTSs_symbol     = dTSs[symbol]
+            dTSs_symbol_raw = dTSs_symbol['raw']
+            lcas_symbol     = lcas[symbol]
+            lTSs_symbol     = lTSs[symbol]
+            analyzer        = simAnalyzers[position_def['currencyAnalysisConfigurationCode']]
+            aKwargs_symbol  = aKwargs[symbol]
+            aParams         = analyzer['analysisParams']
+            atp_sorted      = analyzer['analysisToProcess_sorted']
+
+            #[2-3]: Analysis Generation
+            bdRawTS_remove_min = None
+            for iID in dAgg_symbol:
+                #[2-3-1]: Instances
+                aggTS = func_gnitt(intervalID = iID, timestamp = timestamp, nTicks = 0)
+                dAgg_symbol_iID    = dAgg_symbol[iID]
+                dTSs_symbol_iID    = dTSs_symbol[iID]
+                lcas_symbol_iID    = lcas_symbol[iID]
+                lTSs_symbol_iID    = lTSs_symbol[iID]
+                aParams_iID        = aParams[iID]
+                atp_sorted_iID     = atp_sorted[iID]
+                aKwargs_symbol_iID = aKwargs_symbol[iID]
+
+                #[2-3-2]: Aggregation
+                for target in ('kline', 'depth', 'aggTrade', 'metric'):
+                    dRaw_symbol_target     = dRaw_symbol[target]
+                    dAgg_symbol_iID_target = dAgg_symbol_iID[target]
+                    dTSs_symbol_iID_target = dTSs_symbol_iID[target]
+                    lcas_symbol_iID_target = lcas_symbol_iID[target]
+                    lTSs_symbol_iID_target = lTSs_symbol_iID[target]
+                    aggregator = aggregators[target]
+                    if aggTS not in dAgg_symbol_iID_target:
+                        dTSs_symbol_iID_target.append(aggTS)
+                    aggregator(dataRaw        = dRaw_symbol_target,
+                                dataAgg        = dAgg_symbol_iID_target,
+                                lastClosedAggs = lcas_symbol_iID_target,
+                                rawOpenTS      = timestamp,
+                                aggOpenTS      = aggTS,
+                                aggIntervalID  = iID,
+                                precisions     = precisions)
+                    if aggTS in lcas_symbol_iID_target:
+                        if not lTSs_symbol_iID_target or lTSs_symbol_iID_target[-1] != aggTS:
+                            lTSs_symbol_iID_target.append(aggTS)
+
+                #[2-3-3]: Analysis Generation
+                nAR_keeps    = dict()
+                nBD_keep_max = 1
+                for aType, aCode in atp_sorted_iID:
+                    dAgg_symbol_iID_aCode = dAgg_symbol_iID[aCode]
+                    dTSs_symbol_iID_aCode = dTSs_symbol_iID[aCode]
+                    if aggTS not in dAgg_symbol_iID_aCode:
+                        dTSs_symbol_iID_aCode.append(aggTS)
+                    nAR_keep, nBD_keep = func_aGen(analysisType    = aType,
+                                                    timestamp       = aggTS,
+                                                    analysisResults = dAgg_symbol_iID_aCode,
+                                                    **aKwargs_symbol_iID,
+                                                    **aParams_iID[aCode])
+                    nAR_keeps[aCode] = nAR_keep+1
+                    if nBD_keep_max < nBD_keep: nBD_keep_max = nBD_keep 
+                nBD_keep_max += 1
+
+                #[2-3-4]: Memory Optimization (Analysis & Aggregated Base Data)
+                #---[2-3-4-1]: Analysis
+                for aCode, nAr_keep in nAR_keeps.items():
+                    arTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nAr_keep-1))-1
+                    dAgg_symbol_iID_aCode = dAgg_symbol_iID[aCode]
+                    dTSs_symbol_iID_aCode = dTSs_symbol_iID[aCode]
+                    while dTSs_symbol_iID_aCode and dTSs_symbol_iID_aCode[0] <= arTS_remove_min:
+                        ts_remove = dTSs_symbol_iID_aCode.popleft()
+                        del dAgg_symbol_iID_aCode[ts_remove]
+                #---[2-3-4-2]: Base Data
+                bdTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nBD_keep_max-1))-1
+                for target in ('kline', 'depth', 'aggTrade', 'metric'):
+                    dAgg_symbol_iID_target = dAgg_symbol_iID[target]
+                    dTSs_symbol_iID_target = dTSs_symbol_iID[target]
+                    lcas_symbol_iID_target = lcas_symbol_iID[target]
+                    lTSs_symbol_iID_target = lTSs_symbol_iID[target]
+                    #[2-3-4-2-1]: Last Aggregated Data
+                    while dTSs_symbol_iID_target and dTSs_symbol_iID_target[0] <= bdTS_remove_min:
+                        ts_remove = dTSs_symbol_iID_target.popleft()
+                        del dAgg_symbol_iID_target[ts_remove]
+                    #[2-3-4-2-2]: Last Closed Aggregation
+                    while lTSs_symbol_iID_target and lTSs_symbol_iID_target[0] <= bdTS_remove_min:
+                        ts_remove = lTSs_symbol_iID_target.popleft()
+                        del lcas_symbol_iID_target[ts_remove]
+                if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
+
+            #[2-4]: Memory Optimization (Raw Base Data)
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
+                dRaw_target     = dRaw_symbol[target]
+                dTSs_raw_target = dTSs_symbol_raw[target]
+                while dTSs_raw_target and dTSs_raw_target[0] <= bdRawTS_remove_min:
+                    ts_remove = dTSs_raw_target.popleft()
+                    del dRaw_target[ts_remove]
+
+            #[2-5]: Analysis Result Linearization
+            la = func_lAnalysis(dataRaw        = dRaw_symbol,
+                                dataAggregated = dAgg_symbol, 
+                                analysisPairs  = atp_sorted, 
+                                timestamp      = timestamp)
+            
+            #[2-6]: Linearized Analysis Export
+            las[symbol] = la
+            if aExport:
+                ae = position['AE']
+                #[4-9-1]: Index Identifiers
+                if ae['indexIdentifier'] is None: 
+                    ae_keys = sorted(la)
+                    ae_ii   = {k: i for i, k in enumerate(ae_keys)}
+                    ae['indexIdentifier']        = ae_ii
+                    ae['linearizedAnalysisKeys'] = ae_keys
+                #[4-9-2]: Tuplization & Appending
+                aLinearized_tuple = tuple(la[laKey] for laKey in ae['linearizedAnalysisKeys'])
+                position['AE']['data'].append(aLinearized_tuple)
+
+        #[3]: Linearized Analyses Return
+        return las
     
-    def __allocateBalance(self, positionSymbol, apply):
+    def __handleAnalysisResults(self, timestamp, linearizedAnalyses):
         #[1]: Instances
-        position     = self.__positions[positionSymbol]
-        position_def = self.__positions_def[positionSymbol]
-        asset        = self.__assets[position_def['quoteAsset']]
-        qPrecision   = position_def['precisions']['quote']
+        positions     = self.__positions
+        positions_def = self.__positions_def
 
-        #[2]: Position Check
-        if 0 < position['allocatedBalance']:
-            return position['allocatedBalance']
-
-        #[2]: Balance Allocation
-        allocatable_balance_remaining = asset['allocatableBalance']-asset['allocatedBalance']
-        allocated_balance_expected    = asset['allocatableBalance']*position_def['assumedRatio']
-        allocated_balance_maximum     = position_def['maxAllocatedBalance']
-        allocated_balance = allocated_balance = round(max(0.0, min(allocatable_balance_remaining, allocated_balance_expected, allocated_balance_maximum)), qPrecision)
-        
-        #[3]: Apply
-        if apply:
-            asset['allocatedBalance']    = round(asset['allocatedBalance'] + allocated_balance, qPrecision)
-            position['allocatedBalance'] = allocated_balance
-
-        #[4]: Return Allocated Balance
-        return allocated_balance
-
-    def __releaseAllocatedBalance(self, positionSymbol):
-        #[1]: Instances
-        position     = self.__positions[positionSymbol]
-        position_def = self.__positions_def[positionSymbol]
-        asset        = self.__assets[position_def['quoteAsset']]
-        qPrecision   = position_def['precisions']['quote']
-
-        #[2]: Allocated Balance Release
-        asset['allocatedBalance']    = round(asset['allocatedBalance'] - position['allocatedBalance'], qPrecision)
-        position['allocatedBalance'] = 0
+        #[2]: Generate Analysis and Handle Generated Analysis Results
+        for symbol, position in positions.items():
+            #[2-1]: Instances
+            gr_symbol = position['GR']
+            if gr_symbol is None or not (gr_symbol[0] <= timestamp <= gr_symbol[1]):
+                continue
+            position_def = positions_def[symbol]
+            precisions   = position_def['precisions']
+            tcTracker    = position['tradeControlTracker']
+            cp           = position['currentPrice']
+            tc           = self.__tradeConfigurations[position_def['tradeConfigurationCode']]
     
-    def __formatPeriodicReport(self, timestamp):
-        #[1]: Instances
-        assets   = self.__assets
-        pReports = self.__periodicReports
-        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+            #[2-2]: Target Exposure Factor
+            try:
+                tef_dir, tef_val = teffunctions.TEFFUNCTIONS_GET_TEF[tc['teff_functionType']](params             = tc['teff_functionParams'],
+                                                                                              linearizedAnalysis = linearizedAnalyses[symbol],
+                                                                                              tcTracker_model    = tcTracker['teff_model'])
+            except Exception as e:
+                print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An Unexpected Error Occurred While Attempting To Compute Target Exposure Factor In Simulation.\n"
+                                        f" * Simulation Code:   {self.__simulationCode}\n"
+                                        f" * TEF Function Type: {tc['teff_functionType']}\n"
+                                        f" * Position Symbol:   {symbol}\n"
+                                        f" * Timestamp:         {timestamp}\n"
+                                        f" * Error:             {e}\n"
+                                        f" * Detailed Trace:    {traceback.format_exc()}", 
+                                        'light_red'))
+                continue
+            if (tef_dir not in (None, 'SHORT', 'LONG') or 
+                not isinstance(tef_val, (int, float))  or 
+                not (-1 <= tef_val <= 1)):
+                print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An Unexpected TEF Result Detected. Direction Must Be None, 'SHORT' Or 'LONG', And The Value Must Be An Integer Or Float In Range [-1.0, 1.0].\n"
+                                        f" * Simulation Code:   {self.__simulationCode}\n"
+                                        f" * TEF Function Type: {tc['teff_functionType']}\n"
+                                        f" * TEF Direction:     {tef_dir}\n"
+                                        f" * TEF Value:         {tef_val}\n"
+                                        f" * Position Symbol:   {symbol}\n"
+                                        f" * Timestamp:         {timestamp}", 
+                                        'light_red'))
+                continue
+    
+            #[2-3]: SL Exit Flag
+            if tcTracker['slExited'] != tef_dir: 
+                tcTracker['slExited'] = None
+    
+            #[2-4]: Trade Handlers Determination
+            tradeHandler_checkList = {'ENTRY': None,
+                                      'CLEAR': None,
+                                      'EXIT':  None}
+            #---[2-4-1]: CheckList 1: CLEAR
+            if   position['quantity'] < 0 and tef_dir != 'SHORT': tradeHandler_checkList['CLEAR'] = 'BUY'
+            elif 0 < position['quantity'] and tef_dir != 'LONG':  tradeHandler_checkList['CLEAR'] = 'SELL'
+            #---[2-4-2]: CheckList 2: ENTRY & EXIT
+            pslCheck = tc['postStopLossReentry'] or (tcTracker['slExited'] is None)
+            if tef_dir == 'SHORT':  
+                if pslCheck and tc['direction'] in ('BOTH', 'SHORT'): 
+                    tradeHandler_checkList['ENTRY'] = 'SELL'
+                tradeHandler_checkList['EXIT'] = 'BUY'
+            elif tef_dir == 'LONG':
+                if pslCheck and tc['direction'] in ('BOTH', 'LONG'): 
+                    tradeHandler_checkList['ENTRY'] = 'BUY'
+                tradeHandler_checkList['EXIT'] = 'SELL'
+            elif tef_dir is None:
+                if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = 'BUY'
+                elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = 'SELL'
+    
+            #[2-5]: Trade Handlers Determination
+            tradeHandlers = []
+            if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
+            if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
+            if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
+    
+            #[2-6]: Update Trade Handlers
+            position_ths = position['_tradeHandlers']
+            tc_orderType   = tc['orderType']
+            tc_orderOffset = tc['orderOffset']
+            for thType in tradeHandlers:
+                side = tradeHandler_checkList[thType]
+                if tc_orderType == 'LIMIT':
+                    if   side == 'BUY':  price = round(cp*(1-tc_orderOffset), precisions['price'])
+                    elif side == 'SELL': price = round(cp*(1+tc_orderOffset), precisions['price'])
+                elif tc_orderType == 'MARKET': 
+                    price = cp
+                th = {'type':      thType, 
+                      'orderType': tc_orderType,
+                      'side':      side,
+                      'tefVal':    tef_val,
+                      'timestamp': timestamp,
+                      'price':     price}
+                position_ths.append(th)
 
-        #[2]: Report Timestamp Check
-        prTS = func_gnitt(intervalID = PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = 0)
-        if prTS in pReports: return prTS
+    def __updateWalletBalanceTrendAnalysis(self, timestamp):
+        assets = self.__assets
+        for asset in assets.values():
+            #[5-1]: Instances
+            wbta          = asset['WBTA']
+            walletBalance = asset['walletBalance']
+            #[5-2]: First Balance Update Check
+            if wbta['firstUpdatedTS'] is None:
+                if walletBalance != wbta['initialWalletBalance']:
+                    wbta['firstUpdatedTS'] = timestamp
+            #[5-3]: Counter & Sums Update
+            if wbta['firstUpdatedTS'] is None: continue
+            x = (timestamp - wbta['firstUpdatedTS'])/KLINTERVAL_S
+            y = math.log(walletBalance) if 0 < walletBalance else 0.0
+            wbta['count']  += 1
+            wbta['sum_x']  += x
+            wbta['sum_xx'] += x**2
+            wbta['sum_y']  += y
+            wbta['sum_yy'] += y**2
+            wbta['sum_xy'] += x*y
+            #[5-4]: Balance History
+            wbta['minimumWalletBalance'] = min(wbta['minimumWalletBalance'], walletBalance)
+            wbta['maximumWalletBalance'] = max(wbta['maximumWalletBalance'], walletBalance)
+            wbta['finalWalletBalance']   = walletBalance
 
-        #[3]: Previous Report
-        prTS_prev = func_gnitt(intervalID = PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = -1)
-        prs_prev  = pReports.get(prTS_prev, None)
-
-        #[4]: New Report Formatting
-        pReport = dict()
+    def __updatePeriodicReport(self, timestamp):
+        assets        = self.__assets
+        pReports      = self.__periodicReports
         for assetName, asset in assets.items():
-            #[4-1]: Current Values
-            mb = asset['marginBalance']
-            wb = asset['walletBalance']
-            cr = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
-            rl = 0 if asset['riskLevel']      is None else asset['riskLevel']
-            #[4-2]: Previous Values
-            if prs_prev is not None:
-                pr_prev = prs_prev[assetName]
-                mb_open = pr_prev['marginBalance_close']
-                wb_open = pr_prev['walletBalance_close']
-                cr_open = pr_prev['commitmentRate_close']
-                rl_open = pr_prev['riskLevel_close']
-            else:
-                mb_open = mb
-                wb_open = wb
-                cr_open = cr
-                rl_open = rl
-            #[4-3]: Formatting
-            pReport[assetName] = {'nTrades':             0,
-                                  'nTrades_buy':         0,
-                                  'nTrades_sell':        0,
-                                  'nTrades_entry':       0,
-                                  'nTrades_clear':       0,
-                                  'nTrades_exit':        0,
-                                  'nTrades_fslImmed':    0,
-                                  'nTrades_fslClose':    0,
-                                  'nTrades_liquidation': 0,
-                                  'nTrades_forceClear':  0,
-                                  'nTrades_unknown':     0,
-                                  'nTrades_gain':        0,
-                                  'nTrades_loss':        0,
-                                  'marginBalance_open':  mb_open, 'marginBalance_min':  mb, 'marginBalance_max':  mb, 'marginBalance_close':  mb,
-                                  'walletBalance_open':  wb_open, 'walletBalance_min':  wb, 'walletBalance_max':  wb, 'walletBalance_close':  wb,
-                                  'commitmentRate_open': cr_open, 'commitmentRate_min': cr, 'commitmentRate_max': cr, 'commitmentRate_close': cr,
-                                  'riskLevel_open':      rl_open, 'riskLevel_min':      rl, 'riskLevel_max':      rl, 'riskLevel_close':      rl,
-                                  '_intervalID': PERIODICREPORT_INTERVALID}
-        pReports[prTS] = pReport
+            #[6-1]: Instances & Daily Report Formatting (If needed)
+            pReport_TS = self.__formatPeriodicReport(timestamp = timestamp)
+            pReport    = pReports[pReport_TS][assetName]
+            #[6-2]: Wallet Balance
+            walletBalance = asset['walletBalance']
+            pReport['walletBalance_min'] = min(pReport['walletBalance_min'], walletBalance)
+            pReport['walletBalance_max'] = max(pReport['walletBalance_max'], walletBalance)
+            pReport['walletBalance_close'] = walletBalance
+            #[6-3]: Margin Balance
+            marginBalance = asset['marginBalance']
+            pReport['marginBalance_min'] = min(pReport['marginBalance_min'], marginBalance)
+            pReport['marginBalance_max'] = max(pReport['marginBalance_max'], marginBalance)
+            pReport['marginBalance_close'] = marginBalance
+            #[6-4]: Commitment Rate
+            if asset['commitmentRate'] is None: commitmentRate = 0
+            else:                               commitmentRate = asset['commitmentRate']
+            pReport['commitmentRate_min'] = min(pReport['commitmentRate_min'], commitmentRate)
+            pReport['commitmentRate_max'] = max(pReport['commitmentRate_max'], commitmentRate)
+            pReport['commitmentRate_close'] = commitmentRate
+            #[6-5]: Risk Level
+            if asset['riskLevel'] is None: riskLevel = 0
+            else:                          riskLevel = asset['riskLevel']
+            pReport['riskLevel_min'] = min(pReport['riskLevel_min'], riskLevel)
+            pReport['riskLevel_max'] = max(pReport['riskLevel_max'], riskLevel)
+            pReport['riskLevel_close'] = riskLevel
 
-        #[5]: Return Periodic Report Timestamp
-        return prTS
-    
-    def __handleKline(self, positionSymbol, timestamp, kline):
-        #[1]: Instances
-        position_def = self.__positions_def[positionSymbol]
-        position     = self.__positions[positionSymbol]
-        tcConfig     = self.__tradeConfigurations[position_def['tradeConfigurationCode']]
-        tcTracker    = position['tradeControlTracker']
-        precisions   = position_def['precisions']
-
-        #[2]: Force Exit Check
-        tradeHandler_checkList = {'FSLIMMED':    None,
-                                  'FSLCLOSE':    None,
-                                  'LIQUIDATION': None}
-        if position['quantity'] != 0 and not (kline[KLINDEX_OPENPRICE] is None or kline[KLINDEX_LOWPRICE] is None or kline[KLINDEX_HIGHPRICE] is None or kline[KLINDEX_CLOSEPRICE] is None):
-            #FSL IMMED
-            if tcConfig['fullStopLossImmediate'] is not None:
-                #<SHORT>
-                if position['quantity'] < 0:
-                    price_FSL = round(position['entryPrice']*(1+tcConfig['fullStopLossImmediate']), precisions['price'])
-                    if price_FSL <= kline[KLINDEX_HIGHPRICE]: 
-                        tradeHandler_checkList['FSLIMMED'] = ('BUY', price_FSL, price_FSL-kline[KLINDEX_OPENPRICE])
-                #<LONG>
-                elif 0 < position['quantity']:
-                    price_FSL = round(position['entryPrice']*(1-tcConfig['fullStopLossImmediate']), precisions['price'])
-                    if kline[KLINDEX_LOWPRICE] <= price_FSL: 
-                        tradeHandler_checkList['FSLIMMED'] = ('SELL', price_FSL, kline[KLINDEX_OPENPRICE]-price_FSL)
-            #FSL CLOSE
-            if tcConfig['fullStopLossClose'] is not None:
-                #<SHORT>
-                if position['quantity'] < 0:
-                    price_FSL = round(position['entryPrice']*(1+tcConfig['fullStopLossClose']), precisions['price'])
-                    if price_FSL <= kline[KLINDEX_CLOSEPRICE]: 
-                        tradeHandler_checkList['FSLCLOSE'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
-                #<LONG>
-                elif 0 < position['quantity']:
-                    price_FSL = round(position['entryPrice']*(1-tcConfig['fullStopLossClose']), precisions['price'])
-                    if kline[KLINDEX_CLOSEPRICE] <= price_FSL: 
-                        tradeHandler_checkList['FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-            #LIQUIDATION
-            if position['liquidationPrice'] is not None:
-                #<SHORT>
-                if position['quantity'] < 0:
-                    if position['liquidationPrice'] <= kline[KLINDEX_HIGHPRICE]: 
-                        tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', position['liquidationPrice'], position['liquidationPrice']-kline[KLINDEX_OPENPRICE])
-                #<LONG>
-                elif 0 < position['quantity']:
-                    if kline[KLINDEX_LOWPRICE] <= position['liquidationPrice']: 
-                        tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', position['liquidationPrice'], kline[KLINDEX_OPENPRICE]-position['liquidationPrice'])
-
-        #[3]: Trade Handler Determination
-        if tradeHandler_checkList['LIQUIDATION'] is not None and tradeHandler_checkList['FSLIMMED'] is not None:
-            if tradeHandler_checkList['LIQUIDATION'][2] <= tradeHandler_checkList['FSLIMMED'][2]: tradeHandler = 'LIQUIDATION'
-            else:                                                                                 tradeHandler = 'FSLIMMED'
-        elif tradeHandler_checkList['LIQUIDATION'] is not None: tradeHandler = 'LIQUIDATION'
-        elif tradeHandler_checkList['FSLIMMED']    is not None: tradeHandler = 'FSLIMMED'
-        elif tradeHandler_checkList['FSLCLOSE']    is not None: tradeHandler = 'FSLCLOSE'
-        else:                                                   tradeHandler = None
-
-        #[4]: Trade Handlers Execution
-        if tradeHandler is None: 
-            return
-        thParams      = tradeHandler_checkList[tradeHandler]
-        quantity_prev = position['quantity']
-        #---[4-1]: FSLIMMED
-        if tradeHandler == 'FSLIMMED':
-            self.__processSimulatedTrade(positionSymbol = positionSymbol, 
-                                         logicSource    = 'FSLIMMED', 
-                                         side           = thParams[0], 
-                                         quantity       = abs(position['quantity']), 
-                                         timestamp      = timestamp, 
-                                         tradePrice     = thParams[1])
-            if   quantity_prev < 0: tcTracker['slExited'] = 'SHORT'
-            elif 0 < quantity_prev: tcTracker['slExited'] = 'LONG'
-        #---[4-2]: FSLCLOSE
-        elif tradeHandler == 'FSLCLOSE':
-            self.__processSimulatedTrade(positionSymbol = positionSymbol, 
-                                         logicSource    = 'FSLCLOSE', 
-                                         side           = thParams[0], 
-                                         quantity       = abs(position['quantity']), 
-                                         timestamp      = timestamp, 
-                                         tradePrice     = thParams[1])
-            if   quantity_prev < 0: tcTracker['slExited'] = 'SHORT'
-            elif 0 < quantity_prev: tcTracker['slExited'] = 'LONG'
-        #---[4-3]: LIQUIDATION
-        elif tradeHandler == 'LIQUIDATION': 
-            self.__processSimulatedTrade(positionSymbol = positionSymbol, 
-                                         logicSource    = 'LIQUIDATION', 
-                                         side           = None, 
-                                         quantity       = abs(position['quantity']), 
-                                         timestamp      = timestamp, 
-                                         tradePrice     = thParams[1]) 
-            if   quantity_prev < 0: tcTracker['slExited'] = 'SHORT'
-            elif 0 < quantity_prev: tcTracker['slExited'] = 'LONG'
-
-    def __handleAnalysisResult(self, positionSymbol, linearizedAnalysis, timestamp):
-        #[1]: Instances
-        position_def = self.__positions_def[positionSymbol]
-        position     = self.__positions[positionSymbol]
-        asset        = self.__assets[position_def['quoteAsset']]
-        tcConfig     = self.__tradeConfigurations[position_def['tradeConfigurationCode']]
-        tcTracker    = position['tradeControlTracker']
-        precisions   = position_def['precisions']
-
-        #[2]: Target Exposure Factor
-        try:
-            tef_dir, tef_val = teffunctions.TEFFUNCTIONS_GET_TEF[tcConfig['teff_functionType']](params             = tcConfig['teff_functionParams'],
-                                                                                                linearizedAnalysis = linearizedAnalysis,
-                                                                                                tcTracker_model    = tcTracker['teff_model'])
-        except Exception as e:
-            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An Unexpected Error Occurred While Attempting To Compute Target Exposure Factor In Simulation.\n"
-                                    f" * Simulation Code:   {self.__simulationCode}\n"
-                                    f" * TEF Function Type: {tcConfig['teff_functionType']}\n"
-                                    f" * Position Symbol:   {positionSymbol}\n"
-                                    f" * Timestamp:         {timestamp}\n"
-                                    f" * Error:             {e}\n"
-                                    f" * Detailed Trace:    {traceback.format_exc()}", 
-                                    'light_red'))
-            return
-        if (tef_dir not in (None, 'SHORT', 'LONG') or 
-            not isinstance(tef_val, (int, float))  or 
-            not (-1 <= tef_val <= 1)):
-            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An Unexpected TEF Result Detected. Direction Must Be None, 'SHORT' Or 'LONG', And The Value Must Be An Integer Or Float In Range [-1.0, 1.0].\n"
-                                    f" * Simulation Code:   {self.__simulationCode}\n"
-                                    f" * TEF Function Type: {tcConfig['teff_functionType']}\n"
-                                    f" * TEF Direction:     {tef_dir}\n"
-                                    f" * TEF Value:         {tef_val}\n"
-                                    f" * Position Symbol:   {positionSymbol}\n"
-                                    f" * Timestamp:         {timestamp}", 
-                                    'light_red'))
-            return
-
-        #[3]: SL Exit Flag
-        if tcTracker['slExited'] != tef_dir: 
-            tcTracker['slExited'] = None
-
-        #[4]: Trade Handlers Determination
-        tradeHandler_checkList = {'ENTRY': None,
-                                  'CLEAR': None,
-                                  'EXIT':  None}
-        #---[4-1]: CheckList 1: CLEAR
-        if   position['quantity'] < 0 and tef_dir != 'SHORT': tradeHandler_checkList['CLEAR'] = ('BUY',  position['currentPrice'])
-        elif 0 < position['quantity'] and tef_dir != 'LONG':  tradeHandler_checkList['CLEAR'] = ('SELL', position['currentPrice'])
-        #---[4-2]: CheckList 2: ENTRY & EXIT
-        pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
-        if tef_dir == 'SHORT':  
-            if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
-                tradeHandler_checkList['ENTRY'] = ('SELL', position['currentPrice'])
-            tradeHandler_checkList['EXIT'] = ('BUY', position['currentPrice'])
-        elif tef_dir == 'LONG':
-            if pslCheck and tcConfig['direction'] in ('BOTH', 'LONG'): 
-                tradeHandler_checkList['ENTRY'] = ('BUY', position['currentPrice'])
-            tradeHandler_checkList['EXIT'] = ('SELL', position['currentPrice'])
-        elif tef_dir is None:
-            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = ('BUY',  position['currentPrice'])
-            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = ('SELL', position['currentPrice'])
-
-        #[5]: Trade Handlers Determination
-        tradeHandlers = []
-        if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
-        if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
-        if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
-
-        #[6]: Trade Handlers Execution
-        for tradeHandler in tradeHandlers:
-            th_side, th_price = tradeHandler_checkList[tradeHandler]
-            #[6-1]: CLEAR
-            if tradeHandler == 'CLEAR': 
-                self.__processSimulatedTrade(positionSymbol = positionSymbol, 
-                                             logicSource    = 'CLEAR', 
-                                             side           = th_side, 
-                                             quantity       = abs(position['quantity']), 
-                                             timestamp      = timestamp, 
-                                             tradePrice     = th_price)
-            #[6-2]: ENTRY & EXIT
-            else:
-                balance_allocated = position['allocatedBalance'] or self.__allocateBalance(positionSymbol = positionSymbol, apply = False)
-                balance_committed = abs(position['quantity'])*position['entryPrice']/position_def['leverage'] if position['entryPrice'] is not None else 0
-                balance_toCommit  = balance_allocated*abs(tef_val)
-                balance_toEnter   = balance_toCommit-balance_committed
-                if balance_toEnter == 0: continue
-                #[6-2-1]: ENTRY
-                if tradeHandler == 'ENTRY':
-                    if not 0 < balance_toEnter: continue
-                    balance_toEnter_eff = min(balance_toEnter, asset['availableBalance'])
-                    if not 0 < balance_toEnter_eff: continue
-                    quantity_minUnit  = pow(10, -precisions['quantity'])
-                    quantity_toEnter  = round(int((balance_toEnter_eff/th_price*position_def['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
-                    if not 0 < quantity_toEnter: continue
-                    self.__allocateBalance(positionSymbol = positionSymbol, apply = True)
-                    self.__processSimulatedTrade(positionSymbol = positionSymbol, 
-                                                 logicSource    = 'ENTRY', 
-                                                 side           = th_side, 
-                                                 quantity       = quantity_toEnter, 
-                                                 timestamp      = timestamp, 
-                                                 tradePrice     = th_price)
-
-                #[6-2-2]: EXIT
-                elif tradeHandler == 'EXIT':
-                    if not balance_toEnter < 0: continue
-                    if tef_val == 0.0:
-                        quantity_toExit  = abs(position['quantity'])
-                    else:
-                        quantity_minUnit = pow(10, -precisions['quantity'])
-                        quantity_toExit  = round(int((-balance_toEnter/position['entryPrice']*position_def['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
-                    if not 0 < quantity_toExit: continue
-                    self.__processSimulatedTrade(positionSymbol = positionSymbol, 
-                                                 logicSource    = 'EXIT', 
-                                                 side           = th_side, 
-                                                 quantity       = quantity_toExit, 
-                                                 timestamp      = timestamp, 
-                                                 tradePrice     = th_price)
-    
-    def __processSimulatedTrade(self, positionSymbol, logicSource, side, quantity, timestamp, tradePrice):
-        #[1]: Instances
-        position_def = self.__positions_def[positionSymbol]
-        position     = self.__positions[positionSymbol]
-        precisions   = position_def['precisions']
-        asset        = self.__assets[position_def['quoteAsset']]
-
-        #[2]: Trade Processing
-        #---[2-1]: LIQUIDATION
-        if logicSource == 'LIQUIDATION':
-            #[2-1-1]: Quantity & Side Determination
-            quantity_prev = position['quantity']
-            quantity_abs  = abs(quantity_prev)
-            if   0 < quantity_prev: side = 'SELL'
-            elif quantity_prev < 0: side = 'BUY'
-            
-            #[2-1-2]: New Quantity & Entry Price
-            quantity_new   = 0
-            entryPrice_new = None
-            
-            #[2-1-3]: Profit, Trading Fee, and Clearance Fee
-            if quantity_prev != 0 and position['entryPrice'] is not None:
-                if   side == 'SELL': profit = round(quantity_abs*(tradePrice-position['entryPrice'])-position['maintenanceMargin'], precisions['quote'])
-                elif side == 'BUY':  profit = round(quantity_abs*(position['entryPrice']-tradePrice)-position['maintenanceMargin'], precisions['quote'])
-                tradingFee = round(quantity_abs*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
-            else:
-                profit     = 0
-                tradingFee = 0
-            netProfit = profit - tradingFee
-            
-            #[2-1-4]: Apply State Changes
-            if position_def['isolated']:
-                new_iwb = max(position['isolatedWalletBalance'] + netProfit, 0)
-                asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']-position['isolatedWalletBalance']+new_iwb, precisions['quote'])
-                asset['crossWalletBalance']            = round(asset['crossWalletBalance']+new_iwb, precisions['quote'])
-                position['isolatedWalletBalance']      = 0
-            else:
-                new_cwb = max(asset['crossWalletBalance'] + netProfit, 0)
-                asset['crossWalletBalance'] = round(new_cwb, precisions['quote'])
-            
-            #[2-1-5]: Reset Position State
-            position['quantity']   = 0
-            position['entryPrice'] = None
-
-        #---[2-2]: General Trading
-        else:
-            #[2-2-1]: Compute Values
-            #---Quantity
-            if   side == 'BUY':  quantity_new = round(position['quantity']+quantity, precisions['quantity'])
-            elif side == 'SELL': quantity_new = round(position['quantity']-quantity, precisions['quantity'])
-            quantity_dirDelta = round(abs(quantity_new)-abs(position['quantity']), precisions['quantity'])
-
-            #---Cost, Profit & Entry Price
-            if 0 < quantity_dirDelta:
-                if position['quantity'] == 0: notional_prev = 0
-                else:                         notional_prev = abs(position['quantity'])*position['entryPrice']
-                notional_new = notional_prev+quantity_dirDelta*tradePrice
-                entryPrice_new = round(notional_new/abs(quantity_new), precisions['price'])
-                profit = 0
-            elif quantity_dirDelta < 0:
-                if quantity_new == 0: entryPrice_new = None
-                else:                 entryPrice_new = position['entryPrice']
-                if   side == 'BUY':  profit = round(quantity*(position['entryPrice']-tradePrice), precisions['quote'])
-                elif side == 'SELL': profit = round(quantity*(tradePrice-position['entryPrice']), precisions['quote'])
-
-            #---Trading Fee
-            tradingFee = round(quantity*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
-            
-            #[2-2-2]: Apply Values
-            #---Realized PnL & Trading Fee → Cross Wallet
-            asset['crossWalletBalance'] = round(asset['crossWalletBalance']+profit-tradingFee, precisions['quote'])
-            
-            #---Isolated Mode: Cross ↔ Isolated Wallet Transfer
-            if position_def['isolated']:
-                if 0 < quantity_dirDelta:   # Entry: cross → isolated
-                    wb_transfer = round(quantity*tradePrice*((1/position_def['leverage'])+_MARKETOPENLOSSRATE), precisions['quote'])
-                elif quantity_dirDelta < 0: # Exit: isolated → cross
-                    if quantity_new == 0: wb_transfer = -position['isolatedWalletBalance']
-                    else:                 wb_transfer = -round(quantity*position['entryPrice']/position_def['leverage'], precisions['quote'])
-                position['isolatedWalletBalance'] = round(position['isolatedWalletBalance']+wb_transfer, precisions['quote'])
-                asset['crossWalletBalance']       = round(asset['crossWalletBalance']      -wb_transfer, precisions['quote'])
-                asset['isolatedWalletBalance']    = round(asset['isolatedWalletBalance']   +wb_transfer, precisions['quote'])
-            
-            #---Update Position State
-            position['quantity']   = quantity_new
-            position['entryPrice'] = entryPrice_new
-
-        #[3]: Allocated Balance Release
-        if position['quantity'] == 0 and 0 < position['allocatedBalance']:
-            self.__releaseAllocatedBalance(positionSymbol = positionSymbol)
-
-        #[4]: Update Account
-        self.__updateAccount(timestamp = timestamp)
-
-        #[5]: Save Trade Log
-        tradeLog = {'timestamp':           timestamp, 
-                    'positionSymbol':      positionSymbol,
-                    'logicSource':         logicSource,
-                    'side':                side,
-                    'quantity':            quantity,
-                    'price':               tradePrice,
-                    'profit':              profit,
-                    'tradingFee':          tradingFee,
-                    'totalQuantity':       quantity_new,
-                    'entryPrice':          entryPrice_new,
-                    'walletBalance':       asset['walletBalance'],
-                    'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
-        self.__tradeLogs.append(tradeLog)
-
-        #[6]: Update Daily Report
-        pReport_TS = self.__formatPeriodicReport(timestamp = timestamp)
-        pReport    = self.__periodicReports[pReport_TS][position_def['quoteAsset']]
-        pReport['nTrades'] += 1
-        if   side == 'BUY':                pReport['nTrades_buy']         += 1
-        elif side == 'SELL':               pReport['nTrades_sell']        += 1
-        if   logicSource == 'ENTRY':       pReport['nTrades_entry']       += 1
-        elif logicSource == 'CLEAR':       pReport['nTrades_clear']       += 1
-        elif logicSource == 'EXIT':        pReport['nTrades_exit']        += 1
-        elif logicSource == 'FSLIMMED':    pReport['nTrades_fslImmed']    += 1
-        elif logicSource == 'FSLCLOSE':    pReport['nTrades_fslClose']    += 1
-        elif logicSource == 'LIQUIDATION': pReport['nTrades_liquidation'] += 1
-        if   0 < profit: pReport['nTrades_gain'] += 1
-        elif profit < 0: pReport['nTrades_loss'] += 1
-        wb = asset['walletBalance']
-        pReport['walletBalance_min']   = min(pReport['walletBalance_min'], wb)
-        pReport['walletBalance_max']   = max(pReport['walletBalance_max'], wb)
-        pReport['walletBalance_close'] = wb
-    
     def __generateSimulationSummary(self):
         #[1]: Instances
         positions_def = self.__positions_def
@@ -1647,7 +1647,7 @@ class Simulation:
             
         #[4]: Return The Generated Simulation Summary
         return simulationSummary
-    
+
     def __exportAnalysis(self):
         #[1]: Analysis Export Check
         aExport = self.__analysisExport
@@ -1706,4 +1706,395 @@ class Simulation:
                        arr  = data_numpy)
             with open(path_descriptor, 'w') as f: 
                 f.write(json.dumps(descriptor, indent = 4))
-    #Simulation Process END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+    #---L2: Sub-Functions
+    def __orderCreationRequest_generate(self, symbol, logicSource, orderType, side, quantity, price, tcTrackerUpdate = None):
+        #[1]: Instances
+        position     = self.__positions[symbol]
+        position_def = self.__positions_def[symbol]
+        precisions   = position_def['precisions']
+        
+        #[2]: OCR Generation
+        if   side == 'BUY':  targetQuantity = round(position['quantity']+quantity, precisions['quantity'])
+        elif side == 'SELL': targetQuantity = round(position['quantity']-quantity, precisions['quantity'])
+        ocr = {'logicSource':      logicSource,
+               'originalQuantity': position['quantity'],
+               'targetQuantity':   targetQuantity,
+               'orderParams':      {'symbol':     symbol,
+                                    'side':       side,
+                                    'type':       orderType,
+                                    'recompare':  (logicSource == 'FSLIMMED'),
+                                    'quantity':   quantity,
+                                    'price':      price},
+               'tcTrackerUpdate':  tcTrackerUpdate,
+               'orderCode':        None,
+               'result':           None}
+        position['_orderCreationRequest'] = ocr
+
+        #[3]: Request Dispatch
+        ocr['orderCode'] = self.__submitOrder(orderParams = ocr['orderParams'].copy())
+        
+        #[4]: Finally
+        return True
+
+    def __orderCreationRequest_terminate(self, symbol):
+        #[1]: Instances
+        position = self.__positions[symbol]
+        ocr      = position['_orderCreationRequest']
+
+        #[2]: Trade Control Tracker Update
+        if ocr['tcTrackerUpdate'] is not None:
+            auxiliaries_trade.updateTradeControlTracker(position                  = position,
+                                                        tradeControlTrackerUpdate = ocr['tcTrackerUpdate'], 
+                                                        updateMode                = 'onComplete')
+            
+        #[3]: OCR Initialization
+        position['_orderCreationRequest'] = None
+        
+    def __submitOrder(self, orderParams):
+        #[1]: Instances
+        orders = self.__orders
+
+        #[2]: Order Generation
+        symbol = orderParams['symbol']
+        oCode = (symbol, time.perf_counter_ns())
+        order = {'symbol':    symbol,
+                 'side':      orderParams['side'],
+                 'orderType': orderParams['type'],
+                 'quantity':  orderParams['quantity'],
+                 'price':     orderParams['price'],
+                 'recompare': orderParams['recompare']}
+        orders[oCode] = order
+
+        #[3]: Return Order Number
+        return oCode
+    
+    def __removeOrder(self, orderCode):
+        #[1]: Instances
+        orders = self.__orders
+
+        #[2]: Existence Check
+        if orderCode not in orders:
+            return False
+
+        #[3]: Order Cancellation
+        del orders[orderCode]
+
+        #[4]: Result Return 
+        return True
+
+    def __processTrade(self, timestamp, symbol, side, orderType, quantity, price):
+        #[1]: Instances
+        position_def = self.__positions_def[symbol]
+        position     = self.__positions[symbol]
+        precisions   = position_def['precisions']
+        asset        = self.__assets[position_def['quoteAsset']]
+        ocr          = position['_orderCreationRequest']
+
+        #[2]: Compute New Values
+        #---[2-1]: Quantity
+        if   side == 'BUY':  quantity_new = round(position['quantity']+quantity, precisions['quantity'])
+        elif side == 'SELL': quantity_new = round(position['quantity']-quantity, precisions['quantity'])
+        quantity_dirDelta = round(abs(quantity_new)-abs(position['quantity']), precisions['quantity'])
+        #---[2-2]: Cost, Profit & Entry Price
+        if 0 < quantity_dirDelta:
+            if position['quantity'] == 0: notional_prev = 0
+            else:                         notional_prev = abs(position['quantity'])*position['entryPrice']
+            notional_new = notional_prev+quantity_dirDelta*price
+            entryPrice_new = round(notional_new/abs(quantity_new), precisions['price'])
+            profit = 0
+        elif quantity_dirDelta < 0:
+            if quantity_new == 0: entryPrice_new = None
+            else:                 entryPrice_new = position['entryPrice']
+            if   side == 'BUY':  profit = round(quantity*(position['entryPrice']-price), precisions['quote'])
+            elif side == 'SELL': profit = round(quantity*(price-position['entryPrice']), precisions['quote'])
+        #---[2-3]: Trading Fee
+        tradingFee = round(quantity*price*_TRADINGFEE[position_def['contractType']][orderType][position_def['quoteAsset']], precisions['quote'])
+        
+        #[3]: Apply New Values
+        #---[3-1]: Realized PnL & Trading Fee → Cross Wallet
+        asset['crossWalletBalance'] = round(asset['crossWalletBalance']+profit-tradingFee, precisions['quote'])
+        #---[3-2]: Isolated Mode: Cross ↔ Isolated Wallet Transfer
+        if position_def['isolated']:
+            if 0 < quantity_dirDelta:   # Entry: cross → isolated
+                wb_transfer = round(quantity*price*((1/position_def['leverage'])+_MARKETOPENLOSSRATE), precisions['quote'])
+            elif quantity_dirDelta < 0: # Exit: isolated → cross
+                if quantity_new == 0: wb_transfer = -position['isolatedWalletBalance']
+                else:                 wb_transfer = -round(quantity*position['entryPrice']/position_def['leverage'], precisions['quote'])
+            position['isolatedWalletBalance'] = round(position['isolatedWalletBalance']+wb_transfer, precisions['quote'])
+            asset['crossWalletBalance']       = round(asset['crossWalletBalance']      -wb_transfer, precisions['quote'])
+            asset['isolatedWalletBalance']    = round(asset['isolatedWalletBalance']   +wb_transfer, precisions['quote'])
+        #---[3-3]: Position Status
+        position['_quantity_new']   = quantity_new
+        position['_entryPrice_new'] = entryPrice_new
+
+        #[3]: Order Result Update
+        ocr['result'] = {'timestamp':     timestamp,
+                         'side':          side,
+                         'orderType':     orderType,
+                         'price':         price,
+                         'quantity':      quantity,
+                         'profit':        profit,
+                         'tradingFee':    tradingFee,
+                         'walletBalance': asset['crossWalletBalance']+asset['isolatedWalletBalance']}
+
+    def __liquidatePosition(self, timestamp, symbol):
+        #[1]: Instances
+        position_def = self.__positions_def[symbol]
+        position     = self.__positions[symbol]
+        precisions   = position_def['precisions']
+        asset        = self.__assets[position_def['quoteAsset']]
+        price_liq    = position['liquidationPrice']
+
+        #[2]: Quantity & Side Determination
+        quantity_prev = position['quantity']
+        quantity_abs  = abs(quantity_prev)
+        if   0 < quantity_prev: side = 'SELL'
+        elif quantity_prev < 0: side = 'BUY'
+        
+        #[3]: Profit, Trading Fee, and Clearance Fee
+        if   side == 'SELL': profit = round(quantity_abs*(price_liq-position['entryPrice'])-position['maintenanceMargin'], precisions['quote'])
+        elif side == 'BUY':  profit = round(quantity_abs*(position['entryPrice']-price_liq)-position['maintenanceMargin'], precisions['quote'])
+        tradingFee = round(quantity_abs*price_liq*_TRADINGFEE[position_def['contractType']]['MARKET']['DEFAULT'], precisions['quote'])
+        netProfit = profit - tradingFee
+        
+        #[4]: Apply State Changes
+        if position_def['isolated']:
+            new_iwb = max(position['isolatedWalletBalance'] + netProfit, 0)
+            asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']-position['isolatedWalletBalance']+new_iwb, precisions['quote'])
+            asset['crossWalletBalance']            = round(asset['crossWalletBalance']+new_iwb, precisions['quote'])
+            position['isolatedWalletBalance']      = 0
+        else:
+            new_cwb = max(asset['crossWalletBalance'] + netProfit, 0)
+            asset['crossWalletBalance'] = round(new_cwb, precisions['quote'])
+        
+        #[5]: Reset Position State
+        position['_quantity_new']   = 0
+        position['_entryPrice_new'] = None
+        position['_liquidationReport'] = {'timestamp':     timestamp,
+                                          'side':          side,
+                                          'price':         price_liq,
+                                          'quantity':      quantity_abs,
+                                          'profit':        profit,
+                                          'tradingFee':    tradingFee,
+                                          'walletBalance': asset['crossWalletBalance']+asset['isolatedWalletBalance']}
+
+    def __checkTrade(self, symbol, quantity_new, entryPrice_new):
+        #[1]: Instances
+        position     = self.__positions[symbol]
+        position_def = self.__positions_def[symbol]
+        ocr          = position['_orderCreationRequest']
+
+        #[2]: OCR Handling
+        if ocr is not None:
+            #[2-1]: OCR Values
+            ocr_result = ocr['result']
+            if not ocr_result:
+                return
+
+            #[2-2]: Save Trade Log
+            self.__saveTradeLog(timestamp           = ocr_result['timestamp'],
+                                symbol              = symbol,
+                                logicSource         = ocr['logicSource'],
+                                side                = ocr_result['side'],
+                                quantity            = ocr_result['quantity'],
+                                price               = ocr_result['price'],
+                                profit              = ocr_result['profit'],
+                                tradingFee          = ocr_result['tradingFee'],
+                                quantity_new        = quantity_new,
+                                entryPrice_new      = entryPrice_new,
+                                walletBalance       = ocr_result['walletBalance'],
+                                tradeControlTracker = auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker']))
+            
+            #[2-3]: Update Periodic Report
+            self.__updatePeriodicReport_onTrade(timestamp     = ocr_result['timestamp'],
+                                                quoteAsset    = position_def['quoteAsset'],
+                                                side          = ocr_result['side'],
+                                                logicSource   = ocr['logicSource'],
+                                                profit        = ocr_result['profit'],
+                                                walletBalance = ocr_result['walletBalance'])
+
+            #[2-4]: OCR Termination
+            self.__orderCreationRequest_terminate(symbol = symbol)
+
+    def __readLiquidationReport(self, symbol):
+        #[1]: Instances
+        position     = self.__positions[symbol]
+        position_def = self.__positions_def[symbol]
+        liqReport    = position['_liquidationReport']
+
+        #[2]: Report Check
+        if liqReport is None:
+            return False
+        
+        #[3]: Save Trade Log
+        self.__saveTradeLog(timestamp           = liqReport['timestamp'],
+                            symbol              = symbol,
+                            logicSource         = 'LIQUIDATION',
+                            side                = liqReport['side'],
+                            quantity            = liqReport['quantity'],
+                            price               = liqReport['price'],
+                            profit              = liqReport['profit'],
+                            tradingFee          = liqReport['tradingFee'],
+                            quantity_new        = 0,
+                            entryPrice_new      = None,
+                            walletBalance       = liqReport['walletBalance'],
+                            tradeControlTracker = auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker']))
+
+        #[4]: Update Periodic Report
+        self.__updatePeriodicReport_onTrade(timestamp     = liqReport['timestamp'],
+                                            quoteAsset    = position_def['quoteAsset'],
+                                            side          = liqReport['side'],
+                                            logicSource   = 'LIQUIDATION',
+                                            profit        = liqReport['profit'],
+                                            walletBalance = liqReport['walletBalance'])
+
+        #[5]: Order Canceling
+        ocr = position['_orderCreationRequest']
+        if ocr is not None and ocr['result'] is None:
+            self.__removeOrder(orderCode = ocr['orderCode'])
+            position['_orderCreationRequest'] = None
+
+        #[6]: Trade Hanlders & Trade Control Tracker Clearing
+        position['_tradeHandlers'].clear()
+        position['tradeControlTracker'] = auxiliaries_trade.getInitializedTradeControlTracker()
+
+        #[7]: Report Clearing
+        position['_liquidationReport'] = None
+
+        #[8]: Return True To Indicate Liquidation Report Read
+        return True
+
+
+
+    #---LX: General Functions
+    def __allocateBalance(self, symbol, apply):
+        #[1]: Instances
+        position     = self.__positions[symbol]
+        position_def = self.__positions_def[symbol]
+        asset        = self.__assets[position_def['quoteAsset']]
+        qPrecision   = position_def['precisions']['quote']
+
+        #[2]: Position Check
+        if 0 < position['allocatedBalance']:
+            return position['allocatedBalance']
+
+        #[3]: Balance Allocation
+        allocatable_balance_remaining = asset['allocatableBalance']-asset['allocatedBalance']
+        allocated_balance_expected    = asset['allocatableBalance']*position_def['assumedRatio']
+        allocated_balance_maximum     = position_def['maxAllocatedBalance']
+        allocated_balance = round(max(0.0, min(allocatable_balance_remaining, allocated_balance_expected, allocated_balance_maximum)), qPrecision)
+        
+        #[4]: Apply
+        if apply:
+            asset['allocatedBalance']    = round(asset['allocatedBalance'] + allocated_balance, qPrecision)
+            position['allocatedBalance'] = allocated_balance
+
+        #[5]: Return Allocated Balance
+        return allocated_balance
+
+    def __releaseAllocatedBalance(self, symbol):
+        #[1]: Instances
+        position     = self.__positions[symbol]
+        position_def = self.__positions_def[symbol]
+        asset        = self.__assets[position_def['quoteAsset']]
+        qPrecision   = position_def['precisions']['quote']
+
+        #[2]: Allocated Balance Release
+        asset['allocatedBalance']    = round(asset['allocatedBalance'] - position['allocatedBalance'], qPrecision)
+        position['allocatedBalance'] = 0
+        
+    def __formatPeriodicReport(self, timestamp):
+        #[1]: Instances
+        assets   = self.__assets
+        pReports = self.__periodicReports
+        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+
+        #[2]: Report Timestamp Check
+        prTS = func_gnitt(intervalID = PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = 0)
+        if prTS in pReports: return prTS
+
+        #[3]: Previous Report
+        prTS_prev = func_gnitt(intervalID = PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = -1)
+        prs_prev  = pReports.get(prTS_prev, None)
+
+        #[4]: New Report Formatting
+        pReport = dict()
+        for assetName, asset in assets.items():
+            #[4-1]: Current Values
+            mb = asset['marginBalance']
+            wb = asset['walletBalance']
+            cr = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
+            rl = 0 if asset['riskLevel']      is None else asset['riskLevel']
+            #[4-2]: Previous Values
+            if prs_prev is not None:
+                pr_prev = prs_prev[assetName]
+                mb_open = pr_prev['marginBalance_close']
+                wb_open = pr_prev['walletBalance_close']
+                cr_open = pr_prev['commitmentRate_close']
+                rl_open = pr_prev['riskLevel_close']
+            else:
+                mb_open = mb
+                wb_open = wb
+                cr_open = cr
+                rl_open = rl
+            #[4-3]: Formatting
+            pReport[assetName] = {'nTrades':             0,
+                                  'nTrades_buy':         0,
+                                  'nTrades_sell':        0,
+                                  'nTrades_entry':       0,
+                                  'nTrades_clear':       0,
+                                  'nTrades_exit':        0,
+                                  'nTrades_fslImmed':    0,
+                                  'nTrades_fslClose':    0,
+                                  'nTrades_liquidation': 0,
+                                  'nTrades_forceClear':  0,
+                                  'nTrades_unknown':     0,
+                                  'nTrades_gain':        0,
+                                  'nTrades_loss':        0,
+                                  'marginBalance_open':  mb_open, 'marginBalance_min':  mb, 'marginBalance_max':  mb, 'marginBalance_close':  mb,
+                                  'walletBalance_open':  wb_open, 'walletBalance_min':  wb, 'walletBalance_max':  wb, 'walletBalance_close':  wb,
+                                  'commitmentRate_open': cr_open, 'commitmentRate_min': cr, 'commitmentRate_max': cr, 'commitmentRate_close': cr,
+                                  'riskLevel_open':      rl_open, 'riskLevel_min':      rl, 'riskLevel_max':      rl, 'riskLevel_close':      rl,
+                                  '_intervalID': PERIODICREPORT_INTERVALID}
+        pReports[prTS] = pReport
+
+        #[5]: Return Periodic Report Timestamp
+        return prTS
+
+    def __saveTradeLog(self, timestamp, symbol, logicSource, side, quantity, price, profit, tradingFee, quantity_new, entryPrice_new, walletBalance, tradeControlTracker):
+        tradeLog = {'timestamp':           timestamp, 
+                    'positionSymbol':      symbol,
+                    'logicSource':         logicSource,
+                    'side':                side,
+                    'quantity':            quantity,
+                    'price':               price,
+                    'profit':              profit,
+                    'tradingFee':          tradingFee,
+                    'totalQuantity':       quantity_new,
+                    'entryPrice':          entryPrice_new,
+                    'walletBalance':       walletBalance,
+                    'tradeControlTracker': tradeControlTracker}
+        self.__tradeLogs.append(tradeLog)
+
+    def __updatePeriodicReport_onTrade(self, timestamp, quoteAsset, side, logicSource, profit, walletBalance):
+        pReport_TS = self.__formatPeriodicReport(timestamp = timestamp)
+        pReport    = self.__periodicReports[pReport_TS][quoteAsset]
+        pReport['nTrades'] += 1
+        if   side == 'BUY':                pReport['nTrades_buy']         += 1
+        elif side == 'SELL':               pReport['nTrades_sell']        += 1
+        if   logicSource == 'ENTRY':       pReport['nTrades_entry']       += 1
+        elif logicSource == 'CLEAR':       pReport['nTrades_clear']       += 1
+        elif logicSource == 'EXIT':        pReport['nTrades_exit']        += 1
+        elif logicSource == 'FSLIMMED':    pReport['nTrades_fslImmed']    += 1
+        elif logicSource == 'FSLCLOSE':    pReport['nTrades_fslClose']    += 1
+        elif logicSource == 'LIQUIDATION': pReport['nTrades_liquidation'] += 1
+        if   0 < profit: pReport['nTrades_gain'] += 1
+        elif profit < 0: pReport['nTrades_loss'] += 1
+        wb = walletBalance
+        pReport['walletBalance_min']   = min(pReport['walletBalance_min'], wb)
+        pReport['walletBalance_max']   = max(pReport['walletBalance_max'], wb)
+        pReport['walletBalance_close'] = wb
+#Simulation Process END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
