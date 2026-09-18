@@ -1021,6 +1021,7 @@ def pg_simulation_result_configure_subpage_setup(subpage, fn_get_text_pack):
 
 def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis_configuration, simulation_selected, fn_get_text_pack):
     if simulation_selected:
+        mainPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status = analysis_configuration['NNA_Master'], callStatusUpdateFunction = False)
         for lIdx in range (NMAXLINES):
             lineActive = analysis_configuration.get(f'NNA_{lIdx}_LineActive', False)
             if lineActive: 

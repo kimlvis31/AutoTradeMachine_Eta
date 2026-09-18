@@ -1109,7 +1109,7 @@ def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
     #[2]: Configuration Construction
     configuration['MMACD_Master'] = mainPage.GUIOs["INDICATORMASTERSWITCH_MMACD"].getStatus()
     configuration['MMACD_SignalNSamples'] = int(subPage.GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].getText())
-    for lineIndex in range (constants.NLINES_MMACD):
+    for lineIndex in range (NMAXLINES):
         configuration[f'MMACD_MA{lineIndex}_LineActive'] = subPage.GUIOs[f"MA{lineIndex}_LINE"].getStatus()
         configuration[f'MMACD_MA{lineIndex}_NSamples']   = int(subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].getText())
 
@@ -1184,7 +1184,7 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
         #MMACD
         signalNSamples = analysis_configuration['MMACD_SignalNSamples']
         subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = f"{signalNSamples}")
-        for lIdx in range (constants.NLINES_MMACD):
+        for lIdx in range (NMAXLINES):
             lineActive = analysis_configuration.get(f'MMACD_MA{lIdx}_LineActive', False)
             if lineActive: nSamples_str = f"{analysis_configuration[f'MMACD_MA{lIdx}_NSamples']}"
             else:          nSamples_str = "-"
@@ -1196,7 +1196,7 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
         
         #MMACD
         subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
-        for lIdx in range (constants.NLINES_MMACD):
+        for lIdx in range (NMAXLINES):
             subPage.GUIOs[f"MA{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
             subPage.GUIOs[f"MA{lIdx}_NSAMPLES"].updateText(text = "-")
 #SIMULATION RESULTS PAGE FUNCTIONS END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -1067,7 +1067,7 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
         mainPage.GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status = analysis_configuration['TPD_Master'], callStatusUpdateFunction = False)
         
         #TPD
-        for lIdx in range (constants.NLINES_TPD):
+        for lIdx in range (NMAXLINES):
             lineActive = analysis_configuration.get(f'TPD_{lIdx}_LineActive', False)
             if lineActive: 
                 viewLength_str = f"{analysis_configuration[f'TPD_{lIdx}_ViewLength']}"
@@ -1086,7 +1086,7 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
         mainPage.GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = False, callStatusUpdateFunction = False)
         
         #TPD
-        for lIdx in range (constants.NLINES_TPD):
+        for lIdx in range (NMAXLINES):
             subPage.GUIOs[f"TPD_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
             subPage.GUIOs[f"TPD_{lIdx}_VIEWLENGTH"].updateText(text = "-")
             subPage.GUIOs[f"TPD_{lIdx}_NSAMPLES"].updateText(text   = "-")
