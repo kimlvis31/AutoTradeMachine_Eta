@@ -224,11 +224,15 @@ class CurrencyAnalysis:
         for cac_iID in cac_all.values():
             if not cac_iID['NNA_Master']:
                 continue
-            for lIdx in range (constants.NLINES_NNA):
-                lActive = cac_iID.get(f'NNA_{lIdx}_LineActive', False)
-                if not lActive: continue
-                nnCode = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
-                nns[nnCode] = None
+            lIdx   = 0
+            laCode = f'NNA_{lIdx}_LineActive'
+            while laCode in cac_iID:
+                if cac_iID[laCode]:
+                    nnCode = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
+                    nns[nnCode] = None
+                lIdx += 1
+                laCode = f'NNA_{lIdx}_LineActive'
+                
         if nns and self.__status != STATUS_ERROR:
             for nnCode in nns:
                 rID = func_sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
@@ -288,9 +292,9 @@ class CurrencyAnalysis:
             self.__updateStatus(status = STATUS_ERROR)
             return
         nn = neural_networks.neuralNetwork_MLP(nKlines      = nKlines, 
-                                                     hiddenLayers = hiddenLayers, 
-                                                     outputLayer  = outputLayer, 
-                                                     device       = 'cpu')
+                                               hiddenLayers = hiddenLayers, 
+                                               outputLayer  = outputLayer, 
+                                               device       = 'cpu')
         nn.importConnectionsData(connections = connections)
         nn.setEvaluationMode()
         nns[neuralNetworkCode] = nn
