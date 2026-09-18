@@ -26,61 +26,75 @@ from datetime import datetime, timezone, tzinfo, timedelta
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 
-#Constants
-KLINDEX_OPENTIME         =  0
-KLINDEX_CLOSETIME        =  1
-KLINDEX_OPENPRICE        =  2
-KLINDEX_HIGHPRICE        =  3
-KLINDEX_LOWPRICE         =  4
-KLINDEX_CLOSEPRICE       =  5
-KLINDEX_NTRADES          =  6
-KLINDEX_VOLBASE          =  7
-KLINDEX_VOLQUOTE         =  8
-KLINDEX_VOLBASETAKERBUY  =  9
-KLINDEX_VOLQUOTETAKERBUY = 10
-KLINDEX_CLOSED           = 11
-KLINDEX_SOURCE           = 12
-
-DEPTHINDEX_OPENTIME  = 0
-DEPTHINDEX_CLOSETIME = 1
-DEPTHINDEX_BIDS5     = 2
-DEPTHINDEX_BIDS4     = 3 
-DEPTHINDEX_BIDS3     = 4
-DEPTHINDEX_BIDS2     = 5 
-DEPTHINDEX_BIDS1     = 6 
-DEPTHINDEX_BIDS0     = 7 
-DEPTHINDEX_ASKS0     = 8 
-DEPTHINDEX_ASKS1     = 9 
-DEPTHINDEX_ASKS2     = 10 
-DEPTHINDEX_ASKS3     = 11
-DEPTHINDEX_ASKS4     = 12
-DEPTHINDEX_ASKS5     = 13
-DEPTHINDEX_CLOSED    = 14
-DEPTHINDEX_SOURCE    = 15
-
-ATINDEX_OPENTIME     = 0
-ATINDEX_CLOSETIME    = 1
-ATINDEX_QUANTITYBUY  = 2
-ATINDEX_QUANTITYSELL = 3
-ATINDEX_NTRADESBUY   = 4
-ATINDEX_NTRADESSELL  = 5
-ATINDEX_NOTIONALBUY  = 6
-ATINDEX_NOTIONALSELL = 7
-ATINDEX_CLOSED       = 8
-ATINDEX_SOURCE       = 9
-
-METRICINDEX_OPENTIME          = 0
-METRICINDEX_CLOSETIME         = 1
-METRICINDEX_OPENINTEREST      = 2
-METRICINDEX_OPENINTERESTVALUE = 3
-METRICINDEX_LONGSHORTRATIO    = 4
-METRICINDEX_CLOSED            = 5
-METRICINDEX_SOURCE            = 6
+#External Constants
+FORMATTEDDATATYPE_FETCHED    = constants.FORMATTEDDATATYPE_FETCHED
+FORMATTEDDATATYPE_EMPTY      = constants.FORMATTEDDATATYPE_EMPTY
+FORMATTEDDATATYPE_DUMMY      = constants.FORMATTEDDATATYPE_DUMMY
+FORMATTEDDATATYPE_STREAMED   = constants.FORMATTEDDATATYPE_STREAMED
+FORMATTEDDATATYPE_INCOMPLETE = constants.FORMATTEDDATATYPE_INCOMPLETE
+KLINTERVAL                = constants.KLINTERVAL
+KLINTERVAL_CLIENT         = constants.KLINTERVAL_CLIENT
+KLINTERVAL_STREAM         = constants.KLINTERVAL_STREAM
+KLINTERVAL_S              = constants.KLINTERVAL_S
+KLINTERVAL_METRICS        = constants.KLINTERVAL_METRICS
+KLINTERVAL_METRICS_CLIENT = constants.KLINTERVAL_METRICS_CLIENT
+KLINTERVAL_METRICS_STREAM = constants.KLINTERVAL_METRICS_STREAM
+KLINTERVAL_METRICS_S      = constants.KLINTERVAL_METRICS_S
+KLINDEX_OPENTIME              = constants.KLINDEX_OPENTIME
+KLINDEX_CLOSETIME             = constants.KLINDEX_CLOSETIME
+KLINDEX_OPENPRICE             = constants.KLINDEX_OPENPRICE
+KLINDEX_HIGHPRICE             = constants.KLINDEX_HIGHPRICE
+KLINDEX_LOWPRICE              = constants.KLINDEX_LOWPRICE
+KLINDEX_CLOSEPRICE            = constants.KLINDEX_CLOSEPRICE
+KLINDEX_NTRADES               = constants.KLINDEX_NTRADES
+KLINDEX_VOLBASE               = constants.KLINDEX_VOLBASE
+KLINDEX_VOLQUOTE              = constants.KLINDEX_VOLQUOTE
+KLINDEX_VOLBASETAKERBUY       = constants.KLINDEX_VOLBASETAKERBUY
+KLINDEX_VOLQUOTETAKERBUY      = constants.KLINDEX_VOLQUOTETAKERBUY
+KLINDEX_CLOSED                = constants.KLINDEX_CLOSED
+KLINDEX_SOURCE                = constants.KLINDEX_SOURCE
+DEPTHINDEX_OPENTIME           = constants.DEPTHINDEX_OPENTIME
+DEPTHINDEX_CLOSETIME          = constants.DEPTHINDEX_CLOSETIME
+DEPTHINDEX_BIDS5              = constants.DEPTHINDEX_BIDS5
+DEPTHINDEX_BIDS4              = constants.DEPTHINDEX_BIDS4
+DEPTHINDEX_BIDS3              = constants.DEPTHINDEX_BIDS3
+DEPTHINDEX_BIDS2              = constants.DEPTHINDEX_BIDS2
+DEPTHINDEX_BIDS1              = constants.DEPTHINDEX_BIDS1
+DEPTHINDEX_BIDS0              = constants.DEPTHINDEX_BIDS0
+DEPTHINDEX_ASKS0              = constants.DEPTHINDEX_ASKS0
+DEPTHINDEX_ASKS1              = constants.DEPTHINDEX_ASKS1
+DEPTHINDEX_ASKS2              = constants.DEPTHINDEX_ASKS2
+DEPTHINDEX_ASKS3              = constants.DEPTHINDEX_ASKS3
+DEPTHINDEX_ASKS4              = constants.DEPTHINDEX_ASKS4
+DEPTHINDEX_ASKS5              = constants.DEPTHINDEX_ASKS5
+DEPTHINDEX_CLOSED             = constants.DEPTHINDEX_CLOSED
+DEPTHINDEX_SOURCE             = constants.DEPTHINDEX_SOURCE
+ATINDEX_OPENTIME              = constants.ATINDEX_OPENTIME
+ATINDEX_CLOSETIME             = constants.ATINDEX_CLOSETIME
+ATINDEX_QUANTITYBUY           = constants.ATINDEX_QUANTITYBUY
+ATINDEX_QUANTITYSELL          = constants.ATINDEX_QUANTITYSELL
+ATINDEX_NTRADESBUY            = constants.ATINDEX_NTRADESBUY
+ATINDEX_NTRADESSELL           = constants.ATINDEX_NTRADESSELL
+ATINDEX_NOTIONALBUY           = constants.ATINDEX_NOTIONALBUY
+ATINDEX_NOTIONALSELL          = constants.ATINDEX_NOTIONALSELL
+ATINDEX_CLOSED                = constants.ATINDEX_CLOSED
+ATINDEX_SOURCE                = constants.ATINDEX_SOURCE
+METRICINDEX_OPENTIME          = constants.METRICINDEX_OPENTIME
+METRICINDEX_CLOSETIME         = constants.METRICINDEX_CLOSETIME
+METRICINDEX_OPENINTEREST      = constants.METRICINDEX_OPENINTEREST
+METRICINDEX_OPENINTERESTVALUE = constants.METRICINDEX_OPENINTERESTVALUE
+METRICINDEX_LONGSHORTRATIO    = constants.METRICINDEX_LONGSHORTRATIO
+METRICINDEX_CLOSED            = constants.METRICINDEX_CLOSED
+METRICINDEX_SOURCE            = constants.METRICINDEX_SOURCE
 
 DEPTHBINS                = constants.DEPTHBINS
-DEPTHBINS_BID_THRESHOLDS = {dIdx: -DEPTHBINS[dIdx][0] / 100 for dIdx in (DEPTHINDEX_BIDS0, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS5)}
-DEPTHBINS_ASK_THRESHOLDS = {dIdx:  DEPTHBINS[dIdx][1] / 100 for dIdx in (DEPTHINDEX_ASKS0, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS5)}
+DEPTHBINS_BID_THRESHOLDS = constants.DEPTHBINS_BID_THRESHOLDS
+DEPTHBINS_ASK_THRESHOLDS = constants.DEPTHBINS_ASK_THRESHOLDS
 
+_IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
+_IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
+
+#Internal Constants
 _CONNECTIONSCHECKINTERVAL_NS = 1e9
 _CONNECTIONSTATUS_BINANCE_DISCONNECTED = -1
 _CONNECTIONSTATUS_BINANCE_CONNECTED    = 0
@@ -140,24 +154,6 @@ _BINANCE_FUTURESSTART_YEAR  = 2019
 _BINANCE_FUTURESSTART_MONTH = 8
 _BINANCE_FUTURESSTART_YEAR_TIMESTAMP  = 1546300800
 _BINANCE_FUTURESSTART_MONTH_TIMESTAMP = 1564617600
-
-_FORMATTEDDATATYPE_FETCHED    = 0
-_FORMATTEDDATATYPE_EMPTY      = 1
-_FORMATTEDDATATYPE_DUMMY      = 2
-_FORMATTEDDATATYPE_STREAMED   = 3
-_FORMATTEDDATATYPE_INCOMPLETE = 4
-
-_IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
-_IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
-
-KLINTERVAL        = constants.KLINTERVAL
-KLINTERVAL_CLIENT = constants.KLINTERVAL_CLIENT
-KLINTERVAL_STREAM = constants.KLINTERVAL_STREAM
-KLINTERVAL_S      = constants.KLINTERVAL_S
-KLINTERVAL_METRICS        = constants.KLINTERVAL_METRICS
-KLINTERVAL_METRICS_CLIENT = constants.KLINTERVAL_METRICS_CLIENT
-KLINTERVAL_METRICS_STREAM = constants.KLINTERVAL_METRICS_STREAM
-KLINTERVAL_METRICS_S      = constants.KLINTERVAL_METRICS_S
 
 TWMSTATUS_PREPARING = 0
 TWMSTATUS_READY     = 1
@@ -429,6 +425,7 @@ class BinanceAPIManager:
                 client = binance.Client()
                 status = client.get_system_status()['status']
                 self.__binance_client_default = client
+                client.futures_cancel_order
                 return status
             else: 
                 return self.__binance_client_default.get_system_status()['status']
@@ -2247,7 +2244,7 @@ class BinanceAPIManager:
                                 None, 
                                 None,
                                 True,
-                                _FORMATTEDDATATYPE_EMPTY)
+                                FORMATTEDDATATYPE_EMPTY)
                     fetchedKlines_formatted.append(kl_dummy)
                     self.__logger(message = (f"An Expected Kline Was Not Fetched. The Corresponding Data Will Be Filled With A Dummy Kline, But An User Attention Is Advised.\n"
                                              f" * Symbol:    {symbol}\n"
@@ -2283,7 +2280,7 @@ class BinanceAPIManager:
                                     float(vBaseTB),
                                     float(vQuoteTB),
                                     True,
-                                    _FORMATTEDDATATYPE_FETCHED)
+                                    FORMATTEDDATATYPE_FETCHED)
                     fetchedKlines_formatted.append(kl_formatted)
                     del fetchedKlines_dict[efkt]
             #---[3-3-2]: Unexpected Klines
@@ -2451,29 +2448,29 @@ class BinanceAPIManager:
                 if li_openTS < intervalTS:
                     #[3-4-1]: Record The Last Interval As Closed And Save To The Announcement Buffer
                     lastInterval[DEPTHINDEX_CLOSED] = True
-                    lastInterval[DEPTHINDEX_SOURCE] = _FORMATTEDDATATYPE_INCOMPLETE
+                    lastInterval[DEPTHINDEX_SOURCE] = FORMATTEDDATATYPE_INCOMPLETE
                     sd_depths_depths[li_openTS] = tuple(lastInterval)
 
                     #[3-4-2]: Fill In Any Gaps With Dummy Depths Interval Data
                     di_openTS = func_gnitt(intervalID = KLINTERVAL, timestamp = li_openTS, mrktReg = None, nTicks = 1)
                     while di_openTS < intervalTS:
                         di_openTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = di_openTS, mrktReg = None, nTicks = 1)
-                        dummyInterval = (di_openTS,              #[0]:  openTS
-                                        di_openTS_next-1,        #[1]:  closeTS
-                                        None,                    #[2]:  bids5
-                                        None,                    #[3]:  bids4
-                                        None,                    #[4]:  bids3
-                                        None,                    #[5]:  bids2
-                                        None,                    #[6]:  bids1
-                                        None,                    #[7]:  bids0
-                                        None,                    #[8]:  asks0
-                                        None,                    #[9]:  asks1
-                                        None,                    #[10]: asks2
-                                        None,                    #[11]: asks3
-                                        None,                    #[12]: asks4
-                                        None,                    #[13]: asks5
-                                        True,                    #[14]: closed
-                                        _FORMATTEDDATATYPE_DUMMY #[15]: depthType
+                        dummyInterval = (di_openTS,             #[0]:  openTS
+                                        di_openTS_next-1,       #[1]:  closeTS
+                                        None,                   #[2]:  bids5
+                                        None,                   #[3]:  bids4
+                                        None,                   #[4]:  bids3
+                                        None,                   #[5]:  bids2
+                                        None,                   #[6]:  bids1
+                                        None,                   #[7]:  bids0
+                                        None,                   #[8]:  asks0
+                                        None,                   #[9]:  asks1
+                                        None,                   #[10]: asks2
+                                        None,                   #[11]: asks3
+                                        None,                   #[12]: asks4
+                                        None,                   #[13]: asks5
+                                        True,                   #[14]: closed
+                                        FORMATTEDDATATYPE_DUMMY #[15]: depthType
                                         )
                         sd_depths_depths[di_openTS] = dummyInterval
                         di_openTS = di_openTS_next
@@ -2698,7 +2695,7 @@ class BinanceAPIManager:
                                None,
                                None,
                                isNotPoll,
-                               _FORMATTEDDATATYPE_EMPTY)
+                               FORMATTEDDATATYPE_EMPTY)
                     metrics_formatted.append(m_dummy)
                     if cause in ('stream', 'dm'):
                         self.__logger(message = (f"An Expected Metric Was Not Fetched. The Corresponding Data Will Be Filled With A Dummy Metric, But An User Attention Is Advised.\n"
@@ -2719,7 +2716,7 @@ class BinanceAPIManager:
                                float(oi_5m_raw['sumOpenInterestValue']),
                                float(ls_5m_raw['longShortRatio']),
                                isNotPoll,
-                               _FORMATTEDDATATYPE_FETCHED)
+                               FORMATTEDDATATYPE_FETCHED)
                 metrics_formatted.append(m_formatted)
 
             #[3-5]: Unexpected Metrics
@@ -2884,7 +2881,7 @@ class BinanceAPIManager:
                                     None, 
                                     None,
                                     True,
-                                    _FORMATTEDDATATYPE_EMPTY)
+                                    FORMATTEDDATATYPE_EMPTY)
                         fetchedKlines_formatted.append(kl_dummy)
                     #[2-3-2]: Expected Fetched - Reformat And Save
                     else:
@@ -2912,7 +2909,7 @@ class BinanceAPIManager:
                                         vBaseTB,
                                         vQuoteTB,
                                         True,
-                                        _FORMATTEDDATATYPE_FETCHED)
+                                        FORMATTEDDATATYPE_FETCHED)
                         fetchedKlines_formatted.append(kl_formatted)
                         del fetchedKlines_dict[efkt]
                 fetchTask['data'].append(fetchedKlines_formatted)
@@ -3018,7 +3015,7 @@ class BinanceAPIManager:
                                                                       timestamp_beg     = fetchedRange[0], 
                                                                       timestamp_end     = fetchedRange[1], 
                                                                       lastTickInclusive = True)
-                enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
+                enfType = FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else FORMATTEDDATATYPE_EMPTY
                 binFormats = (0.2, 1.0, 2.0, 3.0, 4.0, 5.0)
                 fetchedDepths_formatted = []
                 for efdt in efdts_expected:
@@ -3114,7 +3111,7 @@ class BinanceAPIManager:
                                            bins_rd_asks[4],
                                            bins_rd_asks[5],
                                            True,
-                                           _FORMATTEDDATATYPE_FETCHED)
+                                           FORMATTEDDATATYPE_FETCHED)
                         fetchedDepths_formatted.append(depth_formatted)
                         del fetchedDepths_dict[efdt]
                 fetchTask['data'].append(fetchedDepths_formatted)
@@ -3219,7 +3216,7 @@ class BinanceAPIManager:
                                                                      timestamp_beg     = fetchedRange[0], 
                                                                      timestamp_end     = fetchedRange[1], 
                                                                      lastTickInclusive = True)
-                enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
+                enfType = FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else FORMATTEDDATATYPE_EMPTY
                 aggTrades_formatted = []
                 for efatt in efatts:
                     at_pp = aggTrades_dict.get(efatt, None)
@@ -3253,7 +3250,7 @@ class BinanceAPIManager:
                                 round(at_pp[4], sd_quotePrecision),
                                 round(at_pp[5], sd_quotePrecision),
                                 True,
-                                _FORMATTEDDATATYPE_FETCHED)
+                                FORMATTEDDATATYPE_FETCHED)
                         aggTrades_formatted.append(at_f)
                         del aggTrades_dict[efatt]
                 fetchTask['data'].append(aggTrades_formatted)
@@ -3343,7 +3340,7 @@ class BinanceAPIManager:
                                                                      timestamp_beg     = fetchedRange[0], 
                                                                      timestamp_end     = fetchedRange[1], 
                                                                      lastTickInclusive = True)
-                enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
+                enfType = FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else FORMATTEDDATATYPE_EMPTY
                 metrics_formatted = []
                 for emt in emts_expected:
                     emt_5m = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = emt, mrktReg = None, nTicks = 0)
@@ -3367,7 +3364,7 @@ class BinanceAPIManager:
                                        metric_5m_raw[1],
                                        metric_5m_raw[2],
                                        True,
-                                       _FORMATTEDDATATYPE_FETCHED)
+                                       FORMATTEDDATATYPE_FETCHED)
                         metrics_formatted.append(m_formatted)
                 fetchTask['data'].append(metrics_formatted)
 
@@ -3935,7 +3932,7 @@ class BinanceAPIManager:
                        kl_volBaseTB,
                        kl_volQuoteTB,
                        kl_closed,
-                       _FORMATTEDDATATYPE_STREAMED)
+                       FORMATTEDDATATYPE_STREAMED)
             
             #[1-5]: Data Formatting & Data Update
             #---[1-5-1]: If Waiting Fetch, Add Base Data To Buffer
@@ -3996,19 +3993,19 @@ class BinanceAPIManager:
                             di_openTS = func_gnitt(intervalID = KLINTERVAL, timestamp = li_openTS, mrktReg = None, nTicks = 1)
                             while di_openTS < db_intervalTS:
                                 di_openTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = di_openTS, mrktReg = None, nTicks = 1)
-                                dummyInterval = (di_openTS,                #[0]:  openTS
-                                                 di_openTS_next-1,         #[1]:  closeTS
-                                                 None,                     #[2]:  openPrice
-                                                 None,                     #[3]:  highPrice
-                                                 None,                     #[4]:  lowPrice
-                                                 None,                     #[5]:  closePrice
-                                                 None,                     #[6]:  nTrades
-                                                 None,                     #[7]:  volBase
-                                                 None,                     #[8]:  volQuote
-                                                 None,                     #[9]:  volBase  - Taker Buy
-                                                 None,                     #[10]: volQuote - Taker Buy
-                                                 True,                     #[11]: closed
-                                                 _FORMATTEDDATATYPE_DUMMY) #[12]: klineType
+                                dummyInterval = (di_openTS,               #[0]:  openTS
+                                                 di_openTS_next-1,        #[1]:  closeTS
+                                                 None,                    #[2]:  openPrice
+                                                 None,                    #[3]:  highPrice
+                                                 None,                    #[4]:  lowPrice
+                                                 None,                    #[5]:  closePrice
+                                                 None,                    #[6]:  nTrades
+                                                 None,                    #[7]:  volBase
+                                                 None,                    #[8]:  volQuote
+                                                 None,                    #[9]:  volBase  - Taker Buy
+                                                 None,                    #[10]: volQuote - Taker Buy
+                                                 True,                    #[11]: closed
+                                                 FORMATTEDDATATYPE_DUMMY) #[12]: klineType
                                 sd_klines_klines[di_openTS] = dummyInterval
                                 di_openTS = di_openTS_next
 
@@ -4228,22 +4225,22 @@ class BinanceAPIManager:
                             di_openTS = func_gnitt(intervalID = KLINTERVAL, timestamp = li_openTS, mrktReg = None, nTicks = 1)
                             while di_openTS < db_intervalTS:
                                 di_openTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = di_openTS, mrktReg = None, nTicks = 1)
-                                dummyInterval = (di_openTS,               #[0]:  openTS
-                                                 di_openTS_next-1,        #[1]:  closeTS
-                                                 None,                    #[2]:  bids5
-                                                 None,                    #[3]:  bids4
-                                                 None,                    #[4]:  bids3
-                                                 None,                    #[5]:  bids2
-                                                 None,                    #[6]:  bids1
-                                                 None,                    #[7]:  bids0
-                                                 None,                    #[8]:  asks0
-                                                 None,                    #[9]:  asks1
-                                                 None,                    #[10]: asks2
-                                                 None,                    #[11]: asks3
-                                                 None,                    #[12]: asks4
-                                                 None,                    #[13]: asks5
-                                                 True,                    #[14]: closed
-                                                 _FORMATTEDDATATYPE_DUMMY #[15]: depthType
+                                dummyInterval = (di_openTS,              #[0]:  openTS
+                                                 di_openTS_next-1,       #[1]:  closeTS
+                                                 None,                   #[2]:  bids5
+                                                 None,                   #[3]:  bids4
+                                                 None,                   #[4]:  bids3
+                                                 None,                   #[5]:  bids2
+                                                 None,                   #[6]:  bids1
+                                                 None,                   #[7]:  bids0
+                                                 None,                   #[8]:  asks0
+                                                 None,                   #[9]:  asks1
+                                                 None,                   #[10]: asks2
+                                                 None,                   #[11]: asks3
+                                                 None,                   #[12]: asks4
+                                                 None,                   #[13]: asks5
+                                                 True,                   #[14]: closed
+                                                 FORMATTEDDATATYPE_DUMMY #[15]: depthType
                                                 )
                                 sd_depths_depths[di_openTS] = dummyInterval
                                 di_openTS = di_openTS_next
@@ -4251,22 +4248,22 @@ class BinanceAPIManager:
                         #[1-4-2-2-4-2]: Interval Setup
                         if ic_newInterval:
                             db_intervalTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = db_intervalTS, mrktReg = None, nTicks = 1)
-                            lastInterval = [db_intervalTS,              #[0]:  openTS
-                                            db_intervalTS_next-1,       #[1]:  closeTS
-                                            0,                          #[2]:  bids5
-                                            0,                          #[3]:  bids4
-                                            0,                          #[4]:  bids3
-                                            0,                          #[5]:  bids2
-                                            0,                          #[6]:  bids1
-                                            0,                          #[7]:  bids0
-                                            0,                          #[8]:  asks0
-                                            0,                          #[9]:  asks1
-                                            0,                          #[10]: asks2
-                                            0,                          #[11]: asks3
-                                            0,                          #[12]: asks4
-                                            0,                          #[13]: asks5
-                                            False,                      #[14]: closed
-                                            _FORMATTEDDATATYPE_STREAMED #[15]: depthType
+                            lastInterval = [db_intervalTS,             #[0]:  openTS
+                                            db_intervalTS_next-1,      #[1]:  closeTS
+                                            0,                         #[2]:  bids5
+                                            0,                         #[3]:  bids4
+                                            0,                         #[4]:  bids3
+                                            0,                         #[5]:  bids2
+                                            0,                         #[6]:  bids1
+                                            0,                         #[7]:  bids0
+                                            0,                         #[8]:  asks0
+                                            0,                         #[9]:  asks1
+                                            0,                         #[10]: asks2
+                                            0,                         #[11]: asks3
+                                            0,                         #[12]: asks4
+                                            0,                         #[13]: asks5
+                                            False,                     #[14]: closed
+                                            FORMATTEDDATATYPE_STREAMED #[15]: depthType
                                            ]
                             sd_depths['lastInterval'] = lastInterval
                         else:
@@ -4465,32 +4462,32 @@ class BinanceAPIManager:
                             di_openTS = func_gnitt(intervalID = KLINTERVAL, timestamp = li_openTS, mrktReg = None, nTicks = 1)
                             while di_openTS < db_intervalTS:
                                 di_openTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = di_openTS, mrktReg = None, nTicks = 1)
-                                dummyInterval = (di_openTS,               #[0]: openTS
-                                                 di_openTS_next-1,        #[1]: closeTS
-                                                 None,                    #[2]: quantity_buy
-                                                 None,                    #[3]: quantity_sell
-                                                 None,                    #[4]: nTrades_buy
-                                                 None,                    #[5]: nTrades_sell
-                                                 None,                    #[6]: notional_buy
-                                                 None,                    #[7]: notional_sell
-                                                 True,                    #[8]: closed
-                                                 _FORMATTEDDATATYPE_DUMMY #[9]: aggTradeType
+                                dummyInterval = (di_openTS,              #[0]: openTS
+                                                 di_openTS_next-1,       #[1]: closeTS
+                                                 None,                   #[2]: quantity_buy
+                                                 None,                   #[3]: quantity_sell
+                                                 None,                   #[4]: nTrades_buy
+                                                 None,                   #[5]: nTrades_sell
+                                                 None,                   #[6]: notional_buy
+                                                 None,                   #[7]: notional_sell
+                                                 True,                   #[8]: closed
+                                                 FORMATTEDDATATYPE_DUMMY #[9]: aggTradeType
                                                 )
                                 sd_aggTrades_aggTrades[di_openTS] = dummyInterval
                                 di_openTS = di_openTS_next
 
                         #[1-5-2-2-4-2]: New Interval Setup
                         db_intervalTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = db_intervalTS, mrktReg = None, nTicks = 1)
-                        lastInterval = [db_intervalTS,              #[0]: openTS
-                                        db_intervalTS_next-1,       #[1]: closeTS
-                                        0,                          #[2]: quantity_buy
-                                        0,                          #[3]: quantity_sell
-                                        0,                          #[4]: nTrades_buy
-                                        0,                          #[5]: nTrades_sell
-                                        0,                          #[6]: notional_buy
-                                        0,                          #[7]: notional_sell
-                                        False,                      #[8]: closed
-                                        _FORMATTEDDATATYPE_STREAMED #[9]: aggTradeType
+                        lastInterval = [db_intervalTS,             #[0]: openTS
+                                        db_intervalTS_next-1,      #[1]: closeTS
+                                        0,                         #[2]: quantity_buy
+                                        0,                         #[3]: quantity_sell
+                                        0,                         #[4]: nTrades_buy
+                                        0,                         #[5]: nTrades_sell
+                                        0,                         #[6]: notional_buy
+                                        0,                         #[7]: notional_sell
+                                        False,                     #[8]: closed
+                                        FORMATTEDDATATYPE_STREAMED #[9]: aggTradeType
                                         ]
                         sd_aggTrades['lastInterval'] = lastInterval
                             
@@ -4602,7 +4599,7 @@ class BinanceAPIManager:
                       sData_oiValue,
                       sData_lsRatio,
                       sData_closed,
-                      _FORMATTEDDATATYPE_STREAMED)
+                      FORMATTEDDATATYPE_STREAMED)
 
             #[1-5]: Data Formatting & Data Update
             #---[1-5-1]: If Waiting Fetch, Add Base Data To Buffer
@@ -4650,13 +4647,13 @@ class BinanceAPIManager:
                             di_openTS = func_gnitt(intervalID = KLINTERVAL, timestamp = li_openTS, mrktReg = None, nTicks = 1)
                             while di_openTS < db_intervalTS:
                                 di_openTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = di_openTS, mrktReg = None, nTicks = 1)
-                                dummyInterval = (di_openTS,                #[0]: openTS
-                                                 di_openTS_next-1,         #[1]: closeTS
-                                                 None,                     #[2]: open_interest
-                                                 None,                     #[3]: open_interest_value
-                                                 None,                     #[4]: long_short_ratio
-                                                 True,                     #[5]: closed
-                                                 _FORMATTEDDATATYPE_DUMMY) #[6]: mType
+                                dummyInterval = (di_openTS,               #[0]: openTS
+                                                 di_openTS_next-1,        #[1]: closeTS
+                                                 None,                    #[2]: open_interest
+                                                 None,                    #[3]: open_interest_value
+                                                 None,                    #[4]: long_short_ratio
+                                                 True,                    #[5]: closed
+                                                 FORMATTEDDATATYPE_DUMMY) #[6]: mType
                                 sd_metrics_metrics[di_openTS] = dummyInterval
                                 di_openTS = di_openTS_next
 

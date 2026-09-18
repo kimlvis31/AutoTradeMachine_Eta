@@ -12,92 +12,32 @@ import termcolor
 import torch
 import gc
 
-#Constants
+
+
+#External Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
 _IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
 _IPC_PRD_INVALIDADDRESS    = ipc._PRD_INVALIDADDRESS
 _IPC_FAR_INVALIDFUNCTIONID = ipc._FAR_INVALIDFUNCTIONID
 
-KLINDEX_OPENTIME         =  0
-KLINDEX_CLOSETIME        =  1
-KLINDEX_OPENPRICE        =  2
-KLINDEX_HIGHPRICE        =  3
-KLINDEX_LOWPRICE         =  4
-KLINDEX_CLOSEPRICE       =  5
-KLINDEX_NTRADES          =  6
-KLINDEX_VOLBASE          =  7
-KLINDEX_VOLQUOTE         =  8
-KLINDEX_VOLBASETAKERBUY  =  9
-KLINDEX_VOLQUOTETAKERBUY = 10
-KLINDEX_CLOSED           = 11
-KLINDEX_SOURCE           = 12
-
-DEPTHINDEX_OPENTIME  = 0
-DEPTHINDEX_CLOSETIME = 1
-DEPTHINDEX_BIDS5     = 2
-DEPTHINDEX_BIDS4     = 3 
-DEPTHINDEX_BIDS3     = 4
-DEPTHINDEX_BIDS2     = 5 
-DEPTHINDEX_BIDS1     = 6 
-DEPTHINDEX_BIDS0     = 7 
-DEPTHINDEX_ASKS0     = 8 
-DEPTHINDEX_ASKS1     = 9 
-DEPTHINDEX_ASKS2     = 10 
-DEPTHINDEX_ASKS3     = 11
-DEPTHINDEX_ASKS4     = 12
-DEPTHINDEX_ASKS5     = 13
-DEPTHINDEX_CLOSED    = 14
-DEPTHINDEX_SOURCE    = 15
-
-ATINDEX_OPENTIME     = 0
-ATINDEX_CLOSETIME    = 1
-ATINDEX_QUANTITYBUY  = 2
-ATINDEX_QUANTITYSELL = 3
-ATINDEX_NTRADESBUY   = 4
-ATINDEX_NTRADESSELL  = 5
-ATINDEX_NOTIONALBUY  = 6
-ATINDEX_NOTIONALSELL = 7
-ATINDEX_CLOSED       = 8
-ATINDEX_SOURCE       = 9
-
-METRICINDEX_OPENTIME          = 0
-METRICINDEX_CLOSETIME         = 1
-METRICINDEX_OPENINTEREST      = 2
-METRICINDEX_OPENINTERESTVALUE = 3
-METRICINDEX_LONGSHORTRATIO    = 4
-METRICINDEX_CLOSED            = 5
-METRICINDEX_SOURCE            = 6
-
-FORMATTEDDATATYPE_FETCHED    = 0
-FORMATTEDDATATYPE_EMPTY      = 1
-FORMATTEDDATATYPE_DUMMY      = 2
-FORMATTEDDATATYPE_STREAMED   = 3
-FORMATTEDDATATYPE_INCOMPLETE = 4
-
-COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME,  'metric': METRICINDEX_OPENTIME},
-                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME, 'metric': METRICINDEX_CLOSETIME},
-                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED,    'metric': METRICINDEX_CLOSED},
-                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE,    'metric': METRICINDEX_SOURCE}}
-
+COMMONDATAINDEXES = constants.COMMONDATAINDEXES
 KLINTERVAL   = constants.KLINTERVAL
-KLINTERVAL_S = constants.KLINTERVAL_S
+DUMMYFRAMES = constants.DUMMYFRAMES
 
-_DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None,                   True, FORMATTEDDATATYPE_DUMMY),
-                'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
-                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY),
-                'metric':   (None, None, None,                                                       True, FORMATTEDDATATYPE_DUMMY)}
 
+
+#Internal Constants
 _DATAFETCHCHUNKSIZE = 43_200
-
 _ANALYSIS_GENERATIONORDER = analyzers.ANALYSIS_GENERATIONORDER
 _TIMELIMIT_DATAPROCESS_NS = 100e6
-
 _TYPEMODE_PENDING                = 0
 _TYPEMODE_FETCHINGTRADELOGS      = 1
 _TYPEMODE_FETCHINGNEURALNETWORKS = 2
 _TYPEMODE_FETCHINGMARKETDATA     = 3
 _TYPEMODE_REGENERATING           = 4
 _TYPEMODE_ERROR                  = 5
+
+
 
 #Chart Drawer TL Viewer Subclass
 class chartDrawer_tlViewer(chartDrawer):
@@ -655,7 +595,7 @@ class chartDrawer_tlViewer(chartDrawer):
                 ts = func_gnitt(intervalID = KLINTERVAL, timestamp = gap_beg, nTicks = 0)
                 while ts <= gap_end:
                     ts_close = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1
-                    dRaw_target[ts] = (ts, ts_close) + _DUMMYFRAMES[target]
+                    dRaw_target[ts] = (ts, ts_close) + DUMMYFRAMES[target]
                     ts = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)
 
         #[4]: Currency Analysis Configuration Read

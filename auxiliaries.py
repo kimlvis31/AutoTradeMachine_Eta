@@ -1,122 +1,56 @@
 import os
 import json
+import constants
 from datetime import datetime, timezone
 
-KLINE_INTERVAL_ID_1m  = 0
-KLINE_INTERVAL_ID_3m  = 1
-KLINE_INTERVAL_ID_5m  = 2
-KLINE_INTERVAL_ID_15m = 3
-KLINE_INTERVAL_ID_30m = 4
-KLINE_INTERVAL_ID_1h  = 5
-KLINE_INTERVAL_ID_2h  = 6
-KLINE_INTERVAL_ID_4h  = 7
-KLINE_INTERVAL_ID_6h  = 8
-KLINE_INTERVAL_ID_8h  = 9
-KLINE_INTERVAL_ID_12h = 10
-KLINE_INTERVAL_ID_1d  = 11
-KLINE_INTERVAL_ID_3d  = 12
-KLINE_INTERVAL_ID_1W  = 13
-KLINE_INTERVAL_ID_1M  = 14
-KLINE_INTERVAL_IDs = (KLINE_INTERVAL_ID_1m, 
-                      KLINE_INTERVAL_ID_3m, 
-                      KLINE_INTERVAL_ID_5m, 
-                      KLINE_INTERVAL_ID_15m, 
-                      KLINE_INTERVAL_ID_30m, 
-                      KLINE_INTERVAL_ID_1h, 
-                      KLINE_INTERVAL_ID_2h, 
-                      KLINE_INTERVAL_ID_4h, 
-                      KLINE_INTERVAL_ID_6h, 
-                      KLINE_INTERVAL_ID_8h, 
-                      KLINE_INTERVAL_ID_12h, 
-                      KLINE_INTERVAL_ID_1d, 
-                      KLINE_INTERVAL_ID_3d, 
-                      KLINE_INTERVAL_ID_1W, 
-                      KLINE_INTERVAL_ID_1M)
+KLINE_INTERVAL_ID_1m  = constants.KLINE_INTERVAL_ID_1m
+KLINE_INTERVAL_ID_3m  = constants.KLINE_INTERVAL_ID_3m
+KLINE_INTERVAL_ID_5m  = constants.KLINE_INTERVAL_ID_5m
+KLINE_INTERVAL_ID_15m = constants.KLINE_INTERVAL_ID_15m
+KLINE_INTERVAL_ID_30m = constants.KLINE_INTERVAL_ID_30m
+KLINE_INTERVAL_ID_1h  = constants.KLINE_INTERVAL_ID_1h
+KLINE_INTERVAL_ID_2h  = constants.KLINE_INTERVAL_ID_2h
+KLINE_INTERVAL_ID_4h  = constants.KLINE_INTERVAL_ID_4h
+KLINE_INTERVAL_ID_6h  = constants.KLINE_INTERVAL_ID_6h
+KLINE_INTERVAL_ID_8h  = constants.KLINE_INTERVAL_ID_8h
+KLINE_INTERVAL_ID_12h = constants.KLINE_INTERVAL_ID_12h
+KLINE_INTERVAL_ID_1d  = constants.KLINE_INTERVAL_ID_1d
+KLINE_INTERVAL_ID_3d  = constants.KLINE_INTERVAL_ID_3d
+KLINE_INTERVAL_ID_1W  = constants.KLINE_INTERVAL_ID_1W
+KLINE_INTERVAL_ID_1M  = constants.KLINE_INTERVAL_ID_1M
+KLINE_INTERVAL_IDs  = constants.KLINE_INTERVAL_IDs
+KLINE_INTERVAL_SECs = constants.KLINE_INTERVAL_SECs
 
-KLINE_INTERVAL_SECs = {KLINE_INTERVAL_ID_1m:      60,
-                       KLINE_INTERVAL_ID_3m:     180,
-                       KLINE_INTERVAL_ID_5m:     300,
-                       KLINE_INTERVAL_ID_15m:    900,
-                       KLINE_INTERVAL_ID_30m:   1800,
-                       KLINE_INTERVAL_ID_1h:    3600,
-                       KLINE_INTERVAL_ID_2h:    7200,
-                       KLINE_INTERVAL_ID_4h:   14400,
-                       KLINE_INTERVAL_ID_6h:   21600,
-                       KLINE_INTERVAL_ID_8h:   28800,
-                       KLINE_INTERVAL_ID_12h:  43200,
-                       KLINE_INTERVAL_ID_1d:   86400,
-                       KLINE_INTERVAL_ID_3d:  259200,
-                       KLINE_INTERVAL_ID_1W:  604800,
-                       KLINE_INTERVAL_ID_1M: 2678400}
+GRID_INTERVAL_ID_1m   = constants.GRID_INTERVAL_ID_1m
+GRID_INTERVAL_ID_3m   = constants.GRID_INTERVAL_ID_3m
+GRID_INTERVAL_ID_5m   = constants.GRID_INTERVAL_ID_5m
+GRID_INTERVAL_ID_10m  = constants.GRID_INTERVAL_ID_10m
+GRID_INTERVAL_ID_15m  = constants.GRID_INTERVAL_ID_15m
+GRID_INTERVAL_ID_30m  = constants.GRID_INTERVAL_ID_30m
+GRID_INTERVAL_ID_1h   = constants.GRID_INTERVAL_ID_1h
+GRID_INTERVAL_ID_2h   = constants.GRID_INTERVAL_ID_2h
+GRID_INTERVAL_ID_4h   = constants.GRID_INTERVAL_ID_4h
+GRID_INTERVAL_ID_6h   = constants.GRID_INTERVAL_ID_6h
+GRID_INTERVAL_ID_8h   = constants.GRID_INTERVAL_ID_8h
+GRID_INTERVAL_ID_12h  = constants.GRID_INTERVAL_ID_12h
+GRID_INTERVAL_ID_1d   = constants.GRID_INTERVAL_ID_1d
+GRID_INTERVAL_ID_3d   = constants.GRID_INTERVAL_ID_3d
+GRID_INTERVAL_ID_1W   = constants.GRID_INTERVAL_ID_1W
+GRID_INTERVAL_ID_1M   = constants.GRID_INTERVAL_ID_1M
+GRID_INTERVAL_ID_3M   = constants.GRID_INTERVAL_ID_3M
+GRID_INTERVAL_ID_6M   = constants.GRID_INTERVAL_ID_6M
+GRID_INTERVAL_ID_1Y   = constants.GRID_INTERVAL_ID_1Y
+GRID_INTERVAL_ID_2Y   = constants.GRID_INTERVAL_ID_2Y
+GRID_INTERVAL_ID_5Y   = constants.GRID_INTERVAL_ID_5Y
+GRID_INTERVAL_ID_10Y  = constants.GRID_INTERVAL_ID_10Y
+GRID_INTERVAL_ID_20Y  = constants.GRID_INTERVAL_ID_20Y
+GRID_INTERVAL_ID_50Y  = constants.GRID_INTERVAL_ID_50Y
+GRID_INTERVAL_ID_100Y = constants.GRID_INTERVAL_ID_100Y
+GRID_INTERVAL_IDs  = constants.GRID_INTERVAL_IDs
+GRID_INTERVAL_SECs = constants.GRID_INTERVAL_SECs
 
-GRID_INTERVAL_ID_1m   =  0
-GRID_INTERVAL_ID_3m   =  1
-GRID_INTERVAL_ID_5m   =  2
-GRID_INTERVAL_ID_10m  =  3
-GRID_INTERVAL_ID_15m  =  4
-GRID_INTERVAL_ID_30m  =  5
-GRID_INTERVAL_ID_1h   =  6
-GRID_INTERVAL_ID_2h   =  7
-GRID_INTERVAL_ID_4h   =  8
-GRID_INTERVAL_ID_6h   =  9
-GRID_INTERVAL_ID_8h   = 10
-GRID_INTERVAL_ID_12h  = 11
-GRID_INTERVAL_ID_1d   = 12
-GRID_INTERVAL_ID_3d   = 13
-GRID_INTERVAL_ID_1W   = 14
-GRID_INTERVAL_ID_1M   = 15
-GRID_INTERVAL_ID_3M   = 16
-GRID_INTERVAL_ID_6M   = 17
-GRID_INTERVAL_ID_1Y   = 18
-GRID_INTERVAL_ID_2Y   = 19
-GRID_INTERVAL_ID_5Y   = 20
-GRID_INTERVAL_ID_10Y  = 21
-GRID_INTERVAL_ID_20Y  = 22
-GRID_INTERVAL_ID_50Y  = 23
-GRID_INTERVAL_ID_100Y = 24
-GRID_INTERVAL_IDs = (GRID_INTERVAL_ID_1m, 
-                     GRID_INTERVAL_ID_3m, 
-                     GRID_INTERVAL_ID_5m, 
-                     GRID_INTERVAL_ID_10m, 
-                     GRID_INTERVAL_ID_15m, 
-                     GRID_INTERVAL_ID_30m, 
-                     GRID_INTERVAL_ID_1h, 
-                     GRID_INTERVAL_ID_2h, 
-                     GRID_INTERVAL_ID_4h, 
-                     GRID_INTERVAL_ID_6h,  
-                     GRID_INTERVAL_ID_8h,  
-                     GRID_INTERVAL_ID_12h,
-                     GRID_INTERVAL_ID_1d, 
-                     GRID_INTERVAL_ID_3d, 
-                     GRID_INTERVAL_ID_1W, 
-                     GRID_INTERVAL_ID_1M,  
-                     GRID_INTERVAL_ID_3M,  
-                     GRID_INTERVAL_ID_6M,  
-                     GRID_INTERVAL_ID_1Y, 
-                     GRID_INTERVAL_ID_2Y, 
-                     GRID_INTERVAL_ID_5Y, 
-                     GRID_INTERVAL_ID_10Y, 
-                     GRID_INTERVAL_ID_20Y, 
-                     GRID_INTERVAL_ID_50Y, 
-                     GRID_INTERVAL_ID_100Y)
-GRID_INTERVAL_SECs = {GRID_INTERVAL_ID_1m:      60,
-                      GRID_INTERVAL_ID_3m:     180,
-                      GRID_INTERVAL_ID_5m:     300,
-                      GRID_INTERVAL_ID_10m:    600,
-                      GRID_INTERVAL_ID_15m:    900,
-                      GRID_INTERVAL_ID_30m:   1800,
-                      GRID_INTERVAL_ID_1h:    3600,
-                      GRID_INTERVAL_ID_2h:    7200,
-                      GRID_INTERVAL_ID_4h:   14400,
-                      GRID_INTERVAL_ID_6h:   21600,
-                      GRID_INTERVAL_ID_8h:   28800,
-                      GRID_INTERVAL_ID_12h:  43200,
-                      GRID_INTERVAL_ID_1d:   86400,
-                      GRID_INTERVAL_ID_3d:  259200,
-                      GRID_INTERVAL_ID_1W:  604800}
-
-TIMEZONE = datetime.now(timezone.utc).astimezone()
-TIMEZONE_DELTA_SEC = TIMEZONE.utcoffset().seconds
+TIMEZONE           = constants.TIMEZONE
+TIMEZONE_DELTA_SEC = constants.TIMEZONE_DELTA_SEC
 
 #Timestamps List Getter
 def getTimestampList_byRange(intervalID, timestamp_beg, timestamp_end, mrktReg = None, lastTickInclusive = False):

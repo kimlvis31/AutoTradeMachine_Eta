@@ -1123,9 +1123,8 @@ class Account:
                           'teff_model': tradeControlTracker['teff_model'].copy()}
         return tcTracker_copy
     
-    def __updateTradeControlTracker(self, symbol, tradeControlTrackerUpdate, updateMode):
+    def __updateTradeControlTracker(self, position, tradeControlTrackerUpdate, updateMode):
         #[1]: Instances
-        position  = self.__positions[symbol]
         tcTracker = position['tradeControlTracker']
 
         #[2]: Trade Control Tracker Update
@@ -1709,7 +1708,7 @@ class Account:
 
         #[3]: Trade Control Tracker Update
         if ocr['tcTrackerUpdate'] is not None:
-            self.__updateTradeControlTracker(symbol                    = symbol, 
+            self.__updateTradeControlTracker(position                  = position, 
                                              tradeControlTrackerUpdate = ocr['tcTrackerUpdate'], 
                                              updateMode                = updateMode)
             tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
