@@ -151,3 +151,26 @@ def getSlippedPrice(side, quantity, reference_price, depth_prev, precision_price
         
     #[6]: Return The Final Volume-Weighted Average Execution Price
     return round(total_executed_notional / quantity, precision_price)
+
+
+
+
+
+def getInitializedTradeControlTracker():
+    tc_initialized = {'slExited':   None,
+                      'teff_model': dict()}
+    return tc_initialized
+
+def updateTradeControlTracker(position, tradeControlTrackerUpdate, updateMode):
+    #[1]: Instances
+    tcTracker = position['tradeControlTracker']
+
+    #[2]: Trade Control Tracker Update
+    #---[2-1]: SL Exited
+    if 'slExited' in tradeControlTrackerUpdate:
+        tcTracker['slExited'] = tradeControlTrackerUpdate['slExited'][updateMode]
+
+def copyTradeControlTracker(tradeControlTracker):
+    tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
+                      'teff_model': tradeControlTracker['teff_model'].copy()}
+    return tcTracker_copy

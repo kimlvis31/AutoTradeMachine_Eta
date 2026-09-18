@@ -742,7 +742,7 @@ class Account:
                     'unrealizedPNL':           None,
                     'liquidationPrice':        None,
                     #Trade Control
-                    'tradeControlTracker': self.__getInitializedTradeControlTracker(),
+                    'tradeControlTracker': auxiliaries_trade.getInitializedTradeControlTracker(),
                     #Positional Distribution
                     'assumedRatio':        0,
                     'allocatedBalance':    0,
@@ -1112,30 +1112,6 @@ class Account:
 
 
 
-    #<Trade Control Tracker>
-    def __getInitializedTradeControlTracker(self):
-        tc_initialized = {'slExited':   None,
-                          'teff_model': dict()}
-        return tc_initialized
-    
-    def __copyTradeControlTracker(self, tradeControlTracker):
-        tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
-                          'teff_model': tradeControlTracker['teff_model'].copy()}
-        return tcTracker_copy
-    
-    def __updateTradeControlTracker(self, position, tradeControlTrackerUpdate, updateMode):
-        #[1]: Instances
-        tcTracker = position['tradeControlTracker']
-
-        #[2]: Trade Control Tracker Update
-        #---[2-1]: SL Exited
-        if 'slExited' in tradeControlTrackerUpdate:
-            tcTracker['slExited'] = tradeControlTrackerUpdate['slExited'][updateMode]
-
-
-
-
-
     #<Trade Processing>
     def __handleAnalysisResults(self):
         #[1]: Instances
@@ -1227,7 +1203,7 @@ class Account:
                 tcTracker['slExited'] = None
         #---[5-2]: Control Tracker Save (If Not Based On Expired Linearized Analysis Result)
         if not ar_expired:
-            tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
+            tcTracker_copied = auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = tcTracker)
             self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
                                     prdAddress = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
                                     prdContent = tcTracker_copied)
@@ -1708,10 +1684,10 @@ class Account:
 
         #[3]: Trade Control Tracker Update
         if ocr['tcTrackerUpdate'] is not None:
-            self.__updateTradeControlTracker(position                  = position, 
-                                             tradeControlTrackerUpdate = ocr['tcTrackerUpdate'], 
-                                             updateMode                = updateMode)
-            tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
+            auxiliaries_trade.updateTradeControlTracker(position                  = position, 
+                                                        tradeControlTrackerUpdate = ocr['tcTrackerUpdate'], 
+                                                        updateMode                = updateMode)
+            tcTracker_copied = auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
             self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
                                     prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
                                     prdContent    = tcTracker_copied)
@@ -1821,7 +1797,7 @@ class Account:
                                 'totalQuantity':      quantity_new_ocr,
                                 'entryPrice':         entryPrice_new_ocr,
                                 'walletBalance':      walletBalance_new,
-                                'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
+                                'tradeControlTracker': auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
                     self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
                                         functionID     = 'addAccountTradeLog', 
                                         functionParams = {'localID':  lID, 
@@ -1900,7 +1876,7 @@ class Account:
                         'totalQuantity':       quantity_new,
                         'entryPrice':          entryPrice_new,
                         'walletBalance':       None,
-                        'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
+                        'tradeControlTracker': auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
             self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
                                 functionID     = 'addAccountTradeLog', 
                                 functionParams = {'localID':  lID, 
@@ -1924,10 +1900,10 @@ class Account:
             #[3-2-4]: Trade Handlers Clearing & Trade Control Initialization (In Case No Processing OCR Exists. Otherwise, in will be handlded along with the OCR)
             if ocr is None:
                 position['_tradeHandlers'].clear()
-                position['tradeControlTracker'] = self.__getInitializedTradeControlTracker()
+                position['tradeControlTracker'] = auxiliaries_trade.getInitializedTradeControlTracker()
                 self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
                                     functionID     = 'editAccountData', 
-                                    functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])),]}, 
+                                    functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])),]}, 
                                     farrHandler    = None)
                 
             #[3-2-5]: Console Print
@@ -2679,9 +2655,9 @@ class Account:
         if position['tradeConfigurationCode'] != newTradeConfigurationCode:
             if newTradeConfigurationCode is None or tcs.exists(code = newTradeConfigurationCode):
                 self.__registerPositionTradeConfiguration(symbol = symbol, tradeConfigurationCode = newTradeConfigurationCode)
-                position['tradeControlTracker'] = self.__getInitializedTradeControlTracker()
+                position['tradeControlTracker'] = auxiliaries_trade.getInitializedTradeControlTracker()
                 db_uReqs.append(((lID, 'positions', symbol, 'tradeConfigurationCode'), position['tradeConfigurationCode']))
-                db_uReqs.append(((lID, 'positions', symbol, 'tradeControlTracker'),    self.__copyTradeControlTracker(position['tradeControlTracker'])))
+                db_uReqs.append(((lID, 'positions', symbol, 'tradeControlTracker'),    auxiliaries_trade.copyTradeControlTracker(position['tradeControlTracker'])))
 
         #---[4-3]: Assumed Ratio
         if position['assumedRatio'] != newAssumedRatio:
@@ -2740,13 +2716,13 @@ class Account:
         
         #[2]: Trade Control Reset (Run-Time Specific Parameters Are Not Reset)
         position = self.__positions[symbol]
-        tcTracker_prev              = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
-        tcTracker_new               = self.__getInitializedTradeControlTracker()
+        tcTracker_prev              = auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
+        tcTracker_new               = auxiliaries_trade.getInitializedTradeControlTracker()
         tcTracker_new['teff_model'] = tcTracker_prev['teff_model'].copy()
         position['tradeControlTracker'] = tcTracker_new
 
         #[3]: Announcement
-        tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
+        tcTracker_copied = auxiliaries_trade.copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
         self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
                                 prdAddress = ('ACCOUNTS', self.__localID, 'positions', symbol, 'tradeControlTracker'), 
                                 prdContent = tcTracker_copied)
