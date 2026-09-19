@@ -102,9 +102,9 @@ GSP_INDICES = {'BUY':  [DEPTHINDEX_ASKS0, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS2, DE
                'SELL': [DEPTHINDEX_BIDS0, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS5]}
 GSP_DEFAULTPENALTY      = {'BUY': 0.0500, 'SELL': -0.0500}
 GSP_DEFAULTCOMPENSATION = {'BUY': 0.0001, 'SELL': -0.0001}
-def getSlippedPrice(side, quantity, reference_price, depth_prev, precision_price):
+def getSlippedPrice(side, quantity, reference_price, depth, precision_price):
     #[1]: Depth Check
-    if depth_prev is None or depth_prev[DEPTHINDEX_SOURCE] in (FORMATTEDDATATYPE_DUMMY, FORMATTEDDATATYPE_EMPTY):
+    if depth is None or depth[DEPTHINDEX_SOURCE] in (FORMATTEDDATATYPE_DUMMY, FORMATTEDDATATYPE_EMPTY):
         return round(reference_price * (1.0 + GSP_DEFAULTCOMPENSATION[side]), precision_price)
 
     #[2]: Computation Variables
@@ -118,7 +118,7 @@ def getSlippedPrice(side, quantity, reference_price, depth_prev, precision_price
     #[4]: Depth Bins Iteration & Liquidity Consumption
     for idx in GSP_INDICES[side]:
         #[4-1]: Bin
-        bin_notional = depth_prev[idx]
+        bin_notional = depth[idx]
         if bin_notional <= 0:
             continue
         binRange = DEPTHBINS[idx]

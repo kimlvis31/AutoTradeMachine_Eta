@@ -1032,7 +1032,7 @@ class Simulation:
             elif o_orderType == 'MARKET': t_price = auxiliaries_trade.getSlippedPrice(side            = o_side,
                                                                                       quantity        = o_quantity,
                                                                                       reference_price = o_price,
-                                                                                      depth_prev      = depth_prev,
+                                                                                      depth           = depth_prev,
                                                                                       precision_price = precisions['price'])
 
             #[6-2-2]: Simulated Trade Processing
