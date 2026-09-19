@@ -425,7 +425,6 @@ class BinanceAPIManager:
                 client = binance.Client()
                 status = client.get_system_status()['status']
                 self.__binance_client_default = client
-                client.futures_cancel_order
                 return status
             else: 
                 return self.__binance_client_default.get_system_status()['status']
@@ -757,7 +756,7 @@ class BinanceAPIManager:
                                    {'subscriber':     'TRADEMANAGER',
                                     'subscriptionID': None,
                                     'fID_kline':      'onKlineStreamReceival',
-                                    'fID_depth':      None,
+                                    'fID_depth':      'onDepthStreamReceival',
                                     'fID_aggTrade':   None,
                                     'fID_metric':     None,
                                     'closedOnly':     False}]
@@ -3564,7 +3563,7 @@ class BinanceAPIManager:
             #---[2-4-1]: Order Status Read Attempt
             try: 
                 order_fromServer = self.__binance_client_users[createdOrder['localID']]['accountInstance'].futures_get_order(symbol            = createdOrder['positionSymbol'], 
-                                                                                                                             origclientorderid = coID)
+                                                                                                                             origClientOrderId = coID)
             except Exception as e:
                 if (str(e) == 'APIError(code=-2013): Order does not exist.'): 
                     apiError_orderDoesNotExist = True
@@ -5036,7 +5035,8 @@ class BinanceAPIManager:
             
         #[6]: Order Creation Attempt
         #---[6-1]: Order Params Completion
-        orderParams['newClientOrderId'] = "ATMETA"+str(time.time_ns())
+        coID = "ATMETA"+str(time.time_ns())
+        orderParams['newClientOrderId'] = coID
         orderParams['newOrderRespType'] = "FULL"
         #---[6-2]: Order Creation Request
         try:                   
@@ -5054,11 +5054,12 @@ class BinanceAPIManager:
                                                       'positionSymbol': positionSymbol, 
                                                       'responseOn':     'CREATEORDER', 
                                                       'result':         _BINANCE_ORDERSTATUS[response_createOrder['status']]['result'],
+                                                      '': 1,
                                                       'orderResult':    {'type':             response_createOrder['type'],
                                                                          'side':             response_createOrder['side'],
                                                                          'averagePrice':     float(response_createOrder['avgPrice']),
                                                                          'originalQuantity': float(response_createOrder['origQty']),
-                                                                         'executedQuantity': float(response_createOrder['executedQty'])},
+                                                                         'executedQuantity': float(response_createOrder['executedQty']),},
                                                       'failType':       None,
                                                       'errorMessage':   None},
                                     requestID = requestID, complete = True)

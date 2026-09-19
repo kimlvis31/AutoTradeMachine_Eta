@@ -70,7 +70,7 @@ class TradeManager:
         self.ipcA.addFARHandler('onCurrenciesUpdate',    self.__far_onCurrenciesUpdate,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #DATAMANAGER
         self.ipcA.addFARHandler('updateConfiguration',   self.__far_updateConfiguration,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #GUI
         self.ipcA.addFARHandler('onKlineStreamReceival', self.__far_onKlineStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
-        self.ipcA.addDummyFARHandler(functionID = 'onDepthStreamReceival')                                                                                 #BINANCEAPI
+        self.ipcA.addFARHandler('onDepthStreamReceival', self.__far_onDepthStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
         self.ipcA.addDummyFARHandler(functionID = 'onAggTradeStreamReceival')                                                                              #BINANCEAPI
         self.ipcA.addDummyFARHandler(functionID = 'onMetricStreamReceival')                                                                                #BINANCEAPI
 
@@ -272,4 +272,12 @@ class TradeManager:
         #[3]: Virtual Server & Accounts Response
         self.__virtualServer.onKlineStreamReceival(symbol = symbol, kline = kline)
         self.__accounts.onKlineStreamReceival(symbol      = symbol, kline = kline)
+
+    def __far_onDepthStreamReceival(self, requester, symbol, depth):
+        #[1]: Source Check
+        if requester != 'BINANCEAPI':
+            return
+
+        #[2]: Virtual Server & Accounts Response
+        self.__virtualServer.onKlineStreamReceival(symbol = symbol, depth = depth)
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
