@@ -67,6 +67,11 @@ class VirtualServer:
         for vAccount in self.__accounts.values():
             vAccount.onKlineStreamReceival(symbol = symbol, kline = kline)
 
+    def onDepthStreamReceival(self, symbol, depth):
+        #[1]: Accounts Response
+        for vAccount in self.__accounts.values():
+            vAccount.onDepthStreamReceival(symbol = symbol, depth = depth)
+
     def getPositionControlRequestResponses(self):
         #[1]: Buffer Copy
         pcrrs = self.__positionControlRequestResponses.copy()
@@ -146,7 +151,8 @@ class VirtualServer:
             return None
         
         #[2]: Margin Type Update Request
-        rID = vAccount.updateMarginType(symbol = symbol, marginType = marginType)
+        rID = f"VSRID_{time.perf_counter_ns():d}"
+        vAccount.updateMarginType(symbol = symbol, marginType = marginType, requestID = rID)
 
         #[3]: Return RID
         return rID
@@ -162,7 +168,8 @@ class VirtualServer:
             return None
         
         #[2]: Leverage Update Request
-        rID = vAccount.updateLeverage(symbol = symbol, leverage = leverage)
+        rID = f"VSRID_{time.perf_counter_ns():d}"
+        vAccount.updateLeverage(symbol = symbol, leverage = leverage, requestID = rID)
 
         #[3]: Return RID
         return rID
@@ -178,8 +185,26 @@ class VirtualServer:
             return None
         
         #[2]: Order Creation Request
-        rID = vAccount.createOrder(symbol = symbol, orderParams = orderParams)
+        rID = f"VSRID_{time.perf_counter_ns():d}"
+        vAccount.createOrder(symbol = symbol, orderParams = orderParams, requestID = rID)
 
-        #[3]: Return 
+        #[3]: Return RID
+        return rID
+
+    def cancelOrder(self, localID, symbol, clientOrderID):
+        #[1]: Account Check
+        vAccount = self.__accounts.get(localID, None)
+        if vAccount is None:
+            self.__logger(message = (f"A Virtual Account Could Not Cancel Order. Account Not Found.\n"
+                                     f" * Local ID: {localID}"), 
+                            logType = 'Warning',
+                            color   = 'light_red')
+            return None
+        
+        #[2]: Order Cancellation Request
+        rID = f"VSRID_{time.perf_counter_ns():d}"
+        vAccount.cancelOrder(symbol = symbol, clientOrderID = clientOrderID, requestID = rID)
+
+        #[3]: Return RID
         return rID
     #External Handlers END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
