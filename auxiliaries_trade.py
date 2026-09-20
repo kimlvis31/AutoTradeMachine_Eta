@@ -1,7 +1,12 @@
 import os
 import json
 import constants
-import auxiliaries
+
+TRADINGFEE = {'PERPETUAL':         {'LIMIT':  {'USDT': 0.0002, 'USDC': 0.0000, 'DEFAULT': 0.0002},
+                                    'MARKET': {'USDT': 0.0005, 'USDC': 0.0004, 'DEFAULT': 0.0005},},
+              'TRADIFI_PERPETUAL': {'LIMIT':  {'USDT': 0.0000, 'USDC': 0.0000, 'DEFAULT': 0.0000},
+                                    'MARKET': {'USDT': 0.0004, 'USDC': 0.0004, 'DEFAULT': 0.0005},}
+             }
 
 #<_LEVERAGEMARGINTABLE Example>
 """ 
