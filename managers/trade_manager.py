@@ -279,5 +279,5 @@ class TradeManager:
             return
 
         #[2]: Virtual Server & Accounts Response
-        self.__virtualServer.onKlineStreamReceival(symbol = symbol, depth = depth)
+        self.__virtualServer.onDepthStreamReceival(symbol = symbol, depth = depth)
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
