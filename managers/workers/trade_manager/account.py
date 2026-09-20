@@ -1361,8 +1361,19 @@ class Account:
             #[2-4-1]: Order Type & Price Determination
             tc_orderType = tc['orderType']
             if tc_orderType == 'LIMIT':
-                if   th_side == 'BUY':  tc_orderPrice = round(position['currentPrice']*(1-tc['orderOffset']), precisions['price'])
-                elif th_side == 'SELL': tc_orderPrice = round(position['currentPrice']*(1+tc['orderOffset']), precisions['price'])
+                tickSize = None
+                for serverFilter in serverFilters:
+                    if serverFilter['filterType'] == 'PRICE_FILTER':
+                        tickSize = float(serverFilter['tickSize'])
+                        break
+                if   th_side == 'BUY':  price_raw = position['currentPrice']*(1-tc['orderOffset'])
+                elif th_side == 'SELL': price_raw = position['currentPrice']*(1+tc['orderOffset'])
+                if tickSize is None:
+                    tc_orderPrice = round(price_raw, precisions['price'])
+                else:
+                    tickDecimals = max(0, -math.floor(math.log10(tickSize)))
+                    if   th_side == 'BUY':  tc_orderPrice = round(math.floor(price_raw/tickSize)*tickSize, tickDecimals)
+                    elif th_side == 'SELL': tc_orderPrice = round(math.ceil(price_raw/tickSize)*tickSize,  tickDecimals)
             else:
                 tc_orderPrice = None
 
