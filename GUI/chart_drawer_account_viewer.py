@@ -16,48 +16,57 @@ _IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
 _IPC_PRD_INVALIDADDRESS    = ipc._PRD_INVALIDADDRESS
 _IPC_FAR_INVALIDFUNCTIONID = ipc._FAR_INVALIDFUNCTIONID
 
-KLINDEX_OPENTIME         =  0
-KLINDEX_CLOSETIME        =  1
-KLINDEX_OPENPRICE        =  2
-KLINDEX_HIGHPRICE        =  3
-KLINDEX_LOWPRICE         =  4
-KLINDEX_CLOSEPRICE       =  5
-KLINDEX_NTRADES          =  6
-KLINDEX_VOLBASE          =  7
-KLINDEX_VOLQUOTE         =  8
-KLINDEX_VOLBASETAKERBUY  =  9
-KLINDEX_VOLQUOTETAKERBUY = 10
-KLINDEX_CLOSED           = 11
-KLINDEX_SOURCE           = 12
-
-DEPTHINDEX_OPENTIME  = 0
-DEPTHINDEX_CLOSETIME = 1
-DEPTHINDEX_BIDS5     = 2
-DEPTHINDEX_BIDS4     = 3 
-DEPTHINDEX_BIDS3     = 4
-DEPTHINDEX_BIDS2     = 5 
-DEPTHINDEX_BIDS1     = 6 
-DEPTHINDEX_BIDS0     = 7 
-DEPTHINDEX_ASKS0     = 8 
-DEPTHINDEX_ASKS1     = 9 
-DEPTHINDEX_ASKS2     = 10 
-DEPTHINDEX_ASKS3     = 11
-DEPTHINDEX_ASKS4     = 12
-DEPTHINDEX_ASKS5     = 13
-DEPTHINDEX_CLOSED    = 14
-DEPTHINDEX_SOURCE    = 15
-
-ATINDEX_OPENTIME     = 0
-ATINDEX_CLOSETIME    = 1
-ATINDEX_QUANTITYBUY  = 2
-ATINDEX_QUANTITYSELL = 3
-ATINDEX_NTRADESBUY   = 4
-ATINDEX_NTRADESSELL  = 5
-ATINDEX_NOTIONALBUY  = 6
-ATINDEX_NOTIONALSELL = 7
-ATINDEX_CLOSED       = 8
-ATINDEX_SOURCE       = 9
-
+FORMATTEDDATATYPE_FETCHED    = constants.FORMATTEDDATATYPE_FETCHED
+FORMATTEDDATATYPE_EMPTY      = constants.FORMATTEDDATATYPE_EMPTY
+FORMATTEDDATATYPE_DUMMY      = constants.FORMATTEDDATATYPE_DUMMY
+FORMATTEDDATATYPE_STREAMED   = constants.FORMATTEDDATATYPE_STREAMED
+FORMATTEDDATATYPE_INCOMPLETE = constants.FORMATTEDDATATYPE_INCOMPLETE
+KLINDEX_OPENTIME              = constants.KLINDEX_OPENTIME
+KLINDEX_CLOSETIME             = constants.KLINDEX_CLOSETIME
+KLINDEX_OPENPRICE             = constants.KLINDEX_OPENPRICE
+KLINDEX_HIGHPRICE             = constants.KLINDEX_HIGHPRICE
+KLINDEX_LOWPRICE              = constants.KLINDEX_LOWPRICE
+KLINDEX_CLOSEPRICE            = constants.KLINDEX_CLOSEPRICE
+KLINDEX_NTRADES               = constants.KLINDEX_NTRADES
+KLINDEX_VOLBASE               = constants.KLINDEX_VOLBASE
+KLINDEX_VOLQUOTE              = constants.KLINDEX_VOLQUOTE
+KLINDEX_VOLBASETAKERBUY       = constants.KLINDEX_VOLBASETAKERBUY
+KLINDEX_VOLQUOTETAKERBUY      = constants.KLINDEX_VOLQUOTETAKERBUY
+KLINDEX_CLOSED                = constants.KLINDEX_CLOSED
+KLINDEX_SOURCE                = constants.KLINDEX_SOURCE
+DEPTHINDEX_OPENTIME           = constants.DEPTHINDEX_OPENTIME
+DEPTHINDEX_CLOSETIME          = constants.DEPTHINDEX_CLOSETIME
+DEPTHINDEX_BIDS5              = constants.DEPTHINDEX_BIDS5
+DEPTHINDEX_BIDS4              = constants.DEPTHINDEX_BIDS4
+DEPTHINDEX_BIDS3              = constants.DEPTHINDEX_BIDS3
+DEPTHINDEX_BIDS2              = constants.DEPTHINDEX_BIDS2
+DEPTHINDEX_BIDS1              = constants.DEPTHINDEX_BIDS1
+DEPTHINDEX_BIDS0              = constants.DEPTHINDEX_BIDS0
+DEPTHINDEX_ASKS0              = constants.DEPTHINDEX_ASKS0
+DEPTHINDEX_ASKS1              = constants.DEPTHINDEX_ASKS1
+DEPTHINDEX_ASKS2              = constants.DEPTHINDEX_ASKS2
+DEPTHINDEX_ASKS3              = constants.DEPTHINDEX_ASKS3
+DEPTHINDEX_ASKS4              = constants.DEPTHINDEX_ASKS4
+DEPTHINDEX_ASKS5              = constants.DEPTHINDEX_ASKS5
+DEPTHINDEX_CLOSED             = constants.DEPTHINDEX_CLOSED
+DEPTHINDEX_SOURCE             = constants.DEPTHINDEX_SOURCE
+ATINDEX_OPENTIME              = constants.ATINDEX_OPENTIME
+ATINDEX_CLOSETIME             = constants.ATINDEX_CLOSETIME
+ATINDEX_QUANTITYBUY           = constants.ATINDEX_QUANTITYBUY
+ATINDEX_QUANTITYSELL          = constants.ATINDEX_QUANTITYSELL
+ATINDEX_NTRADESBUY            = constants.ATINDEX_NTRADESBUY
+ATINDEX_NTRADESSELL           = constants.ATINDEX_NTRADESSELL
+ATINDEX_NOTIONALBUY           = constants.ATINDEX_NOTIONALBUY
+ATINDEX_NOTIONALSELL          = constants.ATINDEX_NOTIONALSELL
+ATINDEX_CLOSED                = constants.ATINDEX_CLOSED
+ATINDEX_SOURCE                = constants.ATINDEX_SOURCE
+METRICINDEX_OPENTIME          = constants.METRICINDEX_OPENTIME
+METRICINDEX_CLOSETIME         = constants.METRICINDEX_CLOSETIME
+METRICINDEX_OPENINTEREST      = constants.METRICINDEX_OPENINTEREST
+METRICINDEX_OPENINTERESTVALUE = constants.METRICINDEX_OPENINTERESTVALUE
+METRICINDEX_LONGSHORTRATIO    = constants.METRICINDEX_LONGSHORTRATIO
+METRICINDEX_CLOSED            = constants.METRICINDEX_CLOSED
+METRICINDEX_SOURCE            = constants.METRICINDEX_SOURCE
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
 
@@ -372,8 +381,8 @@ class chartDrawer_accountViewer(chartDrawer):
         dAgg.clear()
         dTSs.clear()
         for iID, aParams_iID in aParams_ca.items():
-            dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-            dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
+            dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade', 'metric')}
             dAgg_iID = dAgg[iID]
             dTSs_iID = dTSs[iID]
             for aCode in aParams_iID:
@@ -498,6 +507,7 @@ class chartDrawer_accountViewer(chartDrawer):
                             if   target == 'kline':    tCodes = ['KLINE', 'TRADELOG']
                             elif target == 'depth':    tCodes = ['DEPTHOVERLAY', 'DEPTH']
                             elif target == 'aggTrade': tCodes = ['AGGTRADE',]
+                            elif target == 'metric':   tCodes = ['OPENINTEREST', 'LONGSHORTRATIO']
                             else:                      tCodes = [target,]
                             func_addDQueue(targetCodes = tCodes, 
                                            timestamp   = dTS)
@@ -735,8 +745,8 @@ class chartDrawer_accountViewer(chartDrawer):
 
         #[2]: Currency Analysis Configuration
         if ca is None:
-            self._data_agg[iID]        = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-            self._data_timestamps[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
+            self._data_agg[iID]        = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            self._data_timestamps[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade', 'metric')}
         else:
             self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = ca['currencyAnalysisConfiguration'][iID])
 
