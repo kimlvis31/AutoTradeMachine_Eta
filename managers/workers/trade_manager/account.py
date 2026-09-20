@@ -97,7 +97,7 @@ _VIRTUALACCOUNTDBANNOUNCEMENT_POSITIONDATANAMES = {'quantity',
 
 
 #Trade Constants ----------------------------------------------------------------------------------
-_ACTUALTRADE_MARKETTRADINGFEE                 = 0.0005
+_TRADINGFEE                                   = auxiliaries_trade.TRADINGFEE
 _TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.005
 _TRADE_MAXIMUMOCRGENERATIONATTEMPTS           = 5
 _TRADE_TRADEHANDLER_LIFETIME_NS               = int(KLINTERVAL_S*1e9/5)
@@ -359,15 +359,17 @@ class Account:
                     self.__trade_checkTrade(symbol         = symbol, 
                                             quantity_new   = position_ip['quantity'], 
                                             entryPrice_new = position_ip['entryPrice'])
-                position['quantity']               = position_ip['quantity']
-                position['entryPrice']             = position_ip['entryPrice']
-                position['isolatedWalletBalance']  = position_ip['isolatedWalletBalance']
-                position['positionInitialMargin']  = position_ip['positionInitialMargin']
-                position['openOrderInitialMargin'] = position_ip['openOrderInitialMargin']
-                position['maintenanceMargin']      = position_ip['maintenanceMargin']
-                position['unrealizedPNL']          = position_ip['unrealizedPNL']
-                if position['quantity'] == 0 and 0 < position['allocatedBalance']:
-                    self.__releaseAllocatedBalance(symbol = symbol)
+                ocr = position['_orderCreationRequest']
+                if ocr is None or ocr['status'] == 'SETTLED':
+                    position['quantity']               = position_ip['quantity']
+                    position['entryPrice']             = position_ip['entryPrice']
+                    position['isolatedWalletBalance']  = position_ip['isolatedWalletBalance']
+                    position['positionInitialMargin']  = position_ip['positionInitialMargin']
+                    position['openOrderInitialMargin'] = position_ip['openOrderInitialMargin']
+                    position['maintenanceMargin']      = position_ip['maintenanceMargin']
+                    position['unrealizedPNL']          = position_ip['unrealizedPNL']
+                    if position['quantity'] == 0 and 0 < position['allocatedBalance']:
+                        self.__releaseAllocatedBalance(symbol = symbol)
 
             #[2-4]: Position Setup Identity
             position['leverage'] = position_ip['leverage']
@@ -852,8 +854,16 @@ class Account:
                                             ), 
                                   logType = 'Update',
                                   color   = 'light_yellow')
-                    
-                #[2-3-2-3]: Result Recording & Flag Update
+
+                #[2-3-2-3]: Status Update
+                if not result:
+                    ocr['status'] = 'SETTLED'
+                else:
+                    or_status = fr_oResult['status']
+                    if   or_status in ('NEW', 'PARTIALLY_FILLED'): ocr['status'] = 'RESTING'
+                    else:                                          ocr['status'] = 'SETTLED'
+
+                #[2-3-2-4]: Result Recording & Flag Update
                 requestResult = {'resultReceivalTime': time.time(), 
                                  'result':             result,
                                  'failType':           fr_fType,
@@ -861,6 +871,41 @@ class Account:
                                  'errorMessage':       fr_eMsg}
                 ocr['results'].append(requestResult)
                 ocr['lastRequestReceived'] = True
+
+        #---[2-4]: Order Cancellation Request Response
+        elif responseOn == 'CANCELORDER':
+            #[2-4-1]: Expected Check
+            ocr = position['_orderCreationRequest']
+            if ocr is None:
+                return
+            if requestID is not None and ocr['dispatchID'] != requestID:
+                return
+
+            #[2-4-2]: Failure Logging
+            if not result:
+                self.__logger(message = (f"An Order Cancellation Request Received Failure Response.\n"
+                                         f" * Local ID:      {lID}\n"
+                                         f" * Symbol:        {symbol}\n"
+                                         f" * Fail Type:     {functionResult['failType']}\n"
+                                         f" * Error Message: {functionResult['errorMessage']}"), 
+                              logType = 'Update',
+                              color   = 'light_yellow')
+
+            #[2-4-3]: Status Update
+            if result:
+                ocr['status'] = 'SETTLED'
+            else:
+                if functionResult['failType'] == 'ORDERNOTFOUND': ocr['status'] = 'SETTLED'
+                else:                                             ocr['status'] = 'RESTING'
+
+            #[2-4-4]: Result Recording & Flag Update
+            requestResult = {'resultReceivalTime': time.time(), 
+                             'result':             result,
+                             'failType':           functionResult['failType'],
+                             'orderResult':        functionResult['orderResult'],
+                             'errorMessage':       functionResult['errorMessage']}
+            ocr['results'].append(requestResult)
+            ocr['lastRequestReceived'] = True
 
     def __allocateBalance(self, symbol, apply):
         #[1]: Instances
@@ -904,6 +949,7 @@ class Account:
         caCode = position['currencyAnalysisCode']
         tcCode = position['tradeConfigurationCode']
         ooim   = position['openOrderInitialMargin']
+        ocr    = position['_orderCreationRequest']
 
         #[2]: Currency Analysis
         tTests['currencyAnalysis'] = self.__currencyAnalyses.isAttached(code = caCode, accountID = iID)
@@ -919,7 +965,8 @@ class Account:
             tTests['tradeConfiguration'] = (tTest_attached and tTest_mType and tTest_leverage)
 
         #[4]: Open Order
-        tTests['openOrder'] = (ooim == 0.0)
+        if ocr is not None: tTests['openOrder'] = True
+        else:               tTests['openOrder'] = (ooim == 0.0)
 
         #[5]: Tradable Update
         position['tradable'] = all(test for test in tTests.values())
@@ -1258,7 +1305,8 @@ class Account:
                   'side':              tradeHandler_checkList[thType],
                   'tefVal':            tef_val,
                   'timestamp':         la_openTime,
-                  'generationTime_ns': time.time_ns()}
+                  'generationTime_ns': time.time_ns(),
+                  'suspendedTime_ns':  0}
             position_ths.append(th)
     
     def __processTradeHandlers(self):
@@ -1277,10 +1325,15 @@ class Account:
             tradeHandlers = position['_tradeHandlers']
 
             #[2-2]: Status Check
-            if not tradeHandlers:                                 continue #If there exists no tradeHandlers, continue
-            if position['_orderCreationRequest']     is not None: continue #If there exists a generated order creation request, continue
-            if position['_marginTypeControlRequest'] is not None: continue #If there exists a margin type control request, continue
-            if position['_leverageControlRequest']   is not None: continue #If there exists a leverage control request, continue
+            if not tradeHandlers: 
+                continue
+            ocr = position['_orderCreationRequest']
+            if ocr is not None:
+                if ocr['status'] == 'RESTING':
+                    self.__orderCreationRequest_cancel(symbol = symbol)
+                continue
+            if position['_marginTypeControlRequest'] is not None: continue
+            if position['_leverageControlRequest']   is not None: continue
 
             #[2-3]: Position Preparation Check
             tc            = tcs_loaded[position['tradeConfigurationCode']]
@@ -1293,7 +1346,7 @@ class Account:
             th_tefVal     = th['tefVal']
             th_timestamp  = th['timestamp']
             th_genTime_ns = th['generationTime_ns']
-            if _TRADE_TRADEHANDLER_LIFETIME_NS < time.time_ns()-th_genTime_ns:
+            if _TRADE_TRADEHANDLER_LIFETIME_NS < time.time_ns()-th_genTime_ns-th['suspendedTime_ns']:
                 self.__logger(message = (f"A Trade Handler Is Expired And Will Be Discarded.\n"
                                          f" * Local ID:             {lID}\n"
                                          f" * Symbol:               {symbol}\n"
@@ -1304,6 +1357,14 @@ class Account:
                               logType = 'Warning',
                               color   = 'light_magenta')
                 continue
+
+            #[2-4-1]: Order Type & Price Determination
+            tc_orderType = tc['orderType']
+            if tc_orderType == 'LIMIT':
+                if   th_side == 'BUY':  tc_orderPrice = round(position['currentPrice']*(1-tc['orderOffset']), precisions['price'])
+                elif th_side == 'SELL': tc_orderPrice = round(position['currentPrice']*(1+tc['orderOffset']), precisions['price'])
+            else:
+                tc_orderPrice = None
 
             #[2-5]: Handling
             #---[2-5-1]: ENTRY
@@ -1351,45 +1412,12 @@ class Account:
                     continue
 
                 #[2-5-1-3]: Server Filter Test
-                serverFilterTest = None
-                for serverFilter in serverFilters:
-                    sf_ft = serverFilter['filterType']
-                    if sf_ft == 'PRICE_FILTER': 
-                        continue
-                    elif sf_ft == 'LOT_SIZE':     
-                        continue
-                    elif sf_ft == 'MARKET_LOT_SIZE':
-                        _minQty   = float(serverFilter['minQty'])
-                        _maxQty   = float(serverFilter['maxQty'])
-                        _stepSize = float(serverFilter['stepSize'])
-                        if not (_minQty <= quantity):
-                            serverFilterTest = {'type':   'MINQTY',
-                                                'minQty': _minQty}
-                            break
-                        if not (quantity <= _maxQty):
-                            serverFilterTest = {'type':   'MAXQTY',
-                                                'maxQty': _maxQty}
-                            break
-                        if not (quantity == round(quantity, -math.floor(math.log10(_stepSize)))): 
-                            serverFilterTest = {'type':               'STEPSIZE',
-                                                'stepSize':           _stepSize,
-                                                'stepSize_val':       math.floor(math.log10(_stepSize)),
-                                                'quantity_stepSized': round(quantity, -math.floor(math.log10(_stepSize)))}
-                            break
-                    elif sf_ft == 'MAX_NUM_ORDERS': 
-                        continue
-                    elif sf_ft == 'MAX_NUM_ALGO_ORDERS': 
-                        continue
-                    elif sf_ft == 'MIN_NOTIONAL':
-                        _notional_min = float(serverFilter['notional'])
-                        _notional = position['currentPrice']*quantity
-                        if not(_notional_min <= _notional):
-                            serverFilterTest = {'type':        'MINNOTIONAL',
-                                                'notional':     _notional,
-                                                'notional_min': _notional_min}
-                            break
-                    elif sf_ft == 'PERCENT_PRICE': 
-                        continue
+                serverFilterTest = auxiliaries_trade.checkServerFilters(serverFilters = serverFilters,
+                                                                        orderType     = tc_orderType,
+                                                                        quantity      = quantity,
+                                                                        price         = tc_orderPrice,
+                                                                        currentPrice  = position['currentPrice'],
+                                                                        isEntry       = True)
                 if serverFilterTest is not None:
                     self.__logger(message = (f"A Trade Handler Failed Server Filter Test And Will Be Discarded.\n"
                                              f" * Local ID:             {lID}\n"
@@ -1424,8 +1452,10 @@ class Account:
                 func_allocBal(symbol = symbol, apply = True)
                 self.__orderCreationRequest_generate(symbol          = symbol,
                                                      logicSource     = 'ENTRY',
+                                                     orderType       = tc_orderType,
                                                      side            = th_side,
                                                      quantity        = quantity,
+                                                     price           = tc_orderPrice,
                                                      tcTrackerUpdate = None,
                                                      ipcRID          = None)
                 
@@ -1447,7 +1477,29 @@ class Account:
                                   color   = 'light_magenta')
                     continue
 
-                #[2-5-2-2]: Side Confirm
+                #[2-5-2-2]: Server Filter Test
+                serverFilterTest = auxiliaries_trade.checkServerFilters(serverFilters = serverFilters,
+                                                                        orderType     = tc_orderType,
+                                                                        quantity      = quantity,
+                                                                        price         = tc_orderPrice,
+                                                                        currentPrice  = position['currentPrice'],
+                                                                        isEntry       = False)
+                if serverFilterTest is not None:
+                    self.__logger(message = (f"A Trade Handler Failed Server Filter Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}\n"
+                                             f" * Server Filter Test:   {serverFilterTest}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-2-3]: Side Confirm
                 if not ((position['quantity'] < 0 and th_side == 'BUY') or \
                         (0 < position['quantity'] and th_side == 'SELL')): 
                     self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
@@ -1462,11 +1514,13 @@ class Account:
                                   color   = 'light_magenta')
                     continue
 
-                #[2-5-2-3]: Finally
+                #[2-5-2-4]: Finally
                 self.__orderCreationRequest_generate(symbol          = symbol,
                                                      logicSource     = 'CLEAR',
+                                                     orderType       = tc_orderType,
                                                      side            = th_side,
                                                      quantity        = quantity,
+                                                     price           = tc_orderPrice,
                                                      tcTrackerUpdate = None,
                                                      ipcRID          = None)
                 
@@ -1512,7 +1566,29 @@ class Account:
                                   color   = 'light_yellow')
                     continue
 
-                #[2-5-3-3]: Side Confirm
+                #[2-5-3-3]: Server Filter Test
+                serverFilterTest = auxiliaries_trade.checkServerFilters(serverFilters = serverFilters,
+                                                                        orderType     = tc_orderType,
+                                                                        quantity      = quantity,
+                                                                        price         = tc_orderPrice,
+                                                                        currentPrice  = position['currentPrice'],
+                                                                        isEntry       = False)
+                if serverFilterTest is not None:
+                    self.__logger(message = (f"A Trade Handler Failed Server Filter Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}\n"
+                                             f" * Server Filter Test:   {serverFilterTest}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-3-4]: Side Confirm
                 if not ((position['quantity'] < 0 and th_side == 'BUY') or \
                         (0 < position['quantity'] and th_side == 'SELL')): 
                     self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
@@ -1527,13 +1603,16 @@ class Account:
                                   color   = 'light_magenta')
                     continue
 
-                #[2-5-3-4]: Finally
+                #[2-5-3-5]: Finally
                 self.__orderCreationRequest_generate(symbol          = symbol,
                                                      logicSource     = 'EXIT',
+                                                     orderType       = tc_orderType,
                                                      side            = th_side,
                                                      quantity        = quantity,
+                                                     price           = tc_orderPrice,
                                                      tcTrackerUpdate = None,
                                                      ipcRID          = None)
+
             #---[2-5-4]: FSLIMMED & FSLCLOSE
             elif th_type == 'FSLIMMED' or th_type == 'FSLCLOSE':
                 #[2-5-4-1]: Quantity Determination
@@ -1552,7 +1631,29 @@ class Account:
                                   color   = 'light_magenta')
                     continue
 
-                #[2-5-4-2]: Side Confirm
+                #[2-5-4-2]: Server Filter Test
+                serverFilterTest = auxiliaries_trade.checkServerFilters(serverFilters = serverFilters,
+                                                                        orderType     = 'MARKET',
+                                                                        quantity      = quantity,
+                                                                        price         = None,
+                                                                        currentPrice  = position['currentPrice'],
+                                                                        isEntry       = False)
+                if serverFilterTest is not None:
+                    self.__logger(message = (f"A Trade Handler Failed Server Filter Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}\n"
+                                             f" * Server Filter Test:   {serverFilterTest}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-4-3]: Side Confirm
                 if not ((position['quantity'] < 0 and th_side == 'BUY') or \
                         (0 < position['quantity'] and th_side == 'SELL')): 
                     self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
@@ -1567,19 +1668,21 @@ class Account:
                                   color   = 'light_magenta')
                     continue
 
-                #[2-5-4-3]: Finally
+                #[2-5-4-4]: Finally
                 if   position['quantity'] < 0: slTriggeredSide = 'SHORT'
                 elif 0 < position['quantity']: slTriggeredSide = 'LONG'
                 self.__orderCreationRequest_generate(symbol          = symbol,
                                                      logicSource     = th_type,
+                                                     orderType       = 'MARKET',
                                                      side            = th_side,
                                                      quantity        = quantity,
+                                                     price           = None,
                                                      tcTrackerUpdate = {'slExited': {'onComplete': (slTriggeredSide, th_timestamp), 
                                                                                      'onPartial':  (slTriggeredSide, th_timestamp), 
                                                                                      'onFail':     (slTriggeredSide, th_timestamp)}},
                                                      ipcRID          = None)
     
-    def __orderCreationRequest_generate(self, symbol, logicSource, side, quantity, tcTrackerUpdate = None, ipcRID = None):
+    def __orderCreationRequest_generate(self, symbol, logicSource, orderType, side, quantity, price, tcTrackerUpdate = None, ipcRID = None):
         #[1]: Instances
         lID        = self.__localID
         aType      = self.__accountType
@@ -1592,8 +1695,10 @@ class Account:
                                      f" * Local ID:          {lID}\n"
                                      f" * Symbol:            {symbol}\n"
                                      f" * Logic Source:      {logicSource}\n"
+                                     f" * Order Type:        {orderType}\n"
                                      f" * Side:              {side}\n"
                                      f" * Quantity:          {quantity}\n"
+                                     f" * Price:             {price}\n"
                                      f" * TC Tracker Update: {tcTrackerUpdate}\n"
                                      f" * IPC RID:           {ipcRID}\n"
                                      ), 
@@ -1604,20 +1709,30 @@ class Account:
         #[3]: OCR Generation
         if   side == 'BUY':  targetQuantity = round(position['quantity']+quantity, precisions['quantity'])
         elif side == 'SELL': targetQuantity = round(position['quantity']-quantity, precisions['quantity'])
+        clientOrderID = f"ATMETA{time.time_ns():d}"
+        orderParams   = {'symbol':           symbol,
+                         'side':             side,
+                         'type':             orderType,
+                         'quantity':         quantity,
+                         'reduceOnly':       (logicSource != 'ENTRY'),
+                         'newClientOrderId': clientOrderID}
+        if orderType == 'LIMIT':
+            orderParams['price']       = price
+            orderParams['timeInForce'] = 'GTX'
         ocr = {'logicSource':          logicSource,
                'forceClearRID':        ipcRID,
+               'clientOrderID':        clientOrderID,
+               'status':               'DISPATCHED',
                'originalQuantity':     position['quantity'],
                'targetQuantity':       targetQuantity,
-               'orderParams':          {'symbol':     symbol,
-                                        'side':       side,
-                                        'type':       'MARKET',
-                                        'quantity':   quantity,
-                                        'reduceOnly': (logicSource != 'ENTRY')},
+               'executedQuantity':     0.0,
+               'orderParams':          orderParams,
                'tcTrackerUpdate':      tcTrackerUpdate,
                'dispatchID':           None,
                'lastRequestReceived':  False,
                'results':              [],
-               'nAttempts':            1}
+               'nAttempts':            1,
+               'cancelTime_ns':        None}
         position['_orderCreationRequest'] = ocr
 
         #[4]: Request Dispatch
@@ -1644,16 +1759,23 @@ class Account:
         position = self.__positions[symbol]
         ocr      = position['_orderCreationRequest']
         
-        #[1]: OCR Update
-        ocr['orderParams']['quantity'] = quantity_unfilled
-        ocr['lastRequestReceived']     = False
-        ocr['nAttempts']               += 1
-        #---[1-1]: Virtual
+        #[2]: OCR Update
+        clientOrderID = f"ATMETA{time.time_ns():d}"
+        ocr['clientOrderID']                   = clientOrderID
+        ocr['status']                          = 'DISPATCHED'
+        ocr['executedQuantity']                = 0.0
+        ocr['orderParams']['newClientOrderId'] = clientOrderID
+        ocr['orderParams']['quantity']         = quantity_unfilled
+        ocr['lastRequestReceived']             = False
+        ocr['nAttempts']                      += 1
+
+        #[3]: Request Dispatch
+        #---[3-1]: Virtual
         if aType == ACCOUNT_TYPE_VIRTUAL:
             ocr['dispatchID'] = self.__virtualServer.createOrder(localID     = lID,
                                                                  symbol      = symbol,
                                                                  orderParams = ocr['orderParams'].copy())
-        #---[1-2]: Actual
+        #---[3-2]: Actual
         elif aType == ACCOUNT_TYPE_ACTUAL:
             ocr['dispatchID'] = self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
                                                     functionID     = 'createOrder', 
@@ -1715,8 +1837,47 @@ class Account:
                                  requestID      = ocr['forceClearRID'], 
                                  complete       = True)
             
-        #[5]: OCR Initialization
+        #[5]: Trade Handlers Suspension Compensation
+        if ocr['cancelTime_ns'] is not None:
+            suspended_ns = time.time_ns()-ocr['cancelTime_ns']
+            for th in position['_tradeHandlers']:
+                th['suspendedTime_ns'] += suspended_ns
+
+        #[6]: OCR Initialization
         position['_orderCreationRequest'] = None
+
+    def __orderCreationRequest_cancel(self, symbol):
+        #[1]: Instances
+        lID      = self.__localID
+        aType    = self.__accountType
+        position = self.__positions[symbol]
+        ocr      = position['_orderCreationRequest']
+
+        #[2]: OCR Check
+        if ocr is None:
+            return False
+
+        #[3]: Cancellation Request Dispatch
+        #---[3-1]: Virtual
+        if aType == ACCOUNT_TYPE_VIRTUAL:
+            ocr['dispatchID'] = self.__virtualServer.cancelOrder(localID       = lID,
+                                                                 symbol        = symbol,
+                                                                 clientOrderID = ocr['clientOrderID'])
+        #---[3-2]: Actual
+        elif aType == ACCOUNT_TYPE_ACTUAL:
+            ocr['dispatchID'] = self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                                                    functionID     = 'cancelOrder', 
+                                                    functionParams = {'localID':        lID, 
+                                                                      'positionSymbol': symbol, 
+                                                                      'clientOrderID':  ocr['clientOrderID']}, 
+                                                    farrHandler    = self.__farr_onPositionControlResponse)
+
+        #[4]: Status Update
+        ocr['status']        = 'CANCELING'
+        ocr['cancelTime_ns'] = time.time_ns()
+
+        #[5]: Finally
+        return True
     
     def __trade_checkTrade(self, symbol, quantity_new, entryPrice_new):
         #[1]: Instances
@@ -1736,15 +1897,19 @@ class Account:
             ocr_result      = ocr['results'][-1]
             ocr_orderResult = ocr_result['orderResult']
             ocr_orderParams = ocr['orderParams']
-            quantity_delta = round(quantity_new-position['quantity'], precisions['quantity'])
+            quantity_delta  = round(quantity_new-position['quantity'], precisions['quantity'])
             if ocr_result['result']:
-                quantity_unfilled = round(ocr_orderResult['originalQuantity']-ocr_orderResult['executedQuantity'], precisions['quantity'])
-                if   ocr_orderResult['side'] == 'BUY':  quantity_delta_filled =  ocr_orderResult['executedQuantity']
-                elif ocr_orderResult['side'] == 'SELL': quantity_delta_filled = -ocr_orderResult['executedQuantity']
+                eq_reported       = ocr_orderResult['executedQuantity']
+                eq_delta          = round(eq_reported-ocr['executedQuantity'],                 precisions['quantity'])
+                quantity_unfilled = round(ocr_orderResult['originalQuantity']-eq_reported,     precisions['quantity'])
+                if   ocr_orderResult['side'] == 'BUY':  quantity_delta_filled =  eq_delta
+                elif ocr_orderResult['side'] == 'SELL': quantity_delta_filled = -eq_delta
                 quantity_delta_unknown = round(quantity_delta-quantity_delta_filled, precisions['quantity'])
             else:
+                eq_reported            = ocr['executedQuantity']
+                eq_delta               = 0
                 quantity_delta_filled  = 0
-                quantity_unfilled      = ocr_orderParams['quantity']
+                quantity_unfilled      = round(ocr_orderParams['quantity']-eq_reported, precisions['quantity'])
                 quantity_delta_unknown = quantity_delta
 
         #[3]: Quantity Deltas Handling
@@ -1755,6 +1920,7 @@ class Account:
             ocr_orderResult = ocr_result['orderResult']
             ocr_orderParams = ocr['orderParams']
             ocrHandler      = None
+            ocr['lastRequestReceived'] = False
 
             #[3-1-2]: Last Result Successful
             if ocr_result['result']:
@@ -1774,15 +1940,15 @@ class Account:
                         #Profit
                         profit = 0
 
-                    elif quantity_dirDelta_ocr < 0: #Position Size Decreased
+                    else: #Position Size Decreased
                         #Entry Price
                         if quantity_new_ocr == 0: entryPrice_new_ocr = None
                         else:                     entryPrice_new_ocr = position['entryPrice']
                         #Profit
-                        if   ocr_orderParams['side'] == 'BUY':  profit = round(ocr_orderResult['executedQuantity']*(position['entryPrice']-ocr_orderResult['averagePrice']), precisions['quote'])
-                        elif ocr_orderParams['side'] == 'SELL': profit = round(ocr_orderResult['executedQuantity']*(ocr_orderResult['averagePrice']-position['entryPrice']), precisions['quote'])
-                    tradingFee        = round(ocr_orderResult['executedQuantity']*ocr_orderResult['averagePrice']*_ACTUALTRADE_MARKETTRADINGFEE, precisions['quote'])
-                    walletBalance_new = round(asset['walletBalance']+profit-tradingFee,                                                          precisions['quote'])
+                        if   ocr_orderParams['side'] == 'BUY':  profit = round(eq_delta*(position['entryPrice']-ocr_orderResult['averagePrice']), precisions['quote'])
+                        elif ocr_orderParams['side'] == 'SELL': profit = round(eq_delta*(ocr_orderResult['averagePrice']-position['entryPrice']), precisions['quote'])
+                    tradingFee        = round(eq_delta*ocr_orderResult['averagePrice']*_TRADINGFEE[position['contractType']][ocr_orderParams['type']][qAsset], precisions['quote'])
+                    walletBalance_new = round(asset['walletBalance']+profit-tradingFee,                                                                        precisions['quote'])
 
                     #[3-1-2-1-3]: Send Trade Log Save Request to DATAMANAGER
                     tradeLog = {'timestamp':          time.time(),
@@ -1790,7 +1956,7 @@ class Account:
                                 'logicSource':        ocr['logicSource'],
                                 'requestComplete':    (ocr_orderResult['originalQuantity'] == ocr_orderResult['executedQuantity']),
                                 'side':               ocr_orderParams['side'],
-                                'quantity':           ocr_orderResult['executedQuantity'],
+                                'quantity':           eq_delta,
                                 'price':              ocr_orderResult['averagePrice'],
                                 'profit':             profit,
                                 'tradingFee':         tradingFee,
@@ -1819,7 +1985,7 @@ class Account:
                                              f" * LogicSource:       {tradeLog['logicSource']}\n"
                                              f" * Request Complete:  {str(tradeLog['requestComplete'])}\n"
                                              f" * Side:              {tradeLog['side']}\n"
-                                             f" * Traded   Quantity: {auxiliaries.floatToString(number = ocr_orderResult['executedQuantity'], precision = precisions['quantity'])}\n"
+                                             f" * Traded   Quantity: {auxiliaries.floatToString(number = eq_delta,                            precision = precisions['quantity'])}\n"
                                              f" * Unfilled Quantity: {auxiliaries.floatToString(number = quantity_unfilled,                   precision = precisions['quantity'])}\n"
                                              f" * Price:             {auxiliaries.floatToString(number = ocr_orderResult['averagePrice'],     precision = precisions['price'])} {position['quoteAsset']}\n"
                                              f" * Profit:            {auxiliaries.floatToString(number = profit,                              precision = precisions['quote'])} {position['quoteAsset']}\n"
@@ -1827,10 +1993,17 @@ class Account:
                                   logType = 'Update', 
                                   color   = 'light_cyan')
 
+                    #[3-1-2-1-6]: Position & Tracker Update
+                    position['quantity']    = quantity_new_ocr
+                    position['entryPrice']  = entryPrice_new_ocr
+                    ocr['executedQuantity'] = eq_reported
+
                 #[3-1-2-2]: OCR Handler Determination
-                if   quantity_unfilled == 0:                                 ocrHandler = ('TERMINATE',  'COMPLETION')        #Terminate on Success
-                elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS: ocrHandler = ('REGENERATE', 'PARTIALCOMPLETION') #Regenerate
-                else:                                                        ocrHandler = ('TERMINATE',  'LIMITREACHED_PC')   #Terminate on Failure
+                if   ocr['status'] == 'RESTING':                              ocrHandler = ('WAIT',       'RESTING')           #Wait, The Order Is Still Resting On The Server
+                elif quantity_unfilled == 0:                                  ocrHandler = ('TERMINATE',  'COMPLETION')        #Terminate on Success
+                elif ocr_orderParams['type'] == 'LIMIT':                      ocrHandler = ('TERMINATE',  'PARTIALCOMPLETION') #Terminate, The Order Is No Longer On The Server
+                elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:  ocrHandler = ('REGENERATE', 'PARTIALCOMPLETION') #Regenerate
+                else:                                                         ocrHandler = ('TERMINATE',  'LIMITREACHED_PC')   #Terminate on Failure
 
             #[3-1-3]: Last Result Failed, Can Still Regenerate
             elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:
@@ -1841,23 +2014,31 @@ class Account:
                 ocrHandler = ('TERMINATE', 'LIMITREACHED_RJ') #Terminate on Failure
 
             #[3-1-5]: Disruption Detected, Terminate
-            if quantity_delta_unknown != 0 and ocrHandler[0] == 'REGENERATE': 
+            if quantity_delta_unknown != 0 and ocrHandler[0] in ('REGENERATE', 'WAIT'): 
                 ocrHandler = ('TERMINATE', 'UNKNOWNTRADEDETECTED')  #Terminate on Disruption
 
             #[3-1-6]: OCR Handling
             oh_type, oh_cause = ocrHandler
             #---[3-1-6-1]: Termination
             if oh_type == 'TERMINATE':  
-                self.__orderCreationRequest_terminate(symbol = symbol, quantity_new = quantity_new)
-                if   oh_cause == 'COMPLETION':           self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Completion.",                     logType = 'Update', color = 'light_green')
-                elif oh_cause == 'LIMITREACHED_PC':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion Limit Reach.", logType = 'Update', color = 'light_magenta')
-                elif oh_cause == 'LIMITREACHED_RJ':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Rejection Limit Reach.",          logType = 'Update', color = 'light_magenta')
-                elif oh_cause == 'UNKNOWNTRADEDETECTED': self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Interruption.",                   logType = 'Update', color = 'light_magenta')
+                if ocr['status'] == 'RESTING':
+                    self.__orderCreationRequest_cancel(symbol = symbol)
+                    self.__logger(message = f"OCR Cancellation Requested For {lID}-{symbol} Before Termination.", logType = 'Update', color = 'light_blue')
+                else:
+                    self.__orderCreationRequest_terminate(symbol = symbol, quantity_new = quantity_new)
+                    if   oh_cause == 'COMPLETION':           self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Completion.",                     logType = 'Update', color = 'light_green')
+                    elif oh_cause == 'LIMITREACHED_PC':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion Limit Reach.", logType = 'Update', color = 'light_magenta')
+                    elif oh_cause == 'LIMITREACHED_RJ':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Rejection Limit Reach.",          logType = 'Update', color = 'light_magenta')
+                    elif oh_cause == 'UNKNOWNTRADEDETECTED': self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Interruption.",                   logType = 'Update', color = 'light_magenta')
             #---[3-1-6-1]: Regeneration
             elif oh_type == 'REGENERATE': 
                 self.__orderCreationRequest_regenerate(symbol = symbol, quantity_unfilled = quantity_unfilled)
                 if   oh_cause == 'PARTIALCOMPLETION': self.__logger(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Partial Completion.", logType = 'Update', color = 'light_blue')
                 elif oh_cause == 'REJECTED':          self.__logger(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Rejection.",          logType = 'Update', color = 'light_blue')
+            #---[3-1-6-3]: Wait
+            elif oh_type == 'WAIT':
+                if oh_cause == 'RESTING': 
+                    self.__logger(message = f"OCR Waiting For {lID}-{symbol} On Resting Order.", logType = 'Update', color = 'light_blue')
 
         #---[3-2]: Unknown Trade
         if quantity_delta_unknown != 0:
@@ -1969,7 +2150,8 @@ class Account:
                   'side':              tradeHandler_checkList[thType],
                   'tefVal':            None,
                   'timestamp':         kline[KLINDEX_OPENTIME],
-                  'generationTime_ns': time.time_ns()}
+                  'generationTime_ns': time.time_ns(),
+                  'suspendedTime_ns':  0}
             position_ths.append(th)
     
     def __trade_onAbruptClearing(self, symbol, clearingType):
@@ -2517,6 +2699,10 @@ class Account:
         position = self.__positions[symbol]
         ocr      = position['_orderCreationRequest']
         if ocr is not None:
+            if ocr['status'] == 'RESTING':
+                self.__orderCreationRequest_cancel(symbol = symbol)
+                return {'result':  False, 
+                        'message': "Cancelling Resting Order, Retry Shortly"}
             return {'result':  False, 
                     'message': "OCR Not Empty"}
         
@@ -2538,8 +2724,10 @@ class Account:
         #---[4-2]: OCR Generation
         ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol, 
                                                             logicSource     = 'FORCECLEAR', 
+                                                            orderType       = 'MARKET',
                                                             side            = ocr_side,
                                                             quantity        = ocr_quantity,
+                                                            price           = None,
                                                             tcTrackerUpdate = None,
                                                             ipcRID          = requestID)
         
