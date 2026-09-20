@@ -1,6 +1,7 @@
 import os
 import json
 import constants
+import math
 
 TRADINGFEE = {'PERPETUAL':         {'LIMIT':  {'USDT': 0.0002, 'USDC': 0.0000, 'DEFAULT': 0.0002},
                                     'MARKET': {'USDT': 0.0005, 'USDC': 0.0004, 'DEFAULT': 0.0005},},
@@ -157,6 +158,69 @@ def getSlippedPrice(side, quantity, reference_price, depth, precision_price):
         
     #[6]: Return The Final Volume-Weighted Average Execution Price
     return round(total_executed_notional / quantity, precision_price)
+
+
+
+
+
+def checkServerFilters(serverFilters, orderType, quantity, price, currentPrice, isEntry):
+    #[1]: Filter Type Determination
+    if orderType == 'MARKET': lotFilterType = 'MARKET_LOT_SIZE'
+    else:                     lotFilterType = 'LOT_SIZE'
+
+    #[2]: Filters Iteration
+    for serverFilter in serverFilters:
+        sf_ft = serverFilter['filterType']
+
+        #---[2-1]: Lot Size
+        if sf_ft == lotFilterType:
+            minQty   = float(serverFilter['minQty'])
+            maxQty   = float(serverFilter['maxQty'])
+            stepSize = float(serverFilter['stepSize'])
+            if isEntry and not (minQty <= quantity):
+                return {'type':   'MINQTY',
+                        'minQty': minQty}
+            if not (quantity <= maxQty):
+                return {'type':   'MAXQTY',
+                        'maxQty': maxQty}
+            if not (quantity == round(quantity, -math.floor(math.log10(stepSize)))): 
+                return {'type':               'STEPSIZE',
+                        'stepSize':           stepSize,
+                        'stepSize_val':       math.floor(math.log10(stepSize)),
+                        'quantity_stepSized': round(quantity, -math.floor(math.log10(stepSize)))}
+
+        #---[2-2]: Price Filter (LIMIT Only)
+        elif sf_ft == 'PRICE_FILTER':
+            if price is None:
+                continue
+            minPrice = float(serverFilter['minPrice'])
+            maxPrice = float(serverFilter['maxPrice'])
+            tickSize = float(serverFilter['tickSize'])
+            if not (minPrice <= price):
+                return {'type':     'MINPRICE',
+                        'minPrice': minPrice}
+            if not (price <= maxPrice):
+                return {'type':     'MAXPRICE',
+                        'maxPrice': maxPrice}
+            if not (price == round(price, -math.floor(math.log10(tickSize)))): 
+                return {'type':            'TICKSIZE',
+                        'tickSize':        tickSize,
+                        'tickSize_val':    math.floor(math.log10(tickSize)),
+                        'price_tickSized': round(price, -math.floor(math.log10(tickSize)))}
+
+        #---[2-3]: Min Notional (Entry Only)
+        elif sf_ft == 'MIN_NOTIONAL':
+            if not isEntry:
+                continue
+            notional_min = float(serverFilter['notional'])
+            notional     = (price if price is not None else currentPrice)*quantity
+            if not (notional_min <= notional):
+                return {'type':         'MINNOTIONAL',
+                        'notional':     notional,
+                        'notional_min': notional_min}
+
+    #[3]: All Passed
+    return None
 
 
 
