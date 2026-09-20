@@ -141,14 +141,14 @@ _BINANCE_ACCEPTABLE_CONTRACT_TYPES     = {'PERPETUAL', 'TRADIFI_PERPETUAL'}
 _BINANCE_RATELIMITTYPE_ORDERS          = 'ORDERS'
 _BINANCE_RATELIMITTYPE_REQUESTWEIGHT   = 'REQUEST_WEIGHT'
 
-_BINANCE_ORDERSTATUS = {'NEW':              {'result': None,  'complete': False},
-                        'PARTIALLY_FILLED': {'result': True,  'complete': False},
-                        'FILLED':           {'result': True,  'complete': True},
-                        'CANCELED':         {'result': False, 'complete': True},
-                        'PENDING_CANCEL':   {'result': False, 'complete': True},
-                        'REJECTED':         {'result': False, 'complete': True},
-                        'EXPIRED':          {'result': True,  'complete': True},
-                        'EXPIRED_IN_MATCH': {'result': True,  'complete': True}}
+_BINANCE_ORDERSTATUS_INTERPRETATION = {'NEW':              False,
+                                       'PARTIALLY_FILLED': False,
+                                       'FILLED':           True,
+                                       'CANCELED':         True,
+                                       'PENDING_CANCEL':   False,
+                                       'REJECTED':         True,
+                                       'EXPIRED':          True,
+                                       'EXPIRED_IN_MATCH': True}
 
 _BINANCE_FUTURESSTART_YEAR  = 2019
 _BINANCE_FUTURESSTART_MONTH = 8
@@ -263,6 +263,7 @@ class BinanceAPIManager:
         self.ipcA.addFARHandler('setPositionMarginType',   self.__far_setPositionMarginType,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('setPositionLeverage',     self.__far_setPositionLeverage,     executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('createOrder',             self.__far_createOrder,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
+        self.ipcA.addFARHandler('cancelOrder',             self.__far_cancelOrder,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
         #---#COMMON#
         self.ipcA.addFARHandler('registerStreamSubscription',   self.__far_registerStreamSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('unregisterStreamSubscription', self.__far_unregisterStreamSubscription, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
@@ -3575,14 +3576,24 @@ class BinanceAPIManager:
             #---[2-4-2]: Read Result Interpretation
             #------[2-4-2-1]: Result Received
             if order_fromServer is not None:
-                if not _BINANCE_ORDERSTATUS[order_fromServer['status']]['complete']:
+                #[2-4-2-1-1]: Execution Progress Check
+                isComplete       = _BINANCE_ORDERSTATUS_INTERPRETATION[order_fromServer['status']]
+                executedQuantity = float(order_fromServer['executedQty'])
+                isNewlyExecuted  = (createdOrder['lastExecutedQuantity'] < executedQuantity)
+                if not (isComplete or isNewlyExecuted):
                     continue
+                #[2-4-2-1-2]: Tracker Update
+                createdOrder['lastExecutedQuantity'] = executedQuantity
+
+                #[2-4-2-1-3]: Response Dispatch
                 self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                    functionResult = {'localID':        createdOrder['localID'], 
                                                      'positionSymbol': createdOrder['positionSymbol'], 
                                                      'responseOn':     'CREATEORDER', 
-                                                     'result':         _BINANCE_ORDERSTATUS[order_fromServer['status']]['result'],
-                                                     'orderResult':    {'type':             order_fromServer['type'],
+                                                     'result':         True,
+                                                     'orderResult':    {'clientOrderId':    order_fromServer['clientOrderId'],
+                                                                        'status':           order_fromServer['status'],
+                                                                        'type':             order_fromServer['type'],
                                                                         'side':             order_fromServer['side'],
                                                                         'averagePrice':     float(order_fromServer['avgPrice']),
                                                                         'originalQuantity': float(order_fromServer['origQty']),
@@ -3590,8 +3601,12 @@ class BinanceAPIManager:
                                                      'failType':       None,
                                                      'errorMessage':   None}, 
                                    requestID = createdOrder['IPCRID'], 
-                                   complete  = True)
-                completedOrders.append(coID)
+                                   complete  = isComplete)
+                
+                #[2-4-2-1-4]: Completion Handling
+                if isComplete:
+                    completedOrders.append(coID)
+
             #------[2-4-2-2]: Order Not Found
             elif apiError_orderDoesNotExist:
                 createdOrder['nCheckFails'] += 1
@@ -3611,8 +3626,12 @@ class BinanceAPIManager:
                               logType = 'Warning', 
                               color   = 'light_magenta')
                 completedOrders.append(coID)
+
             #------[2-4-2-3]: Unexpectancy
             else:
+                createdOrder['nCheckFails'] += 1
+                if createdOrder['nCheckFails'] < _BINANCE_CREATEDORDERCANCELLATIONTHRESHOLD:
+                    continue
                 self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                    functionResult = {'localID':        createdOrder['localID'], 
                                                      'positionSymbol': createdOrder['positionSymbol'], 
@@ -5035,45 +5054,124 @@ class BinanceAPIManager:
             
         #[6]: Order Creation Attempt
         #---[6-1]: Order Params Completion
-        coID = "ATMETA"+str(time.time_ns())
-        orderParams['newClientOrderId'] = coID
         orderParams['newOrderRespType'] = "FULL"
         #---[6-2]: Order Creation Request
         try:                   
             response_createOrder = self.__binance_client_users[localID]['accountInstance'].futures_create_order(**orderParams)
             errorMsg = None
-        except Exception as e: 
+        except Exception as e:
             response_createOrder = None                                                                                     
             errorMsg = str(e)
-        #---[6-3]: Server Response Handling
+
+        #[7]: Response Dispatch
         if response_createOrder is not None:
-            #[6-3-1]: Order has immediately been filled
-            if _BINANCE_ORDERSTATUS[response_createOrder['status']]['complete']:
-                self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', 
-                                    functionResult = {'localID':        localID, 
-                                                      'positionSymbol': positionSymbol, 
-                                                      'responseOn':     'CREATEORDER', 
-                                                      'result':         _BINANCE_ORDERSTATUS[response_createOrder['status']]['result'],
-                                                      '': 1,
-                                                      'orderResult':    {'type':             response_createOrder['type'],
-                                                                         'side':             response_createOrder['side'],
-                                                                         'averagePrice':     float(response_createOrder['avgPrice']),
-                                                                         'originalQuantity': float(response_createOrder['origQty']),
-                                                                         'executedQuantity': float(response_createOrder['executedQty']),},
-                                                      'failType':       None,
-                                                      'errorMessage':   None},
-                                    requestID = requestID, complete = True)
-            #[6-3-2]: Order has not immediately been filled
-            else:
+            #[7-1]: Server Response Interpretation
+            isComplete = _BINANCE_ORDERSTATUS_INTERPRETATION[response_createOrder['status']]
+
+            #[7-2]: Base Response
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID':        localID, 
+                                                 'positionSymbol': positionSymbol, 
+                                                 'responseOn':     'CREATEORDER', 
+                                                 'result':         True,
+                                                 'orderResult':    {'clientOrderId':    response_createOrder['clientOrderId'],
+                                                                    'status':           response_createOrder['status'],
+                                                                    'type':             response_createOrder['type'],
+                                                                    'side':             response_createOrder['side'],
+                                                                    'averagePrice':     float(response_createOrder['avgPrice']),
+                                                                    'originalQuantity': float(response_createOrder['origQty']),
+                                                                    'executedQuantity': float(response_createOrder['executedQty']),},
+                                                 'failType':       None,
+                                                 'errorMessage':   None},
+                               requestID = requestID, 
+                               complete  = isComplete)
+
+            #[7-3]: Order Tracker Update
+            if not isComplete:
                 self.__binance_createdOrders[response_createOrder['clientOrderId']] = {'IPCRID':                 requestID, 
                                                                                        'localID':                localID, 
                                                                                        'positionSymbol':         positionSymbol, 
-                                                                                       'creationCompletionTime': time.perf_counter_ns()+1e9, 
-                                                                                       'lastCheckTime':          0, 
+                                                                                       'creationCompletionTime': time.perf_counter_ns()+1e9,
+                                                                                       'lastCheckTime':          0,
+                                                                                       'lastExecutedQuantity':   float(response_createOrder['executedQty']),
                                                                                        'nCheckFails':            0}
         else: 
             self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR', 'errorMessage': errorMsg}, 
+                               requestID      = requestID, 
+                               complete       = True)
+
+    def __far_cancelOrder(self, requester, requestID, localID, positionSymbol, clientOrderID):
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            self.ipcA.sendFARR(targetProcess  = requester, 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': 'INVALIDREQUESTER', 'errorMessage': None},      
+                               requestID      = requestID,
+                               complete       = True)
+            return
+
+        #[2]: Server Availability Check
+        if not self.__connection_serverAvailable:
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': 'SERVERUNAVAILABLE', 'errorMessage': None},      
+                               requestID      = requestID, 
+                               complete       = True)
+            return
+
+        #[3]: Account Check
+        if localID not in self.__binance_client_users:
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER',
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': 'LOCALIDNOTFOUND', 'errorMessage': None},      
+                               requestID      = requestID,
+                               complete       = True)
+            return
+
+        #[4]: Account Activation Check
+        if localID not in self.__binance_activatedAccounts_LocalIDs:
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': 'ACCOUNTNOTACTIVATED', 'errorMessage': None},      
+                               requestID      = requestID, 
+                               complete       = True)
+            return
+            
+        #[5]: API Rate Limit Check
+        if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_ORDERS, weight = 1, apply = True):
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': 'APIRATELIMITREACHED', 'errorMessage': None},      
+                               requestID      = requestID, 
+                               complete       = True)
+            return
+            
+        #[6]: Order Cancellation Attempt
+        try:                   
+            response_cancelOrder = self.__binance_client_users[localID]['accountInstance'].futures_cancel_order(symbol            = positionSymbol,
+                                                                                                                origClientOrderId = clientOrderID)
+            errorMsg = None
+        except Exception as e:
+            response_cancelOrder = None                                                                                     
+            errorMsg = str(e)
+
+        #[7]: Response Dispatch
+        if response_cancelOrder is not None:
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER',
+                               functionResult = {'localID':        localID, 
+                                                 'positionSymbol': positionSymbol, 
+                                                 'responseOn':     'CANCELORDER', 
+                                                 'result':         True,
+                                                 'orderResult':    {'clientOrderId':    response_cancelOrder['clientOrderId'],
+                                                                    'status':           response_cancelOrder['status'],
+                                                                    'type':             response_cancelOrder['type'],
+                                                                    'side':             response_cancelOrder['side'],
+                                                                    'averagePrice':     float(response_cancelOrder['avgPrice']),
+                                                                    'originalQuantity': float(response_cancelOrder['origQty']),
+                                                                    'executedQuantity': float(response_cancelOrder['executedQty'])},
+                                                 'failType':       None,
+                                                 'errorMessage':   None},
+                               requestID = requestID, 
+                               complete  = True)
+        else: 
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR', 'errorMessage': errorMsg}, 
                                requestID      = requestID, 
                                complete       = True)
 
