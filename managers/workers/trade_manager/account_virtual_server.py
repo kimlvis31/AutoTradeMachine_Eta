@@ -47,11 +47,7 @@ _ACCOUNT_READABLEASSETS = ('USDT', 'USDC')
 _ACCOUNT_ASSETPRECISIONS = {'USDT': 8,
                             'USDC': 8}
 
-_VIRTUALTRADE_TRADINGFEE                             = {'PERPETUAL':         {'LIMIT':  {'USDT': 0.0002, 'USDC': 0.0000, 'DEFAULT': 0.0002},
-                                                                              'MARKET': {'USDT': 0.0005, 'USDC': 0.0004, 'DEFAULT': 0.0005},},
-                                                        'TRADIFI_PERPETUAL': {'LIMIT':  {'USDT': 0.0000, 'USDC': 0.0000, 'DEFAULT': 0.0000},
-                                                                              'MARKET': {'USDT': 0.0004, 'USDC': 0.0004, 'DEFAULT': 0.0005},}
-                                                       }
+_VIRTUALTRADE_TRADINGFEE                             = auxiliaries_trade.TRADINGFEE
 _VIRTUALTRADE_MARKETOPENLOSSRATE                     = 0.0015
 _VIRTUALTRADE_SERVER_PROBABILITY_SUCCESS             = 0.95
 _VIRTUALTRADE_SERVER_PROBABILITY_INCOMPLETEEXECUTION = 0.10

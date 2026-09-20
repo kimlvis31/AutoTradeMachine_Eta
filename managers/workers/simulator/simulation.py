@@ -105,11 +105,7 @@ DUMMYFRAMES = constants.DUMMYFRAMES
 #Internal Constants
 _FETCHCHUNKSIZE    = 1440
 _PROCESSTIMEOUT_NS = 100e6
-_TRADINGFEE = {'PERPETUAL':         {'LIMIT':  {'USDT': 0.0002, 'USDC': 0.0000, 'DEFAULT': 0.0002},
-                                     'MARKET': {'USDT': 0.0005, 'USDC': 0.0004, 'DEFAULT': 0.0005},},
-               'TRADIFI_PERPETUAL': {'LIMIT':  {'USDT': 0.0000, 'USDC': 0.0000, 'DEFAULT': 0.0000},
-                                     'MARKET': {'USDT': 0.0004, 'USDC': 0.0004, 'DEFAULT': 0.0005},}
-              }
+_TRADINGFEE                = auxiliaries_trade.TRADINGFEE
 _MARKETOPENLOSSRATE        = 0.0015
 _BASEASSETALLOCATABLERATIO = 0.95
 _ASSETPRECISIONS = {'USDT': 8,
