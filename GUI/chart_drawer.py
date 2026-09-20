@@ -74,8 +74,8 @@ METRICINDEX_LONGSHORTRATIO    = constants.METRICINDEX_LONGSHORTRATIO
 METRICINDEX_CLOSED            = constants.METRICINDEX_CLOSED
 METRICINDEX_SOURCE            = constants.METRICINDEX_SOURCE
 DEPTHBINS     = constants.DEPTHBINS
-DEPTHBINS_MIN = constants.DEPTHBINS
-DEPTHBINS_MAX = constants.DEPTHBINS
+DEPTHBINS_MIN = constants.DEPTHBINS_MIN
+DEPTHBINS_MAX = constants.DEPTHBINS_MAX
 
 KLINE_INTERVAL_ID_1m  = constants.KLINE_INTERVAL_ID_1m
 KLINE_INTERVAL_ID_3m  = constants.KLINE_INTERVAL_ID_3m
@@ -2958,13 +2958,6 @@ class chartDrawer:
             for key in drawn[ts]:
                 if ts in dQueue: dQueue[ts][key] = None
                 else:            dQueue[ts] = {key: None}
-        """
-        for key in ('KLINE', 'VOL', 'DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO'):
-            for ts in drawn:
-                if key not in drawn[ts]: continue
-                if ts in dQueue: dQueue[ts][key] = None
-                else:            dQueue[ts] = {key: None}
-        """
 
         #[3]: Clear Graphics
         self._clearDrawers()
