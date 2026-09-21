@@ -245,6 +245,10 @@ def copyTradeControlTracker(tradeControlTracker):
                       'teff_model': tradeControlTracker['teff_model'].copy()}
     return tcTracker_copy
 
+
+
+
+
 def getFormattedOCRString(ocr):
     #[1]: OCR Check
     if ocr is None:
