@@ -334,7 +334,11 @@ class Account:
         positions            = self.__positions
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
-        compute_liqPrice = auxiliaries_trade.computeLiquidationPrice
+        func_tct    = self.__trade_checkTrade
+        func_rab    = self.__releaseAllocatedBalance
+        func_cpt    = self.__checkPositionTradability
+        func_rmtalu = self.__requestMarginTypeAndLeverageUpdate
+        func_clp    = auxiliaries_trade.computeLiquidationPrice
 
         #[2]: Save previous data
         assets_prev    = {assetName: {dKey: asset[dKey]    for dKey in _GUIANNOUCEMENT_ASSETDATANAMES}    for assetName, asset    in assets.items()}
@@ -356,26 +360,28 @@ class Account:
             ocr = position['_orderCreationRequest']
             if ocr is None or ocr['lastRequestReceived']:
                 if position['quantity'] is not None:
-                    self.__trade_checkTrade(symbol         = symbol, 
-                                            quantity_new   = position_ip['quantity'], 
-                                            entryPrice_new = position_ip['entryPrice'])
+                    func_tct(symbol         = symbol, 
+                             quantity_new   = position_ip['quantity'], 
+                             entryPrice_new = position_ip['entryPrice'])
                 ocr = position['_orderCreationRequest']
                 if ocr is None or ocr['status'] == 'SETTLED':
-                    position['quantity']               = position_ip['quantity']
-                    position['entryPrice']             = position_ip['entryPrice']
-                    position['isolatedWalletBalance']  = position_ip['isolatedWalletBalance']
-                    position['positionInitialMargin']  = position_ip['positionInitialMargin']
-                    position['openOrderInitialMargin'] = position_ip['openOrderInitialMargin']
-                    position['maintenanceMargin']      = position_ip['maintenanceMargin']
-                    position['unrealizedPNL']          = position_ip['unrealizedPNL']
+                    position['quantity']   = position_ip['quantity']
+                    position['entryPrice'] = position_ip['entryPrice']
                     if position['quantity'] == 0 and 0 < position['allocatedBalance']:
-                        self.__releaseAllocatedBalance(symbol = symbol)
+                        func_rab(symbol = symbol)
 
-            #[2-4]: Position Setup Identity
+            #[2-4]: Margin & PNL Data (Always Synced)
+            position['isolatedWalletBalance']  = position_ip['isolatedWalletBalance']
+            position['positionInitialMargin']  = position_ip['positionInitialMargin']
+            position['openOrderInitialMargin'] = position_ip['openOrderInitialMargin']
+            position['maintenanceMargin']      = position_ip['maintenanceMargin']
+            position['unrealizedPNL']          = position_ip['unrealizedPNL']
+
+            #[2-5]: Position Setup Identity
             position['leverage'] = position_ip['leverage']
             position['isolated'] = position_ip['isolated']
-            self.__checkPositionTradability(symbol           = symbol)
-            self.__requestMarginTypeAndLeverageUpdate(symbol = symbol)
+            func_cpt(symbol    = symbol)
+            func_rmtalu(symbol = symbol)
             if position['isolated']:
                 asset['_positionSymbols_isolated'].add(symbol)
                 asset['_positionSymbols_crossed'].discard(symbol)
@@ -449,16 +455,16 @@ class Account:
                 
                 if position['isolated']: wb = position['isolatedWalletBalance']
                 else:                    wb = asset['crossWalletBalance']
-                liqPrice = compute_liqPrice(positionSymbol    = symbol,
-                                            walletBalance     = wb,
-                                            quantity          = position['quantity'],
-                                            entryPrice        = position['entryPrice'],
-                                            currentPrice      = position['currentPrice'],
-                                            maintenanceMargin = position['maintenanceMargin'],
-                                            upnl              = position['unrealizedPNL'],
-                                            isolated          = position['isolated'],
-                                            mm_crossTotal     = asset['crossMaintenanceMargin'],
-                                            upnl_crossTotal   = asset['crossUnrealizedPNL'])
+                liqPrice = func_clp(positionSymbol    = symbol,
+                                    walletBalance     = wb,
+                                    quantity          = position['quantity'],
+                                    entryPrice        = position['entryPrice'],
+                                    currentPrice      = position['currentPrice'],
+                                    maintenanceMargin = position['maintenanceMargin'],
+                                    upnl              = position['unrealizedPNL'],
+                                    isolated          = position['isolated'],
+                                    mm_crossTotal     = asset['crossMaintenanceMargin'],
+                                    upnl_crossTotal   = asset['crossUnrealizedPNL'])
                 position['liquidationPrice'] = None if liqPrice is None else round(liqPrice, position['precisions']['price'])
                 ep = position['entryPrice']
                 cp = position['currentPrice']
@@ -762,6 +768,7 @@ class Account:
                     '_leverageControlRequest':   None,
                     '_linearizedAnalyses':       None,
                     '_tradeHandlers':            deque(),
+                    '_tradeHandlers_genCounter': 0,
                     '_orderCreationRequest':     None}
         positions[symbol] = position
         asset['_positionSymbols'].add(symbol)
@@ -865,6 +872,7 @@ class Account:
 
                 #[2-3-2-4]: Result Recording & Flag Update
                 requestResult = {'resultReceivalTime': time.time(), 
+                                 'requestType':        'CREATE',
                                  'result':             result,
                                  'failType':           fr_fType,
                                  'orderResult':        fr_oResult,
@@ -893,13 +901,14 @@ class Account:
 
             #[2-4-3]: Status Update
             if result:
-                ocr['status'] = 'SETTLED'
+                ocr['status'] = 'CANCELLED'
             else:
-                if functionResult['failType'] == 'ORDERNOTFOUND': ocr['status'] = 'SETTLED'
+                if functionResult['failType'] == 'ORDERNOTFOUND': ocr['status'] = 'CANCELLED'
                 else:                                             ocr['status'] = 'RESTING'
 
             #[2-4-4]: Result Recording & Flag Update
             requestResult = {'resultReceivalTime': time.time(), 
+                             'requestType':        'CANCEL',
                              'result':             result,
                              'failType':           functionResult['failType'],
                              'orderResult':        functionResult['orderResult'],
@@ -1300,14 +1309,32 @@ class Account:
 
         #[8]: Update Trade Handlers
         position_ths = position['_tradeHandlers']
+        th_genCnt    = position['_tradeHandlers_genCounter']
+        th_new       = False
         for thType in tradeHandlers:
             th = {'type':              thType, 
                   'side':              tradeHandler_checkList[thType],
                   'tefVal':            tef_val,
                   'timestamp':         la_openTime,
+                  'id':                th_genCnt,
                   'generationTime_ns': time.time_ns(),
                   'suspendedTime_ns':  0}
             position_ths.append(th)
+            self.__logger(message = (f"[{self.__localID}-{symbol}] A Trade Handler Generated.\n"
+                                     f" * type:              {th['type']}\n"
+                                     f" * side:              {th['side']}\n"
+                                     f" * tefVal:            {th['tefVal']}\n"
+                                     f" * timestamp:         {th['timestamp']}\n"
+                                     f" * id:                {th['id']}\n"
+                                     f" * generationTime_ns: {th['generationTime_ns']}\n"
+                                     f" * suspendedTime_ns:  {th['suspendedTime_ns']}"
+                                     ),
+                          logType = 'Update',
+                          color   = 'light_cyan')
+            th_new = True
+        if th_new:
+            if th_genCnt == 525600: position['_tradeHandlers_genCounter'] = 0
+            else:                   position['_tradeHandlers_genCounter'] += 1
     
     def __processTradeHandlers(self):
         #[1]: Instances
@@ -1315,6 +1342,7 @@ class Account:
         tcs_loaded = self.__tradeConfigurations_loaded
         currencies = self.__currencies
         assets     = self.__assets
+        func_gfOCRs   = auxiliaries_trade.getFormattedOCRString
         func_allocBal = self.__allocateBalance
 
         #[2]: Trade Handlers Processing
@@ -1329,8 +1357,16 @@ class Account:
                 continue
             ocr = position['_orderCreationRequest']
             if ocr is not None:
-                if ocr['status'] == 'RESTING':
+                ocr_status = ocr['status']
+                ocr_thID   = ocr['tradeHandlerID']
+                if (ocr_thID is not None              and #Was this OCR generated by trade handler?
+                    ocr_thID < tradeHandlers[0]['id'] and #Was this OCR generated by a trade handler at a prior tick?
+                    ocr_status == 'RESTING'):             #Is this OCR at a RESTING status?
                     self.__orderCreationRequest_cancel(symbol = symbol)
+                    self.__logger(message = (f"OCR Canceling For {self.__localID}-{symbol} By Trade Handler.\n"
+                                             f" * OCR: {func_gfOCRs(ocr = position['_orderCreationRequest'])}"),
+                                  logType = 'Update',
+                                  color   = 'light_green')
                 continue
             if position['_marginTypeControlRequest'] is not None: continue
             if position['_leverageControlRequest']   is not None: continue
@@ -1345,6 +1381,7 @@ class Account:
             th_side       = th['side']
             th_tefVal     = th['tefVal']
             th_timestamp  = th['timestamp']
+            th_id         = th['id']
             th_genTime_ns = th['generationTime_ns']
             if _TRADE_TRADEHANDLER_LIFETIME_NS < time.time_ns()-th_genTime_ns-th['suspendedTime_ns']:
                 self.__logger(message = (f"A Trade Handler Is Expired And Will Be Discarded.\n"
@@ -1461,14 +1498,20 @@ class Account:
 
                 #[2-5-1-5]: Finally
                 func_allocBal(symbol = symbol, apply = True)
-                self.__orderCreationRequest_generate(symbol          = symbol,
-                                                     logicSource     = 'ENTRY',
-                                                     orderType       = tc_orderType,
-                                                     side            = th_side,
-                                                     quantity        = quantity,
-                                                     price           = tc_orderPrice,
-                                                     tcTrackerUpdate = None,
-                                                     ipcRID          = None)
+                ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol,
+                                                                    logicSource     = 'ENTRY',
+                                                                    orderType       = tc_orderType,
+                                                                    side            = th_side,
+                                                                    quantity        = quantity,
+                                                                    price           = tc_orderPrice,
+                                                                    tcTrackerUpdate = None,
+                                                                    ipcRID          = None,
+                                                                    tradeHandlerID  = th_id)
+                if ocrGenResult:
+                    self.__logger(message = (f"OCR Generated For {self.__localID}-{symbol} By Trade Handler.\n"
+                                             f" * OCR: {func_gfOCRs(ocr = position['_orderCreationRequest'])}"),
+                                  logType = 'Update',
+                                  color   = 'light_green')
                 
             #---[2-5-2]: CLEAR
             elif th_type == 'CLEAR':
@@ -1526,14 +1569,20 @@ class Account:
                     continue
 
                 #[2-5-2-4]: Finally
-                self.__orderCreationRequest_generate(symbol          = symbol,
-                                                     logicSource     = 'CLEAR',
-                                                     orderType       = tc_orderType,
-                                                     side            = th_side,
-                                                     quantity        = quantity,
-                                                     price           = tc_orderPrice,
-                                                     tcTrackerUpdate = None,
-                                                     ipcRID          = None)
+                ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol,
+                                                                    logicSource     = 'CLEAR',
+                                                                    orderType       = tc_orderType,
+                                                                    side            = th_side,
+                                                                    quantity        = quantity,
+                                                                    price           = tc_orderPrice,
+                                                                    tcTrackerUpdate = None,
+                                                                    ipcRID          = None,
+                                                                    tradeHandlerID  = th_id)
+                if ocrGenResult:
+                    self.__logger(message = (f"OCR Generated For {self.__localID}-{symbol} By Trade Handler.\n"
+                                             f" * OCR: {func_gfOCRs(ocr = position['_orderCreationRequest'])}"),
+                                  logType = 'Update',
+                                  color   = 'light_green')
                 
             #---[2-5-3]: EXIT
             elif th_type == 'EXIT':
@@ -1615,14 +1664,20 @@ class Account:
                     continue
 
                 #[2-5-3-5]: Finally
-                self.__orderCreationRequest_generate(symbol          = symbol,
-                                                     logicSource     = 'EXIT',
-                                                     orderType       = tc_orderType,
-                                                     side            = th_side,
-                                                     quantity        = quantity,
-                                                     price           = tc_orderPrice,
-                                                     tcTrackerUpdate = None,
-                                                     ipcRID          = None)
+                ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol,
+                                                                    logicSource     = 'EXIT',
+                                                                    orderType       = tc_orderType,
+                                                                    side            = th_side,
+                                                                    quantity        = quantity,
+                                                                    price           = tc_orderPrice,
+                                                                    tcTrackerUpdate = None,
+                                                                    ipcRID          = None,
+                                                                    tradeHandlerID  = th_id)
+                if ocrGenResult:
+                    self.__logger(message = (f"OCR Generated For {self.__localID}-{symbol} By Trade Handler.\n"
+                                             f" * OCR: {func_gfOCRs(ocr = position['_orderCreationRequest'])}"),
+                                  logType = 'Update',
+                                  color   = 'light_green')
 
             #---[2-5-4]: FSLIMMED & FSLCLOSE
             elif th_type == 'FSLIMMED' or th_type == 'FSLCLOSE':
@@ -1682,18 +1737,24 @@ class Account:
                 #[2-5-4-4]: Finally
                 if   position['quantity'] < 0: slTriggeredSide = 'SHORT'
                 elif 0 < position['quantity']: slTriggeredSide = 'LONG'
-                self.__orderCreationRequest_generate(symbol          = symbol,
-                                                     logicSource     = th_type,
-                                                     orderType       = 'MARKET',
-                                                     side            = th_side,
-                                                     quantity        = quantity,
-                                                     price           = None,
-                                                     tcTrackerUpdate = {'slExited': {'onComplete': (slTriggeredSide, th_timestamp), 
-                                                                                     'onPartial':  (slTriggeredSide, th_timestamp), 
-                                                                                     'onFail':     (slTriggeredSide, th_timestamp)}},
-                                                     ipcRID          = None)
+                ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol,
+                                                                    logicSource     = th_type,
+                                                                    orderType       = 'MARKET',
+                                                                    side            = th_side,
+                                                                    quantity        = quantity,
+                                                                    price           = None,
+                                                                    tcTrackerUpdate = {'slExited': {'onComplete': (slTriggeredSide, th_timestamp), 
+                                                                                                    'onPartial':  (slTriggeredSide, th_timestamp), 
+                                                                                                    'onFail':     (slTriggeredSide, th_timestamp)}},
+                                                                    ipcRID          = None,
+                                                                    tradeHandlerID  = th_id)
+                if ocrGenResult:
+                    self.__logger(message = (f"OCR Generated For {self.__localID}-{symbol} By Trade Handler.\n"
+                                             f" * OCR: {func_gfOCRs(ocr = position['_orderCreationRequest'])}"),
+                                  logType = 'Update',
+                                  color   = 'light_green')
     
-    def __orderCreationRequest_generate(self, symbol, logicSource, orderType, side, quantity, price, tcTrackerUpdate = None, ipcRID = None):
+    def __orderCreationRequest_generate(self, symbol, logicSource, orderType, side, quantity, price, tcTrackerUpdate = None, ipcRID = None, tradeHandlerID = None):
         #[1]: Instances
         lID        = self.__localID
         aType      = self.__accountType
@@ -1702,7 +1763,7 @@ class Account:
 
         #[2]: OCR Check
         if position['_orderCreationRequest'] is not None: 
-            self.__logger(message = (f"OCR Generation Rejected - OCR Not Empty.\n"
+            self.__logger(message = (f"OCR Generation Failed - OCR Not Empty.\n"
                                      f" * Local ID:          {lID}\n"
                                      f" * Symbol:            {symbol}\n"
                                      f" * Logic Source:      {logicSource}\n"
@@ -1711,7 +1772,7 @@ class Account:
                                      f" * Quantity:          {quantity}\n"
                                      f" * Price:             {price}\n"
                                      f" * TC Tracker Update: {tcTrackerUpdate}\n"
-                                     f" * IPC RID:           {ipcRID}\n"
+                                     f" * IPC RID:           {ipcRID}"
                                      ), 
                           logType = 'Warning',
                           color   = 'light_red')
@@ -1743,7 +1804,8 @@ class Account:
                'lastRequestReceived':  False,
                'results':              [],
                'nAttempts':            1,
-               'cancelTime_ns':        None}
+               'cancelTime_ns':        None,
+               'tradeHandlerID':       tradeHandlerID}
         position['_orderCreationRequest'] = ocr
 
         #[4]: Request Dispatch
@@ -1760,6 +1822,7 @@ class Account:
                                                                       'positionSymbol': symbol, 
                                                                       'orderParams':    ocr['orderParams'].copy()}, 
                                                     farrHandler    = self.__farr_onPositionControlResponse)
+            
         #[5]: Finally
         return True
     
@@ -1886,7 +1949,7 @@ class Account:
         #[4]: Status Update
         ocr['status']        = 'CANCELING'
         ocr['cancelTime_ns'] = time.time_ns()
-
+        
         #[5]: Finally
         return True
     
@@ -1898,6 +1961,8 @@ class Account:
         precisions = position['precisions']
         ocr        = position['_orderCreationRequest']
         asset      = self.__assets[qAsset]
+        func_log    = self.__logger
+        func_gfOCRs = auxiliaries_trade.getFormattedOCRString
 
         #[2]: Trade Quantity Tracking
         if ocr is None:
@@ -1992,17 +2057,17 @@ class Account:
                                                         profit      = profit)
                     
                     #[3-1-2-1-5]: Console Print
-                    self.__logger(message = (f"Successful OCR Result Received For {lID}-{symbol}.\n"
-                                             f" * LogicSource:       {tradeLog['logicSource']}\n"
-                                             f" * Request Complete:  {str(tradeLog['requestComplete'])}\n"
-                                             f" * Side:              {tradeLog['side']}\n"
-                                             f" * Traded   Quantity: {auxiliaries.floatToString(number = eq_delta,                            precision = precisions['quantity'])}\n"
-                                             f" * Unfilled Quantity: {auxiliaries.floatToString(number = quantity_unfilled,                   precision = precisions['quantity'])}\n"
-                                             f" * Price:             {auxiliaries.floatToString(number = ocr_orderResult['averagePrice'],     precision = precisions['price'])} {position['quoteAsset']}\n"
-                                             f" * Profit:            {auxiliaries.floatToString(number = profit,                              precision = precisions['quote'])} {position['quoteAsset']}\n"
-                                             f" * TradingFee:        {auxiliaries.floatToString(number = tradingFee,                          precision = precisions['quote'])} {position['quoteAsset']}"), 
-                                  logType = 'Update', 
-                                  color   = 'light_cyan')
+                    func_log(message = (f"Successful OCR Result Received For {lID}-{symbol}.\n"
+                                        f" * LogicSource:       {tradeLog['logicSource']}\n"
+                                        f" * Request Complete:  {str(tradeLog['requestComplete'])}\n"
+                                        f" * Side:              {tradeLog['side']}\n"
+                                        f" * Traded   Quantity: {auxiliaries.floatToString(number = eq_delta,                            precision = precisions['quantity'])}\n"
+                                        f" * Unfilled Quantity: {auxiliaries.floatToString(number = quantity_unfilled,                   precision = precisions['quantity'])}\n"
+                                        f" * Price:             {auxiliaries.floatToString(number = ocr_orderResult['averagePrice'],     precision = precisions['price'])} {position['quoteAsset']}\n"
+                                        f" * Profit:            {auxiliaries.floatToString(number = profit,                              precision = precisions['quote'])} {position['quoteAsset']}\n"
+                                        f" * TradingFee:        {auxiliaries.floatToString(number = tradingFee,                          precision = precisions['quote'])} {position['quoteAsset']}"), 
+                             logType = 'Update', 
+                             color   = 'light_cyan')
 
                     #[3-1-2-1-6]: Position & Tracker Update
                     position['quantity']    = quantity_new_ocr
@@ -2010,11 +2075,19 @@ class Account:
                     ocr['executedQuantity'] = eq_reported
 
                 #[3-1-2-2]: OCR Handler Determination
-                if   ocr['status'] == 'RESTING':                              ocrHandler = ('WAIT',       'RESTING')           #Wait, The Order Is Still Resting On The Server
-                elif quantity_unfilled == 0:                                  ocrHandler = ('TERMINATE',  'COMPLETION')        #Terminate on Success
-                elif ocr_orderParams['type'] == 'LIMIT':                      ocrHandler = ('TERMINATE',  'PARTIALCOMPLETION') #Terminate, The Order Is No Longer On The Server
-                elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:  ocrHandler = ('REGENERATE', 'PARTIALCOMPLETION') #Regenerate
-                else:                                                         ocrHandler = ('TERMINATE',  'LIMITREACHED_PC')   #Terminate on Failure
+                if   ocr['status'] in ('RESTING', 'CANCELING'):                      ocrHandler = ('WAIT',       ocr['status'])
+                elif ocr['status'] == 'SETTLED':
+                    if quantity_unfilled == 0:                                       ocrHandler = ('TERMINATE',  'COMPLETION')
+                    else:
+                        if ocr_orderParams['type'] == 'LIMIT':                       ocrHandler = ('TERMINATE',  'PARTIALCOMPLETION')
+                        elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS: ocrHandler = ('REGENERATE', 'PARTIALCOMPLETION')
+                        else:                                                        ocrHandler = ('TERMINATE',  'LIMITREACHED_PC')
+                elif ocr['status'] == 'CANCELLED':                                   ocrHandler = ('TERMINATE',  'CANCELLED')
+                else:                                                                ocrHandler = ('TERMINATE',  'UNKNOWNSTATE')
+
+            #[3-1-3]: Cancellation Request Failed, Re-Attempt Cancellation
+            elif ocr_result['requestType'] == 'CANCEL':
+                ocrHandler = ('TERMINATE', 'CANCEL_FAILED_RETRY')
 
             #[3-1-3]: Last Result Failed, Can Still Regenerate
             elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:
@@ -2034,22 +2107,29 @@ class Account:
             if oh_type == 'TERMINATE':  
                 if ocr['status'] == 'RESTING':
                     self.__orderCreationRequest_cancel(symbol = symbol)
-                    self.__logger(message = f"OCR Cancellation Requested For {lID}-{symbol} Before Termination.", logType = 'Update', color = 'light_blue')
+                    func_log(message = f"OCR Cancellation Requested For {lID}-{symbol} Before Termination.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_blue')
+                elif ocr['status'] == 'CANCELING':
+                    pass # Already awaiting cancel response; prevent duplicate requests
                 else:
                     self.__orderCreationRequest_terminate(symbol = symbol, quantity_new = quantity_new)
-                    if   oh_cause == 'COMPLETION':           self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Completion.",                     logType = 'Update', color = 'light_green')
-                    elif oh_cause == 'LIMITREACHED_PC':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion Limit Reach.", logType = 'Update', color = 'light_magenta')
-                    elif oh_cause == 'LIMITREACHED_RJ':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Rejection Limit Reach.",          logType = 'Update', color = 'light_magenta')
-                    elif oh_cause == 'UNKNOWNTRADEDETECTED': self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Interruption.",                   logType = 'Update', color = 'light_magenta')
-            #---[3-1-6-1]: Regeneration
+                    if   oh_cause == 'COMPLETION':           func_log(message = f"OCR Terminated For {lID}-{symbol} On Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}",                     logType = 'Update', color = 'green')
+                    elif oh_cause == 'PARTIALCOMPLETION':    func_log(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}",             logType = 'Update', color = 'light_green')
+                    elif oh_cause == 'CANCELLED':            func_log(message = f"OCR Terminated For {lID}-{symbol} On Cancellation.\n * OCR: {func_gfOCRs(ocr = ocr)}",                   logType = 'Update', color = 'light_blue')
+                    elif oh_cause == 'LIMITREACHED_PC':      func_log(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion Limit Reach.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_magenta')
+                    elif oh_cause == 'LIMITREACHED_RJ':      func_log(message = f"OCR Terminated For {lID}-{symbol} On Rejection Limit Reach.\n * OCR: {func_gfOCRs(ocr = ocr)}",          logType = 'Update', color = 'light_magenta')
+                    elif oh_cause == 'UNKNOWNTRADEDETECTED': func_log(message = f"OCR Terminated For {lID}-{symbol} On Interruption.\n * OCR: {func_gfOCRs(ocr = ocr)}",                   logType = 'Update', color = 'light_magenta')
+                    else:                                    func_log(message = f"OCR Terminated For {lID}-{symbol} On Unhandled Cause: '{oh_cause}'.\n * OCR: {func_gfOCRs(ocr = ocr)}",  logType = 'Update', color = 'light_red')
+
+            #---[3-1-6-2]: Regeneration
             elif oh_type == 'REGENERATE': 
                 self.__orderCreationRequest_regenerate(symbol = symbol, quantity_unfilled = quantity_unfilled)
-                if   oh_cause == 'PARTIALCOMPLETION': self.__logger(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Partial Completion.", logType = 'Update', color = 'light_blue')
-                elif oh_cause == 'REJECTED':          self.__logger(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Rejection.",          logType = 'Update', color = 'light_blue')
+                if   oh_cause == 'PARTIALCOMPLETION': func_log(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Partial Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_blue')
+                elif oh_cause == 'REJECTED':          func_log(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Rejection.\n * OCR: {func_gfOCRs(ocr = ocr)}",          logType = 'Update', color = 'light_blue')
+
             #---[3-1-6-3]: Wait
             elif oh_type == 'WAIT':
-                if oh_cause == 'RESTING': 
-                    self.__logger(message = f"OCR Waiting For {lID}-{symbol} On Resting Order.", logType = 'Update', color = 'light_blue')
+                if   oh_cause == 'RESTING':   func_log(message = f"OCR Waiting For {lID}-{symbol} On Resting Order.\n * OCR: {func_gfOCRs(ocr = ocr)}",   logType = 'Update', color = 'light_blue')
+                elif oh_cause == 'CANCELING': func_log(message = f"OCR Waiting For {lID}-{symbol} On Cancel Response.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_blue')
 
         #---[3-2]: Unknown Trade
         if quantity_delta_unknown != 0:
@@ -2099,12 +2179,12 @@ class Account:
                                     farrHandler    = None)
                 
             #[3-2-5]: Console Print
-            self.__logger(message = (f"Unknown Trade Detected For {lID}-{symbol}.\n"
-                                     f" * LogicSource: {tradeLog['logicSource']}\n"
-                                     f" * Side:        {tradeLog['side']}\n"
-                                     f" * Q_Delta:     {auxiliaries.floatToString(number = tradeLog['quantity'], precision = precisions['quantity'])}"), 
-                          logType = 'Update', 
-                          color   = 'light_blue')
+            func_log(message = (f"Unknown Trade Detected For {lID}-{symbol}.\n"
+                                f" * LogicSource: {tradeLog['logicSource']}\n"
+                                f" * Side:        {tradeLog['side']}\n"
+                                f" * Q_Delta:     {auxiliaries.floatToString(number = tradeLog['quantity'], precision = precisions['quantity'])}"), 
+                     logType = 'Update', 
+                     color   = 'light_blue')
     
     def __trade_checkConditionalExits(self, symbol, kline):
         #[1]: Instances
@@ -2712,6 +2792,10 @@ class Account:
         if ocr is not None:
             if ocr['status'] == 'RESTING':
                 self.__orderCreationRequest_cancel(symbol = symbol)
+                self.__logger(message = (f"OCR Canceling For {self.__localID}-{symbol} Before Termination In Response To Force Clear. Needs Force Clear Re-Attempt.\n"
+                                         f" * OCR: {auxiliaries_trade.getFormattedOCRString(ocr = position['_orderCreationRequest'])}"),
+                              logType = 'Update', 
+                              color   = 'light_blue')
                 return {'result':  False, 
                         'message': "Cancelling Resting Order, Retry Shortly"}
             return {'result':  False, 
@@ -2740,7 +2824,13 @@ class Account:
                                                             quantity        = ocr_quantity,
                                                             price           = None,
                                                             tcTrackerUpdate = None,
-                                                            ipcRID          = requestID)
+                                                            ipcRID          = requestID,
+                                                            tradeHandlerID  = None)
+        if ocrGenResult:
+            self.__logger(message = (f"OCR Generated For {self.__localID}-{symbol} For Force Clear.\n"
+                                     f" * OCR: {auxiliaries_trade.getFormattedOCRString(ocr = position['_orderCreationRequest'])}"),
+                         logType = 'Update', 
+                         color   = 'light_green')
         
         #[5]: Result Return
         if ocrGenResult:
