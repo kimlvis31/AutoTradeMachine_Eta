@@ -466,7 +466,7 @@ class VirtualAccount:
             o_side     = orderParams['side']
             o_type     = orderParams['type']
             o_quantity = orderParams['quantity']
-            o_price    = orderParams['price']
+            o_price    = orderParams.get('price', None)
 
             #[2-5]: Random Failing
             randFail = (_VIRTUALTRADE_SERVER_PROBABILITY_SUCCESS < round(random.randint(0, 100)/100, 2))
