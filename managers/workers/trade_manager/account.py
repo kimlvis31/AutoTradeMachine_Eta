@@ -909,7 +909,8 @@ class Account:
 
             #[2-4-3]: Status Update
             if result:
-                ocr['status'] = 'CANCELLED'
+                if functionResult['orderResult']['status'] == 'FILLED': ocr['status'] = 'SETTLED'
+                else:                                                   ocr['status'] = 'CANCELLED'
             else:
                 if functionResult['failType'] == 'ORDERNOTFOUND': ocr['status'] = 'CANCELLED'
                 else:                                             ocr['status'] = 'RESTING'

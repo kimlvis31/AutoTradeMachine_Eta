@@ -5215,37 +5215,70 @@ class BinanceAPIManager:
             return
             
         #[6]: Order Cancellation Attempt
-        try:                   
-            response_cancelOrder = self.__binance_client_users[localID]['accountInstance'].futures_cancel_order(symbol            = positionSymbol,
-                                                                                                                origClientOrderId = clientOrderID)
-            errorMsg = None
+        client = self.__binance_client_users[localID]['accountInstance']
+        orderResponse = None
+        failType      = None
+        errorMsg      = None
+        try:
+            orderResponse = client.futures_cancel_order(symbol            = positionSymbol,
+                                                        origClientOrderId = clientOrderID)
+        except binance.exceptions.BinanceAPIException as e:
+            #[6-1]: Order Not Found In The Orderbook - Fetch Its Final State
+            if e.code == -2011:
+                if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = False, apply = True):
+                    failType = 'APIRATELIMITREACHED'
+                    errorMsg = f"Order Final State Fetch Blocked By API Rate Limit After Cancellation Failure ({e})"
+                else:
+                    try:
+                        orderResponse = client.futures_get_order(symbol            = positionSymbol,
+                                                                 origClientOrderId = clientOrderID)
+                        #Order Still Alive Despite Cancellation Rejection - Treat As Cancellation Failure (Account Will Retry)
+                        if orderResponse['status'] in ('NEW', 'PARTIALLY_FILLED'):
+                            orderResponse = None
+                            failType      = 'APIERROR'
+                            errorMsg      = f"Cancellation Rejected But Order Still Open ({e})"
+                    except binance.exceptions.BinanceAPIException as e2:
+                        if e2.code == -2013: failType = 'ORDERNOTFOUND' #Order Does Not Exist
+                        else:                failType = 'APIERROR'
+                        errorMsg = f"{e} / Final State Fetch: {e2}"
+                    except Exception as e2:
+                        failType = 'APIERROR'
+                        errorMsg = f"{e} / Final State Fetch: {e2}"
+            #[6-2]: Other API Errors
+            else:
+                failType = 'APIERROR'
+                errorMsg = str(e)
         except Exception as e:
-            response_cancelOrder = None                                                                                     
+            failType = 'APIERROR'
             errorMsg = str(e)
 
         #[7]: Response Dispatch
-        if response_cancelOrder is not None:
-            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER',
+        if orderResponse is not None:
+            #[7-1]: Created Order Tracker Removal
+            self.__binance_createdOrders.pop(clientOrderID, None)
+
+            #[7-2]: Response
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                functionResult = {'localID':        localID, 
                                                  'positionSymbol': positionSymbol, 
                                                  'responseOn':     'CANCELORDER', 
                                                  'result':         True,
-                                                 'orderResult':    {'clientOrderId':    response_cancelOrder['clientOrderId'],
-                                                                    'status':           response_cancelOrder['status'],
-                                                                    'type':             response_cancelOrder['type'],
-                                                                    'side':             response_cancelOrder['side'],
-                                                                    'averagePrice':     float(response_cancelOrder['avgPrice']),
-                                                                    'originalQuantity': float(response_cancelOrder['origQty']),
-                                                                    'executedQuantity': float(response_cancelOrder['executedQty'])},
+                                                 'orderResult':    {'clientOrderId':    orderResponse['clientOrderId'],
+                                                                    'status':           orderResponse['status'],
+                                                                    'type':             orderResponse['type'],
+                                                                    'side':             orderResponse['side'],
+                                                                    'averagePrice':     float(orderResponse['avgPrice']),
+                                                                    'originalQuantity': float(orderResponse['origQty']),
+                                                                    'executedQuantity': float(orderResponse['executedQty'])},
                                                  'failType':       None,
                                                  'errorMessage':   None},
                                requestID = requestID, 
                                complete  = True)
         else: 
             self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
-                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR', 'errorMessage': errorMsg}, 
-                               requestID      = requestID, 
-                               complete       = True)
+                            functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': failType, 'errorMessage': errorMsg}, 
+                            requestID      = requestID, 
+                            complete       = True)
 
 
 
