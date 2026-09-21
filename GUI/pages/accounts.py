@@ -56,8 +56,8 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'tradable':                {'BASIC': No
                                          'riskLevel':               {'BASIC': 13,   'TRADER': None, 'DETAIL': 22},
                                          'currencyAnalysisCode':    {'BASIC': None, 'TRADER': 6,    'DETAIL': 23},
                                          'tradeConfigurationCode':  {'BASIC': None, 'TRADER': 7,    'DETAIL': 24},
-                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 11,   'DETAIL': 25},
-                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 12,   'DETAIL': 26}}
+                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 25},
+                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 11,   'DETAIL': 26}}
 
 _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES = {'LEVERAGE', 'UNREALIZEDPNL', 'COMMITMENTRATE', 'RISKLEVEL'}
 _PERIODICPOSITIONSSORTING_INTERVAL_NS         = 5e9
