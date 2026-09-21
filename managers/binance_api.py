@@ -162,6 +162,8 @@ TWMSTATUS_EXPIRED   = 2
 SUBSCRIPTIONMODE_BIDSANDASKS = 0b01
 SUBSCRIPTIONMODE_AGGTRADES   = 0b10
 
+
+
 class BinanceAPIManager:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA):
@@ -3651,7 +3653,57 @@ class BinanceAPIManager:
         for coID in completedOrders: 
             del self.__binance_createdOrders[coID]
 
+    def __removeCreatedOrders(self, localID):
+        #[1]: Instances
+        cos = self.__binance_createdOrders
 
+        #[2]: Removal Targets Selection
+        coIDs_remove = [coID for coID, createdOrder in self.__binance_createdOrders.items() if createdOrder['localID'] == localID]
+        for coID in coIDs_remove:
+            del cos[coID]
+
+    def __cancelATMOpenOrders(self, client):
+        #[1]: Open Orders Fetch
+        #---[1-1]: API Rate Limit Check (All-Symbol Open Orders Query)
+        if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, 
+                                        weight    = 40, 
+                                        extraOnly = False, 
+                                        apply     = True):
+            return (False, "API Rate Limit Reached On Open Orders Fetch")
+        #---[1-2]: Fetch
+        try:
+            openOrders = client.futures_get_open_orders()
+        except Exception as e:
+            return (False, f"Open Orders Fetch Failed: {e}")
+    
+        #[2]: ATM Orders Cancellation
+        failures = []
+        for oo in openOrders:
+            #[2-1]: ATM Order Check
+            coID = oo['clientOrderId']
+            if not coID.startswith('ATMETA'):
+                continue
+
+            #[2-2]: API Rate Limit Check
+            if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_ORDERS, weight = 1, apply = True):
+                failures.append(f"{oo['symbol']}/{coID}: API Rate Limit Reached")
+                continue
+
+            #[2-3]: Cancellation
+            try:
+                client.futures_cancel_order(symbol            = oo['symbol'],
+                                            origClientOrderId = coID)
+            except binance.exceptions.BinanceAPIException as e:
+                if e.code == -2011: #Unknown Order (Already Filled Or Cancelled)
+                    continue
+                failures.append(f"{oo['symbol']}/{coID}: {e}")
+            except Exception as e:
+                failures.append(f"{oo['symbol']}/{coID}: {e}")
+    
+        #[3]: Result Return
+        if failures:
+            return (False, "; ".join(failures))
+        return (True, None)
 
 
 
@@ -4915,7 +4967,7 @@ class BinanceAPIManager:
         #[4]: Client Generation
         try:
             newAccount = binance.Client(api_key = apiKey, api_secret = secretKey)
-            newAccount_uid            = newAccount.get_account()['uid']
+            newAccount_uid           = newAccount.get_account()['uid']
             newAccount_enableFutures = newAccount.get_account_api_permissions()['enableFutures']
         except Exception as e: 
             return {'result': False, 'failType': 'UNEXPECTEDERROR', 'errorMessage': str(e)}
@@ -4927,17 +4979,25 @@ class BinanceAPIManager:
         #[6]: Future Enabled Check
         if not newAccount_enableFutures:
             return {'result': False, 'failType': 'FUTURESDISABLED'}
+
+        #[7]: ATM Open Orders Clearing (Orders From A Previous Session Are No Longer Tracked)
+        cancelResult, cancelErrMsg = self.__cancelATMOpenOrders(client = newAccount)
+        if not cancelResult:
+            return {'result': False, 'failType': 'OPENORDERCLEARFAILED', 'errorMessage': cancelErrMsg}
+
+        #[8]: Stale Created Orders Tracking Removal
+        self.__removeCreatedOrders(localID = localID)
         
-        #[7]: Finally
+        #[9]: Finally
         self.__binance_client_users[localID] = {'accountInstance':           newAccount,
                                                 'nConsecutiveDataReadFails': 0}
-        #---[7-1]: Local ID, Data Read Request
+        #---[9-1]: Local ID, Data Read Request
         self.__binance_activatedAccounts_LocalIDs.add(localID)
         self.__binance_activatedAccounts_dataReadRequest = True
-        #---[7-2]: Read Interval
+        #---[9-2]: Read Interval
         self.__computeActivatedAccountsDataReadInterval()
-        #---[7-3]: Result Return
-        return {'result': True}
+        #---[9-3]: Result Return
+        return {'result': True, 'failType': None}
     
     def __far_removeAccountInstance(self, requester, localID):
         #[1]: Source Check
@@ -4945,14 +5005,26 @@ class BinanceAPIManager:
             return
 
         #[2]: ID Check
-        if localID not in self.__binance_client_users:
+        clientUser = self.__binance_client_users.get(localID, None)
+        if clientUser is None:
             return
+
+        #[3]: ATM Open Orders Clearing (Best Effort, Re-Attempted On Next Activation)
+        cancelResult, cancelErrMsg = self.__cancelATMOpenOrders(client = clientUser['accountInstance'])
+        if not cancelResult:
+            self.__logger(message = (f"ATM Open Orders Clearing Failed During Account Instance Removal. They Will Be Re-Attempted On Next Activation.\n"
+                                     f" * Local ID: {localID}\n"
+                                     f" * Error:    {cancelErrMsg}"),
+                          logType = 'Warning',
+                          color   = 'light_red')
         
-        #[3]: Removal
-        #---[3-1]: Account Removal
+        #[4]: Removal
+        #---[4-1]: Created Orders Tracking Removal
+        self.__removeCreatedOrders(localID = localID)
+        #---[4-2]: Account Removal
         del self.__binance_client_users[localID]
         self.__binance_activatedAccounts_LocalIDs.remove(localID)
-        #---[3-2]: Account Data Read Interval Update
+        #---[4-3]: Account Data Read Interval Update
         self.__computeActivatedAccountsDataReadInterval()
     
     def __far_setPositionMarginType(self, requester, requestID, localID, positionSymbol, newMarginType):
