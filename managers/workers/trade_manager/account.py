@@ -217,6 +217,11 @@ class Account:
         fr_failType = functionResult.get('failType',     None)
         fr_eMsg     = functionResult.get('errorMessage', None)
         if fr_result:
+            #[3-1]: Stale OCRs & Trade Handlers Clearing (ATM Orders Have Been Cancelled On The Server Side)
+            for position in self.__positions.values():
+                position['_orderCreationRequest'] = None
+                position['_tradeHandlers'].clear()
+            #[3-2]: Status Update & Announcement
             self.__status = ACCOUNT_STATUS_ACTIVE
             self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
                                     prdAddress    = ('ACCOUNTS', self.__localID, 'status'), 
@@ -232,11 +237,12 @@ class Account:
         if fr_result: 
             rb_msg = None
         else:
-            if   fr_failType == 'FUTURESDISABLED':   rb_msg = "Futures Disabled, Check API Permissions"
-            elif fr_failType == 'UIDMISMATCH':       rb_msg = "BUID Mismatch"
-            elif fr_failType == 'UNEXPECTEDERROR':   rb_msg = f"Unexpected Error: {fr_eMsg}"
-            elif fr_failType == 'SERVERUNAVAILABLE': rb_msg = "Server Unavailable"
-            else:                                    rb_msg = fr_failType
+            if   fr_failType == 'FUTURESDISABLED':      rb_msg = "Futures Disabled, Check API Permissions"
+            elif fr_failType == 'UIDMISMATCH':          rb_msg = "BUID Mismatch"
+            elif fr_failType == 'UNEXPECTEDERROR':      rb_msg = f"Unexpected Error: {fr_eMsg}"
+            elif fr_failType == 'SERVERUNAVAILABLE':    rb_msg = "Server Unavailable"
+            elif fr_failType == 'OPENORDERCLEARFAILED': rb_msg = f"ATM Open Orders Clearing Failed: {fr_eMsg}"
+            else:                                       rb_msg = fr_failType
         self.__binanceInstanceGeneration_result = {'result':  fr_result,
                                                    'message': rb_msg}
     
