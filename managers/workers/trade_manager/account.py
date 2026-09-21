@@ -101,6 +101,7 @@ _TRADINGFEE                                   = auxiliaries_trade.TRADINGFEE
 _TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.005
 _TRADE_MAXIMUMOCRGENERATIONATTEMPTS           = 5
 _TRADE_TRADEHANDLER_LIFETIME_NS               = int(KLINTERVAL_S*1e9/5)
+_TRADE_OPENORDERDETECTIONTHRESHOLD_NS         = int(20*1e9)
 #Trade Constants END ------------------------------------------------------------------------------
 
 
@@ -770,12 +771,13 @@ class Account:
                     '_tradabilityTests': {'currencyAnalysis':   False,
                                           'tradeConfiguration': False,
                                           'openOrder':          False},
-                    '_marginTypeControlRequest': None,
-                    '_leverageControlRequest':   None,
-                    '_linearizedAnalyses':       None,
-                    '_tradeHandlers':            deque(),
-                    '_tradeHandlers_genCounter': 0,
-                    '_orderCreationRequest':     None}
+                    '_marginTypeControlRequest':  None,
+                    '_leverageControlRequest':    None,
+                    '_linearizedAnalyses':        None,
+                    '_tradeHandlers':             deque(),
+                    '_tradeHandlers_genCounter':  0,
+                    '_orderCreationRequest':      None,
+                    '_openOrderFirstDetected_ns': None}
         positions[symbol] = position
         asset['_positionSymbols'].add(symbol)
         asset['_positionSymbols_isolated'].add(symbol)
@@ -980,8 +982,16 @@ class Account:
             tTests['tradeConfiguration'] = (tTest_attached and tTest_mType and tTest_leverage)
 
         #[4]: Open Order
-        if ocr is not None: tTests['openOrder'] = True
-        else:               tTests['openOrder'] = (ooim == 0.0)
+        if ocr is not None or ooim == 0.0:
+            position['_openOrderFirstDetected_ns'] = None
+            tTests['openOrder'] = True
+        elif ooim is None:
+            tTests['openOrder'] = False
+        else:
+            t_current_ns = time.perf_counter_ns()
+            if position['_openOrderFirstDetected_ns'] is None:
+                position['_openOrderFirstDetected_ns'] = t_current_ns
+            tTests['openOrder'] = (t_current_ns-position['_openOrderFirstDetected_ns'] < _TRADE_OPENORDERDETECTIONTHRESHOLD_NS)
 
         #[5]: Tradable Update
         position['tradable'] = all(test for test in tTests.values())
