@@ -5151,14 +5151,16 @@ class BinanceAPIManager:
             return
             
         #[6]: Order Creation Attempt
+        client = self.__binance_client_users[localID]['accountInstance']
+        coID   = orderParams['newClientOrderId']
         #---[6-1]: Order Params Completion
-        orderParams['newOrderRespType'] = "FULL"
+        orderParams['newOrderRespType'] = "RESULT"
         #---[6-2]: Order Creation Request
         response_createOrder = None
         errorMsg             = None
         isAmbiguous          = False
         try:                   
-            response_createOrder = self.__binance_client_users[localID]['accountInstance'].futures_create_order(**orderParams)
+            response_createOrder = client.futures_create_order(**orderParams)
         except binance.exceptions.BinanceAPIException as e:
             errorMsg    = str(e)
             isAmbiguous = (e.code in (-1000, -1001, -1006, -1007, -1008))
@@ -5166,57 +5168,93 @@ class BinanceAPIManager:
             errorMsg    = str(e)
             isAmbiguous = True
 
-        #[7]: Response Dispatch
-        #---[7-1]: Non-Ambiguous Response
+        #[7]: Response Parsing (The Order Is Already On The Server Here - A Parsing Failure Must Not Orphan It)
+        orderResult = None
+        isComplete  = None
         if response_createOrder is not None:
-            #[7-1]: Server Response Interpretation
-            isComplete = _BINANCE_ORDERSTATUS_INTERPRETATION[response_createOrder['status']]
+            try:
+                orderResult = {'clientOrderId':    response_createOrder['clientOrderId'],
+                               'status':           response_createOrder['status'],
+                               'type':             response_createOrder['type'],
+                               'side':             response_createOrder['side'],
+                               'averagePrice':     float(response_createOrder['avgPrice']) if 'avgPrice' in response_createOrder else None,
+                               'originalQuantity': float(response_createOrder['origQty']),
+                               'executedQuantity': float(response_createOrder['executedQty'])}
+                isComplete = _BINANCE_ORDERSTATUS_INTERPRETATION[orderResult['status']]
+            except Exception as e:
+                orderResult = None
+                isAmbiguous = True
+                errorMsg    = f"Order Response Parsing Failed: {e} / Raw: {response_createOrder}"
 
-            #[7-2]: Base Response
+        #[8]: Average Price Completion
+        if orderResult is not None and orderResult['averagePrice'] is None and 0 < orderResult['executedQuantity']:
+            if self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = False, apply = True):
+                try:
+                    order_fromServer = client.futures_get_order(symbol            = positionSymbol,
+                                                                origClientOrderId = coID)
+                    orderResult['averagePrice'] = float(order_fromServer['avgPrice'])
+                except Exception as e:
+                    self.__logger(message = (f"Average Price Fetch Failed After Order Creation. The Order Will Be Tracked Via Status Check.\n"
+                                             f" * Local ID:        {localID}\n"
+                                             f" * Symbol:          {positionSymbol}\n"
+                                             f" * Client Order ID: {coID}\n"
+                                             f" * Error:           {e}"), 
+                                  logType = 'Warning', 
+                                  color   = 'light_magenta')
+
+        #[9]: Response Dispatch
+        #---[9-1]: Parsed, But Average Price Unavailable Despite Execution - Defer To Status Check
+        if orderResult is not None and orderResult['averagePrice'] is None and 0 < orderResult['executedQuantity']:
+            self.__binance_createdOrders[coID] = {'IPCRID':               requestID, 
+                                                  'localID':              localID, 
+                                                  'positionSymbol':       positionSymbol, 
+                                                  'lastCheckTime':        0,
+                                                  'lastExecutedQuantity': 0.0,   #Forces Dispatch On The First Successful Check
+                                                  'nCheckFails':          0,
+                                                  'unconfirmed':          False}
+
+        #---[9-2]: Parsed Successfully
+        elif orderResult is not None:
+            #[9-2-1]: Base Response
             self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                functionResult = {'localID':        localID, 
                                                  'positionSymbol': positionSymbol, 
                                                  'responseOn':     'CREATEORDER', 
                                                  'result':         True,
-                                                 'orderResult':    {'clientOrderId':    response_createOrder['clientOrderId'],
-                                                                    'status':           response_createOrder['status'],
-                                                                    'type':             response_createOrder['type'],
-                                                                    'side':             response_createOrder['side'],
-                                                                    'averagePrice':     float(response_createOrder['avgPrice']),
-                                                                    'originalQuantity': float(response_createOrder['origQty']),
-                                                                    'executedQuantity': float(response_createOrder['executedQty']),},
+                                                 'orderResult':    orderResult,
                                                  'failType':       None,
                                                  'errorMessage':   None},
                                requestID = requestID, 
                                complete  = isComplete)
 
-            #[7-3]: Order Tracker Update
+            #[9-2-2]: Order Tracker Update
             if not isComplete:
-                self.__binance_createdOrders[response_createOrder['clientOrderId']] = {'IPCRID':                 requestID, 
-                                                                                       'localID':                localID, 
-                                                                                       'positionSymbol':         positionSymbol, 
-                                                                                       'creationCompletionTime': time.perf_counter_ns()+1e9,
-                                                                                       'lastCheckTime':          0,
-                                                                                       'lastExecutedQuantity':   float(response_createOrder['executedQty']),
-                                                                                       'nCheckFails':            0,
-                                                                                       'unconfirmed':            False}
-        #---[7-2]: Ambiguous Response
+                self.__binance_createdOrders[coID] = {'IPCRID':               requestID, 
+                                                      'localID':              localID, 
+                                                      'positionSymbol':       positionSymbol, 
+                                                      'lastCheckTime':        0,
+                                                      'lastExecutedQuantity': orderResult['executedQuantity'],
+                                                      'nCheckFails':          0,
+                                                      'unconfirmed':          False}
+
+        #---[9-3]: Ambiguous (Including Response Parsing Failure) - Register For Verification, Account Keeps Waiting (OCR Stays DISPATCHED)
         elif isAmbiguous:
-            self.__binance_createdOrders[orderParams['newClientOrderId']] = {'IPCRID':               requestID, 
-                                                                             'localID':              localID, 
-                                                                             'positionSymbol':       positionSymbol, 
-                                                                             'lastCheckTime':        0,
-                                                                             'lastExecutedQuantity': 0.0,
-                                                                             'nCheckFails':          0,
-                                                                             'unconfirmed':          True}
-            self.__logger(message = (f"An Order Creation Request Returned An Ambiguous Failure. The Order Will Be Verified Via Status Check.\n"
+            self.__binance_createdOrders[coID] = {'IPCRID':               requestID, 
+                                                  'localID':              localID, 
+                                                  'positionSymbol':       positionSymbol, 
+                                                  'lastCheckTime':        0,
+                                                  'lastExecutedQuantity': 0.0,
+                                                  'nCheckFails':          0,
+                                                  'unconfirmed':          True}
+            self.__logger(message = (f"An Order Creation Request Returned An Ambiguous Result. The Order Will Be Verified Via Status Check.\n"
                                      f" * Local ID:        {localID}\n"
                                      f" * Symbol:          {positionSymbol}\n"
-                                     f" * Client Order ID: {orderParams['newClientOrderId']}\n"
+                                     f" * Client Order ID: {coID}\n"
                                      f" * Error:           {errorMsg}"), 
                           logType = 'Warning', 
                           color   = 'light_red')
-        #---[7-3]: Certain API Error
+
+        #---[9-4]: Certain API Error
         else: 
             self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR', 'errorMessage': errorMsg}, 
