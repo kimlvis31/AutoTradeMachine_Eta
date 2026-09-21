@@ -46,8 +46,8 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'tradable':                {'BASIC': No
                                          'maintenanceMargin':       {'BASIC': None, 'TRADER': None, 'DETAIL': 12},
                                          'entryPrice':              {'BASIC': 6,    'TRADER': None, 'DETAIL': 13},
                                          'currentPrice':            {'BASIC': 7,    'TRADER': None, 'DETAIL': 14},
-                                         'liquidationPrice':        {'BASIC': 8,    'TRADER': None, 'DETAIL': 15},
-                                         'unrealizedPNL':           {'BASIC': 9,    'TRADER': None, 'DETAIL': 16},
+                                         'liquidationPrice':        {'BASIC': 9,    'TRADER': None, 'DETAIL': 15},
+                                         'unrealizedPNL':           {'BASIC': 8,    'TRADER': None, 'DETAIL': 16},
                                          'assumedRatio':            {'BASIC': 10,   'TRADER': 9,    'DETAIL': 17},
                                          'weightedAssumedRatio':    {'BASIC': None, 'TRADER': None, 'DETAIL': 18},
                                          'allocatedBalance':        {'BASIC': 11,   'TRADER': None, 'DETAIL': 19},
@@ -322,10 +322,10 @@ def setupPage(self):
                                                                                              900, #LEVERAGE
                                                                                              850, #MARGIN MODE
                                                                                             1000, #QUANTITY
-                                                                                            1000, #ENTRY PRICE
-                                                                                            1200, #CURRENT PRICE
+                                                                                            1100, #ENTRY PRICE
+                                                                                            1700, #CURRENT PRICE
+                                                                                            1600, #UNREALIZED PNL
                                                                                             1000, #LIQUIDATION PRICE
-                                                                                            1200, #UNREALIZED PNL
                                                                                              800, #ASSUMED RATIO
                                                                                             1000, #ALLOCATED BALANCE
                                                                                              800, #COMMITMENT RATE
@@ -340,8 +340,8 @@ def setupPage(self):
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_QUANTITY')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ENTRYPRICE')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENTPRICE')},
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LIQUIDATIONPRICE')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_UNREALIZEDPNL')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LIQUIDATIONPRICE')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ALLOCATEDBALANCE')},
                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_COMMITMENTRATE')},
