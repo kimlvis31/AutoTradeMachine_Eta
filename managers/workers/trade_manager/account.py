@@ -2125,17 +2125,21 @@ class Account:
             elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:
                 ocrHandler = ('REGENERATE', 'REJECTED') #Regenerate
 
-            #[3-1-4]: Last Result Failed, Can No Longer Regenerate
+            #[3-1-4]: Order State Unknown - Regeneration Could Duplicate A Live Order
+            elif ocr_result['failType'] == 'ORDERSTATEUNKNOWN':
+                ocrHandler = ('TERMINATE', 'ORDERSTATEUNKNOWN')
+
+            #[3-1-5]: Last Result Failed, Can No Longer Regenerate
             else:
                 ocrHandler = ('TERMINATE', 'LIMITREACHED_RJ') #Terminate on Failure
 
-            #[3-1-5]: Disruption Detected, Terminate
+            #[3-1-6]: Disruption Detected, Terminate
             if quantity_delta_unknown != 0 and ocrHandler[0] in ('REGENERATE', 'WAIT'): 
                 ocrHandler = ('TERMINATE', 'UNKNOWNTRADEDETECTED')  #Terminate on Disruption
 
-            #[3-1-6]: OCR Handling
+            #[3-1-7]: OCR Handling
             oh_type, oh_cause = ocrHandler
-            #---[3-1-6-1]: Termination
+            #---[3-1-7-1]: Termination
             if oh_type == 'TERMINATE':  
                 if ocr['status'] == 'RESTING':
                     self.__orderCreationRequest_cancel(symbol = symbol)
@@ -2144,21 +2148,22 @@ class Account:
                     pass # Already awaiting cancel response; prevent duplicate requests
                 else:
                     self.__orderCreationRequest_terminate(symbol = symbol, quantity_new = quantity_new)
-                    if   oh_cause == 'COMPLETION':           func_log(message = f"OCR Terminated For {lID}-{symbol} On Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}",                     logType = 'Update', color = 'green')
-                    elif oh_cause == 'PARTIALCOMPLETION':    func_log(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}",             logType = 'Update', color = 'light_green')
-                    elif oh_cause == 'CANCELLED':            func_log(message = f"OCR Terminated For {lID}-{symbol} On Cancellation.\n * OCR: {func_gfOCRs(ocr = ocr)}",                   logType = 'Update', color = 'light_blue')
-                    elif oh_cause == 'LIMITREACHED_PC':      func_log(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion Limit Reach.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_magenta')
-                    elif oh_cause == 'LIMITREACHED_RJ':      func_log(message = f"OCR Terminated For {lID}-{symbol} On Rejection Limit Reach.\n * OCR: {func_gfOCRs(ocr = ocr)}",          logType = 'Update', color = 'light_magenta')
-                    elif oh_cause == 'UNKNOWNTRADEDETECTED': func_log(message = f"OCR Terminated For {lID}-{symbol} On Interruption.\n * OCR: {func_gfOCRs(ocr = ocr)}",                   logType = 'Update', color = 'light_magenta')
-                    else:                                    func_log(message = f"OCR Terminated For {lID}-{symbol} On Unhandled Cause: '{oh_cause}'.\n * OCR: {func_gfOCRs(ocr = ocr)}",  logType = 'Update', color = 'light_red')
+                    if   oh_cause == 'COMPLETION':           func_log(message = f"OCR Terminated For {lID}-{symbol} On Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}",                                logType = 'Update',  color = 'green')
+                    elif oh_cause == 'PARTIALCOMPLETION':    func_log(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}",                        logType = 'Update',  color = 'light_green')
+                    elif oh_cause == 'CANCELLED':            func_log(message = f"OCR Terminated For {lID}-{symbol} On Cancellation.\n * OCR: {func_gfOCRs(ocr = ocr)}",                              logType = 'Update',  color = 'light_blue')
+                    elif oh_cause == 'LIMITREACHED_PC':      func_log(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion Limit Reach.\n * OCR: {func_gfOCRs(ocr = ocr)}",            logType = 'Update',  color = 'light_magenta')
+                    elif oh_cause == 'LIMITREACHED_RJ':      func_log(message = f"OCR Terminated For {lID}-{symbol} On Rejection Limit Reach.\n * OCR: {func_gfOCRs(ocr = ocr)}",                     logType = 'Update',  color = 'light_magenta')
+                    elif oh_cause == 'UNKNOWNTRADEDETECTED': func_log(message = f"OCR Terminated For {lID}-{symbol} On Interruption.\n * OCR: {func_gfOCRs(ocr = ocr)}",                              logType = 'Warning', color = 'light_magenta')
+                    elif oh_cause == 'ORDERSTATEUNKNOWN':    func_log(message = f"OCR Terminated For {lID}-{symbol} On Unknown Order State. Manual Check Advised.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Warning', color = 'light_red')
+                    else:                                    func_log(message = f"OCR Terminated For {lID}-{symbol} On Unhandled Cause: '{oh_cause}'.\n * OCR: {func_gfOCRs(ocr = ocr)}",             logType = 'Warning', color = 'light_red')
 
-            #---[3-1-6-2]: Regeneration
+            #---[3-1-7-2]: Regeneration
             elif oh_type == 'REGENERATE': 
                 self.__orderCreationRequest_regenerate(symbol = symbol, quantity_unfilled = quantity_unfilled)
                 if   oh_cause == 'PARTIALCOMPLETION': func_log(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Partial Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_blue')
                 elif oh_cause == 'REJECTED':          func_log(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Rejection.\n * OCR: {func_gfOCRs(ocr = ocr)}",          logType = 'Update', color = 'light_blue')
 
-            #---[3-1-6-3]: Wait
+            #---[3-1-7-3]: Wait
             elif oh_type == 'WAIT':
                 if   oh_cause == 'RESTING':   func_log(message = f"OCR Waiting For {lID}-{symbol} On Resting Order.\n * OCR: {func_gfOCRs(ocr = ocr)}",   logType = 'Update', color = 'light_blue')
                 elif oh_cause == 'CANCELING': func_log(message = f"OCR Waiting For {lID}-{symbol} On Cancel Response.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_blue')

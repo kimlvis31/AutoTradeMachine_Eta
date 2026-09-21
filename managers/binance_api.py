@@ -3567,27 +3567,41 @@ class BinanceAPIManager:
             try: 
                 order_fromServer = self.__binance_client_users[createdOrder['localID']]['accountInstance'].futures_get_order(symbol            = createdOrder['positionSymbol'], 
                                                                                                                              origClientOrderId = coID)
-            except Exception as e:
-                if (str(e) == 'APIError(code=-2013): Order does not exist.'): 
+            except binance.exceptions.BinanceAPIException as e:
+                if e.code == -2013: 
                     apiError_orderDoesNotExist = True
-                else: 
-                    self.__logger(message = f"An unexpected error ocrrued while attempting to check created order status for {createdOrder['localID']}-{createdOrder['positionSymbol']}. \n * {str(e)}", 
+                else:
+                    self.__logger(message = f"An unexpected API error occurred while attempting to check created order status for {createdOrder['localID']}-{createdOrder['positionSymbol']}. \n * {str(e)}", 
                                   logType = 'Error', 
                                   color   = 'light_red')
+            except Exception as e:
+                self.__logger(message = f"An unexpected error occurred while attempting to check created order status for {createdOrder['localID']}-{createdOrder['positionSymbol']}. \n * {str(e)}", 
+                              logType = 'Error', 
+                              color   = 'light_red')
             
             #---[2-4-2]: Read Result Interpretation
             #------[2-4-2-1]: Result Received
             if order_fromServer is not None:
                 #[2-4-2-1-1]: Execution Progress Check
+                wasUnconfirmed   = createdOrder['unconfirmed']
                 isComplete       = _BINANCE_ORDERSTATUS_INTERPRETATION[order_fromServer['status']]
                 executedQuantity = float(order_fromServer['executedQty'])
                 isNewlyExecuted  = (createdOrder['lastExecutedQuantity'] < executedQuantity)
-                if not (isComplete or isNewlyExecuted):
+                createdOrder['unconfirmed'] = False
+                createdOrder['nCheckFails'] = 0
+                if not (isComplete or isNewlyExecuted or wasUnconfirmed): #First Confirmation Of An Ambiguous Order Always Dispatches (Moves Account OCR Out Of DISPATCHED)
                     continue
+
                 #[2-4-2-1-2]: Tracker Update
                 createdOrder['lastExecutedQuantity'] = executedQuantity
 
-                #[2-4-2-1-3]: Response Dispatch
+                #[2-4-2-1-3]: Confirmation Logging
+                if wasUnconfirmed:
+                    self.__logger(message = f"An ambiguous order for {createdOrder['localID']}-{createdOrder['positionSymbol']} has been confirmed to exist on the server. (Status: {order_fromServer['status']})", 
+                                  logType = 'Update', 
+                                  color   = 'light_blue')
+
+                #[2-4-2-1-4]: Response Dispatch
                 self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                    functionResult = {'localID':        createdOrder['localID'], 
                                                      'positionSymbol': createdOrder['positionSymbol'], 
@@ -3599,54 +3613,66 @@ class BinanceAPIManager:
                                                                         'side':             order_fromServer['side'],
                                                                         'averagePrice':     float(order_fromServer['avgPrice']),
                                                                         'originalQuantity': float(order_fromServer['origQty']),
-                                                                        'executedQuantity': float(order_fromServer['executedQty'])},
+                                                                        'executedQuantity': executedQuantity},
                                                      'failType':       None,
                                                      'errorMessage':   None}, 
                                    requestID = createdOrder['IPCRID'], 
                                    complete  = isComplete)
                 
-                #[2-4-2-1-4]: Completion Handling
+                #[2-4-2-1-5]: Completion Handling
                 if isComplete:
                     completedOrders.append(coID)
 
             #------[2-4-2-2]: Order Not Found
             elif apiError_orderDoesNotExist:
+                #[2-4-2-2-1]: Threshold Check
                 createdOrder['nCheckFails'] += 1
                 if createdOrder['nCheckFails'] < _BINANCE_CREATEDORDERCANCELLATIONTHRESHOLD:
                     continue
+
+                #[2-4-2-2-2]: Fail Type Determination
+                #---Unconfirmed: Confirmed Not Placed (Safe To Regenerate)
+                #---Confirmed:   A Previously Seen Order Vanished (State Unknown, Must Not Regenerate)
+                if createdOrder['unconfirmed']: fr_failType = 'NOTPLACED'
+                else:                           fr_failType = 'ORDERSTATEUNKNOWN'
+
+                #[2-4-2-2-3]: Response Dispatch
                 self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                    functionResult = {'localID':        createdOrder['localID'], 
                                                      'positionSymbol': createdOrder['positionSymbol'], 
                                                      'responseOn':     'CREATEORDER', 
                                                      'result':         False,
                                                      'orderResult':    None,
-                                                     'failType':       'CANCELLATIONTHRESHOLDREACHED',
+                                                     'failType':       fr_failType,
                                                      'errorMessage':   None}, 
                                    requestID = createdOrder['IPCRID'], 
                                    complete  = True)
-                self.__logger(message = f"A created order for {createdOrder['localID']}-{createdOrder['positionSymbol']} check loop terminated due to the cancellation threshold reach.", 
+                self.__logger(message = f"A created order for {createdOrder['localID']}-{createdOrder['positionSymbol']} check loop terminated as the order could not be found on the server. (Fail Type: {fr_failType})", 
                               logType = 'Warning', 
                               color   = 'light_magenta')
                 completedOrders.append(coID)
 
             #------[2-4-2-3]: Unexpectancy
             else:
+                #[2-4-2-3-1]: Threshold Check
                 createdOrder['nCheckFails'] += 1
                 if createdOrder['nCheckFails'] < _BINANCE_CREATEDORDERCANCELLATIONTHRESHOLD:
                     continue
+
+                #[2-4-2-3-2]: Response Dispatch (State Unknown, Must Not Regenerate)
                 self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                    functionResult = {'localID':        createdOrder['localID'], 
                                                      'positionSymbol': createdOrder['positionSymbol'], 
                                                      'responseOn':     'CREATEORDER', 
                                                      'result':         False,
                                                      'orderResult':    None,
-                                                     'failType':       'UNEXPECTEDERROR',
+                                                     'failType':       'ORDERSTATEUNKNOWN',
                                                      'errorMessage':   None}, 
                                    requestID = createdOrder['IPCRID'], 
                                    complete  = True)
-                self.__logger(message = f"A created order for {createdOrder['localID']}-{createdOrder['positionSymbol']} check loop terminated due to an unexpected error.", 
+                self.__logger(message = f"A created order for {createdOrder['localID']}-{createdOrder['positionSymbol']} check loop terminated due to consecutive unexpected errors. The order state is unknown - manual check advised.", 
                               logType = 'Warning', 
-                              color   = 'light_magenta')
+                              color   = 'light_red')
                 completedOrders.append(coID)
                 
         #[3]: Completed Orders Clearing
@@ -5128,14 +5154,20 @@ class BinanceAPIManager:
         #---[6-1]: Order Params Completion
         orderParams['newOrderRespType'] = "FULL"
         #---[6-2]: Order Creation Request
+        response_createOrder = None
+        errorMsg             = None
+        isAmbiguous          = False
         try:                   
             response_createOrder = self.__binance_client_users[localID]['accountInstance'].futures_create_order(**orderParams)
-            errorMsg = None
-        except Exception as e:
-            response_createOrder = None                                                                                     
-            errorMsg = str(e)
+        except binance.exceptions.BinanceAPIException as e:
+            errorMsg    = str(e)
+            isAmbiguous = (e.code in (-1000, -1001, -1006, -1007, -1008))
+        except Exception as e: #Network-Level Failure (Timeout, Connection Error, etc.) - The Request May Have Reached The Server
+            errorMsg    = str(e)
+            isAmbiguous = True
 
         #[7]: Response Dispatch
+        #---[7-1]: Non-Ambiguous Response
         if response_createOrder is not None:
             #[7-1]: Server Response Interpretation
             isComplete = _BINANCE_ORDERSTATUS_INTERPRETATION[response_createOrder['status']]
@@ -5166,7 +5198,25 @@ class BinanceAPIManager:
                                                                                        'creationCompletionTime': time.perf_counter_ns()+1e9,
                                                                                        'lastCheckTime':          0,
                                                                                        'lastExecutedQuantity':   float(response_createOrder['executedQty']),
-                                                                                       'nCheckFails':            0}
+                                                                                       'nCheckFails':            0,
+                                                                                       'unconfirmed':            False}
+        #---[7-2]: Ambiguous Response
+        elif isAmbiguous:
+            self.__binance_createdOrders[orderParams['newClientOrderId']] = {'IPCRID':               requestID, 
+                                                                             'localID':              localID, 
+                                                                             'positionSymbol':       positionSymbol, 
+                                                                             'lastCheckTime':        0,
+                                                                             'lastExecutedQuantity': 0.0,
+                                                                             'nCheckFails':          0,
+                                                                             'unconfirmed':          True}
+            self.__logger(message = (f"An Order Creation Request Returned An Ambiguous Failure. The Order Will Be Verified Via Status Check.\n"
+                                     f" * Local ID:        {localID}\n"
+                                     f" * Symbol:          {positionSymbol}\n"
+                                     f" * Client Order ID: {orderParams['newClientOrderId']}\n"
+                                     f" * Error:           {errorMsg}"), 
+                          logType = 'Warning', 
+                          color   = 'light_red')
+        #---[7-3]: Certain API Error
         else: 
             self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR', 'errorMessage': errorMsg}, 
