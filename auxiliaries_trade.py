@@ -244,3 +244,37 @@ def copyTradeControlTracker(tradeControlTracker):
     tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
                       'teff_model': tradeControlTracker['teff_model'].copy()}
     return tcTracker_copy
+
+def getFormattedOCRString(ocr):
+    #[1]: OCR Check
+    if ocr is None:
+        return "None"
+
+    #[2]: Base Fields
+    lines = [f"  - Logic Source:       {ocr['logicSource']}",
+             f"  - Trade Handler ID:   {ocr['tradeHandlerID']}",
+             f"  - Status:             {ocr['status']}",
+             f"  - Client Order ID:    {ocr['clientOrderID']}",
+             f"  - Dispatch ID:        {ocr['dispatchID']}",
+             f"  - Quantity:           {ocr['originalQuantity']} -> {ocr['targetQuantity']} (Executed: {ocr['executedQuantity']})",
+             f"  - Attempts:           {ocr['nAttempts']}",
+             f"  - Last Req. Received: {ocr['lastRequestReceived']}"]
+
+    #[3]: Order Params
+    op = ocr['orderParams']
+    op_str = f"{op['side']} {op['quantity']} {op['symbol']} {op['type']}"
+    if op['type'] == 'LIMIT': op_str += f" @ {op['price']} ({op['timeInForce']})"
+    if op['reduceOnly']:      op_str += " [ReduceOnly]"
+    lines.append(f"  - Order Params:       {op_str}")
+
+    #[4]: Results
+    lines.append(f"  - Results ({len(ocr['results'])}):")
+    for n, res in enumerate(ocr['results']):
+        orr = res['orderResult']
+        if orr is None:
+            lines.append(f"    [{n}] Result: {res['result']} / Fail: {res['failType']} / Msg: {res['errorMessage']}")
+        else:
+            lines.append(f"    [{n}] Status: {orr['status']} / Executed: {orr['executedQuantity']}/{orr['originalQuantity']} @ {orr['averagePrice']}")
+
+    #[5]: Return
+    return "\n"+"\n".join(lines)
