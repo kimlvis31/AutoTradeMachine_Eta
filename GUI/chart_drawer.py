@@ -4057,9 +4057,10 @@ class chartDrawer:
     
     def __drawer_TRADELOG(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
-        oc    = self.objectConfig
-        cgt   = self.currentGUITheme
-        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        rclcg        = self.displayBox_graphics['KLINESPRICE']['RCLCG']
+        rclcg_yFixed = self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED']
 
         #[2]: Master & Display Status
         if not oc['TRADELOG_Display']: return 0b0
@@ -4079,6 +4080,7 @@ class chartDrawer:
         if drawSignal&0b1:
             #[5-1-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
+            rclcg.removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODYSTRIP')
             rclcg.removeGroup(groupName = f'TRADELOG_LOGS_{timestamp}')
 
             #[5-1-2]: Instances
@@ -4095,17 +4097,18 @@ class chartDrawer:
                 #[5-1-3-1]: Instances
                 kl_cp     = kline[KLINDEX_CLOSEPRICE]
                 tl_newest = tls[max(tlTSs_thisInterval)]
+                tl_tQty   = tl_newest['totalQuantity']
 
                 #[5-1-3-2]: Body
-                if tl_newest['totalQuantity']:
+                if tl_tQty:
                     shape_x     = timestamp
                     shape_x2    = timestamp_next
                     shape_width = shape_x2-shape_x
                     kl_cp = kline[KLINDEX_CLOSEPRICE]
-                    if 0 < tl_newest['totalQuantity']:
+                    if 0 < tl_tQty:
                         if tl_newest['entryPrice'] <= kl_cp: cType = 'BUY'
                         else:                                cType = 'SELL'
-                    elif tl_newest['totalQuantity'] < 0:
+                    elif tl_tQty < 0:
                         if tl_newest['entryPrice'] <= kl_cp: cType = 'SELL'
                         else:                                cType = 'BUY'
                     color = (oc[f'TRADELOG_{cType}_ColorR%{cgt}'],
@@ -4118,6 +4121,22 @@ class chartDrawer:
                                              width = shape_width, height = shape_height, 
                                              color = color, 
                                              shapeName = timestamp, shapeGroupName = 'TRADELOG_BODY', layerNumber = 23)
+
+                #[5-1-3-2]: Position
+                if tl_tQty:
+                    shape_x     = timestamp
+                    shape_x2    = timestamp_next
+                    shape_width = shape_x2-shape_x
+                    if   0 < tl_tQty: cType = 'BUY'
+                    elif tl_tQty < 0: cType = 'SELL'
+                    color = (oc[f'TRADELOG_{cType}_ColorR%{cgt}'],
+                             oc[f'TRADELOG_{cType}_ColorG%{cgt}'],
+                             oc[f'TRADELOG_{cType}_ColorB%{cgt}'],
+                             int(oc[f'TRADELOG_{cType}_ColorA%{cgt}']/2))
+                    rclcg_yFixed.addShape_Rectangle(x = shape_x, y = 0, 
+                                                    width = shape_width, height = 1, 
+                                                    color = color, 
+                                                    shapeName = timestamp, shapeGroupName = 'TRADELOG_BODYSTRIP', layerNumber = 23)
                     
                 #[5-1-3-3]: Trades
                 for lIdx, l in enumerate(l for ts in tlTSs_thisInterval for l in tls[ts]['logs']):
@@ -4307,7 +4326,8 @@ class chartDrawer:
 
             #[2-7]: TRADELOG
             elif targetType == 'TRADELOG':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName        = timestamp, groupName = 'TRADELOG_BODY')
+                self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODYSTRIP')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'TRADELOG_LOGS_{timestamp}')
 
             #[2-8]: INDICATORS
@@ -4384,8 +4404,10 @@ class chartDrawer:
         #---[3-7]: TRADELOG
         elif analysisType == 'TRADELOG':
             if gRemovalSignal&0b1:
-                rclcg = dBox_g['KLINESPRICE']['RCLCG']
-                rclcg.removeGroup(groupName = 'TRADELOG_BODY')
+                rclcg        = dBox_g['KLINESPRICE']['RCLCG']
+                rclcg_yFixed = dBox_g['KLINESPRICE']['RCLCG_YFIXED']
+                rclcg.removeGroup(groupName        = 'TRADELOG_BODY')
+                rclcg_yFixed.removeGroup(groupName = 'TRADELOG_BODYSTRIP')
                 for ts in drawn:
                     if 'TRADELOG' not in drawn[ts]: continue
                     rclcg.removeGroup(groupName = f'TRADELOG_LOGS_{ts}')
