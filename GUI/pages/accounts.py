@@ -2238,10 +2238,7 @@ def __generateAuxillaryFunctions(self):
                     if   pDifferencePerc < 0:  currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'RED_LIGHT'
                     elif pDifferencePerc == 0: currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'DEFAULT'
                     else:                      currentPrice_str, currentPrice_str_color = f"{cp_formatted} [+{pDifferencePerc:.3f} %]", 'GREEN_LIGHT'
-                #[4-1-9]: Liquidation Price
-                if (lp := pos['liquidationPrice']) is None: liquidationPrice_str = "-"
-                else:                                       liquidationPrice_str = fn_fts(number=lp, precision=price_prec)
-                #[4-1-10]: UnrealizedPNL
+                #[4-1-9]: UnrealizedPNL
                 pnl = pos['unrealizedPNL']
                 pim = pos['positionInitialMargin']
                 if pnl is None or pim is None or pim == 0:
@@ -2252,6 +2249,9 @@ def __generateAuxillaryFunctions(self):
                     if   pnl < 0:  unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'RED_LIGHT'
                     elif pnl == 0: unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'DEFAULT'
                     else:          unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [+{roi:.3f} %]", 'GREEN_LIGHT'
+                #[4-1-10]: Liquidation Price
+                if (lp := pos['liquidationPrice']) is None: liquidationPrice_str = "-"
+                else:                                       liquidationPrice_str = fn_fts(number=lp, precision=price_prec)
                 #[4-1-11]: Assumed Ratio
                 if (ar := pos['assumedRatio']) is None: assumedRatio_str = "-"
                 else:                                   assumedRatio_str = f"{ar * 100:.3f} %"
@@ -2294,8 +2294,8 @@ def __generateAuxillaryFunctions(self):
                                    {'text': quantity_str},
                                    {'text': entryPrice_str},
                                    {'text': currentPrice_str,     'textStyles': [('all', currentPrice_str_color)]},
-                                   {'text': liquidationPrice_str},
                                    {'text': unrealizedPNL_str,    'textStyles': [('all', unrealizedPNL_str_color)]},
+                                   {'text': liquidationPrice_str},
                                    {'text': assumedRatio_str},
                                    {'text': allocatedBalance_str},
                                    {'text': commitmentRate_str,   'textStyles': [('all', commitmentRate_str_color)]},
