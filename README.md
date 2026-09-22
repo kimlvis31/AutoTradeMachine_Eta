@@ -753,7 +753,7 @@ To validate the end-to-end system over an extended period, I deployed the applic
 
 
 ### 🗓️ Project Duration
-* September 2024 – May 2026
+* September 2024 – May 2026 (Updates + Maintenance Continued)
 
 
 
@@ -761,7 +761,31 @@ To validate the end-to-end system over an extended period, I deployed the applic
 
 
 
+### 🚀 Project Updates
+**Version 1.1.0 Update [2026/09/22]**
+ - **New Features**
+   * **Metrics Market Data Fetching:** 
+   Added a data pipeline that collects 5m interval Open Interest and global Long/Short Ratio data via the Binance REST API, with Binance Vision archives used for historical backfill. Since Binance provides no streaming support for these metrics, an internal stream generation logic produces 1m interval data from the 5m source, allowing the metrics to flow through the same pipeline as kline, depth, and aggTrade data with minimal changes to the existing architecture. Only endpoints that require no API key were selected, so metrics collection runs independently of account activation.
+
+   * **Limit Price Trading:** 
+   Integrated with the existing TEF function to automatically execute limit orders. Orders are placed as post-only (GTX) at a configurable offset from the current price, aligned to each symbol's tick size in the direction away from the market, so every fill is executed at the maker fee rate. A redesigned order lifecycle (DISPATCHED → RESTING → CANCELING → SETTLED/CANCELLED) tracks resting orders across partial fills using cumulative executed quantity, and resting orders are automatically cancelled and replaced when a newer TEF decision or a stop-loss is triggered. Stop-loss and force-clear orders remain market orders to guarantee immediate execution. The virtual trading server was extended to simulate post-only rejections, partial fills, and price-movement-based limit execution, enabling full lifecycle testing before live deployment.
+
+ - **Improvements**
+   * **Analysis System Modularization:** 
+   Restructured the monolithic analysis logic so that each indicator lives in its own self-contained module file. This establishes a consistent structure for expanding the analysis system: new indicators plug in as standalone modules rather than extending a single growing codebase, keeping the analysis layer scalable as the number of supported indicators increases.
+
+   * **Improved Orde Tracking Logic:**
+   Order handling now distinguishes between definite rejections and ambiguous failures (timeouts, network errors, unexpected response formats). Ambiguous orders are no longer retried blindly; instead, they are registered for status verification and resolved by querying the exchange, preventing duplicate orders. Orders confirmed absent are safely regenerated, while orders whose state cannot be determined are terminated without regeneration. Cancellation requests rejected because the order already closed now fetch the order's final state, correctly recording fills that occur just before cancellation. Response parsing was hardened against API changes, including the removal of `avgPrice` from order creation responses, which is now retrieved via order queries.
+
+   * **Position Direction Display In Chart Drawer Object:**
+   Added a position strip along the bottom of the chart that visualizes, based on trade log data, the final long or short position held at the end of each interval. This makes it easy to read the position state across the chart at a glance, alongside the existing trade record markers.
+
+
+---
+
+
+
 ### 📄 Document Info
-* **Last Updated:** May 6th, 2026  
+* **Last Updated:** September 22nd, 2026  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
