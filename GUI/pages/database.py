@@ -706,7 +706,7 @@ def __generateAuxillaryFunctions(self):
                         nsbi = {'text':       collecting_text,
                                 'textStyles': collecting_ts, 
                                 'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 3)
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 4)
                         if symbol in puVar['currencies_selected']:
                             collectingStream     = all(currencies[s]['collecting'][0] for s in puVar['currencies_selected'])
                             collectingHistorical = all(currencies[s]['collecting'][1] for s in puVar['currencies_selected'])
@@ -760,7 +760,7 @@ def __generateAuxillaryFunctions(self):
                         nsbi = {'text':       fi_text, 
                                 'textStyles': [('all', 'DEFAULT'),], 
                                 'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 8)
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 9)
                         reapplyListFilter = True
                         if updateInformation:
                             guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text = fi_text)
@@ -771,7 +771,7 @@ def __generateAuxillaryFunctions(self):
                         nsbi = {'text':       fi_text, 
                                 'textStyles': [('all', 'DEFAULT'),], 
                                 'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 9)
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 10)
                         reapplyListFilter = True
                         if updateInformation:
                             guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_text)
@@ -782,7 +782,7 @@ def __generateAuxillaryFunctions(self):
                         nsbi = {'text':       fi_text, 
                                 'textStyles': [('all', 'DEFAULT'),], 
                                 'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 10)
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 11)
                         reapplyListFilter = True
                         if updateInformation:
                             guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text = fi_text)
@@ -793,7 +793,7 @@ def __generateAuxillaryFunctions(self):
                         nsbi = {'text':       fi_text, 
                                 'textStyles': [('all', 'DEFAULT'),], 
                                 'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 11)
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 12)
                         reapplyListFilter = True
                         if updateInformation:
                             guios["CURRENCYLIST_FIRSTINTERVALMTDISPLAYTEXT"].updateText(text = fi_text)
@@ -877,7 +877,7 @@ def __generateAuxillaryFunctions(self):
             fetchSpeed_metric_text = "-"
         else:
             fetchSpeed_metric_text = f"{func_svf(value = fetchSpeed_metric)} SIPS"
-        guios["COLLECTIONPROCESS_AVGMDFETCHSPEEDATDISPLAYTEXT"].updateText(text = fetchSpeed_metric_text, textStyle = 'DEFAULT')
+        guios["COLLECTIONPROCESS_AVGMDFETCHSPEEDMTDISPLAYTEXT"].updateText(text = fetchSpeed_metric_text, textStyle = 'DEFAULT')
 
         #---[2-6]: Average Fetch Speed - Total
         fetchSpeed_total = 0
@@ -928,7 +928,7 @@ def __generateAuxillaryFunctions(self):
             remainingRanges_metric_text = "-"
         else:
             remainingRanges_metric_text = f"{func_svf(value = remainingRanges_metric)} SI"
-        guios["COLLECTIONPROCESS_REMAININGRANGESATDISPLAYTEXT"].updateText(text = remainingRanges_metric_text, textStyle = 'DEFAULT')
+        guios["COLLECTIONPROCESS_REMAININGRANGESMTDISPLAYTEXT"].updateText(text = remainingRanges_metric_text, textStyle = 'DEFAULT')
 
         #---[2-11]: Remaining Ranges - Total
         remainingRanges_total = 0
@@ -1283,7 +1283,7 @@ def __generateAuxillaryFunctions(self):
                                                                 nTicks     = 0)-1
         
         #---[3-2]: Selection Box Item Index
-        sbiIdx = {'kline': 4, 'depth': 5, 'aggTrade': 6, 'metric': 7}
+        sbiIdx = {'kline': 5, 'depth': 6, 'aggTrade': 7, 'metric': 8}
 
         #---[3-2]: Availabilities Computation & SelectionBox Update (If Needed)
         for symbol in symbols:
