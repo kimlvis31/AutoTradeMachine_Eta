@@ -333,9 +333,10 @@ def setupPage(self):
                            'ISOLATED': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_ISOLATED')}}
             self.GUIOs[_objName].GUIOs["MARGINTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
             self.GUIOs[_objName].addGUIO("ORDERTYPETITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE'),     'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("ORDERTYPESELECTIONBOX",   selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'name': 'TC_ORDERTYPE', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
-            orderTypes = {'LIMIT':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_LIMIT')},
-                          'MARKET': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_MARKET')}}
+            self.GUIOs[_objName].addGUIO("ORDERTYPESELECTIONBOX",   selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'name': 'TC_ORDERTYPE', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+            orderTypes = {'LIMIT':    {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_LIMIT')},
+                          'MARKET':   {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_MARKET')},
+                          'ADAPTIVE': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_ADAPTIVE')}}
             self.GUIOs[_objName].GUIOs["ORDERTYPESELECTIONBOX"].setSelectionList(selectionList = orderTypes, displayTargets = 'all')
             self.GUIOs[_objName].addGUIO("ORDEROFFSETTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDEROFFSET'),   'fontSize': 80, 'textInteractable': False})
             self.GUIOs[_objName].addGUIO("ORDEROFFSETTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "0.05",                                                                                    'fontSize': 80, 'name': 'TC_ORDEROFFSET', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
@@ -806,7 +807,7 @@ def __generateObjectFunctions(self):
             oType = sp_guios["ORDERTYPESELECTIONBOX"].getSelected()
 
             #[2-1-2]: Order Offset GUIO Update
-            if oType == 'LIMIT':
+            if oType in ('LIMIT', 'ADAPTIVE'):
                 sp_guios["ORDEROFFSETTEXTINPUTBOX"].updateText(text = "0.05")
                 sp_guios["ORDEROFFSETTEXTINPUTBOX"].activate()
             elif oType == 'MARKET':
@@ -1602,7 +1603,7 @@ def __generateAuxillaryFunctions(self):
 
         #---[2-2]: Order OffSet
         orderType = sp_guios["ORDERTYPESELECTIONBOX"].getSelected()
-        if orderType == 'LIMIT':
+        if orderType in ('LIMIT', 'ADAPTIVE'):
             orderOffset_str = sp_guios["ORDEROFFSETTEXTINPUTBOX"].getText()
             try:
                 orderOffset = round(float(orderOffset_str)/100, 4)
@@ -1675,8 +1676,8 @@ def __generateAuxillaryFunctions(self):
         orderType = tc['orderType']
         sp_guios["ORDERTYPESELECTIONBOX"].setSelected(itemKey = orderType, callSelectionUpdateFunction = False)
         #---[2-4]: Order Offset
-        if   orderType == 'LIMIT':  orderOffset = tc['orderOffset']
-        elif orderType == 'MARKET': orderOffset = None
+        if   orderType in ('LIMIT', 'ADAPTIVE'): orderOffset = tc['orderOffset']
+        elif orderType == 'MARKET':              orderOffset = None
         sp_guios["ORDEROFFSETTEXTINPUTBOX"].updateText(text = ("" if orderOffset is None else f"{orderOffset*100:.2f}"))
         if orderOffset is None: sp_guios["ORDEROFFSETTEXTINPUTBOX"].deactivate()
         else:                   sp_guios["ORDEROFFSETTEXTINPUTBOX"].activate()
@@ -1719,8 +1720,8 @@ def __generateAuxillaryFunctions(self):
             if   marginType == 'CROSSED':  isolated = False
             elif marginType == 'ISOLATED': isolated = True
             orderType = sp_guios["ORDERTYPESELECTIONBOX"].getSelected()
-            if   orderType == 'LIMIT':  orderOffset = round(float(sp_guios["ORDEROFFSETTEXTINPUTBOX"].getText())/100, 4)
-            elif orderType == 'MARKET': orderOffset = None
+            if   orderType in ('LIMIT', 'ADAPTIVE'): orderOffset = round(float(sp_guios["ORDEROFFSETTEXTINPUTBOX"].getText())/100, 4)
+            elif orderType == 'MARKET':              orderOffset = None
             direction = sp_guios["DIRECTIONSELECTIONBOX"].getSelected()
             #---Full Stop Loss Immediate
             fslImmed_str = sp_guios["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()

@@ -187,12 +187,10 @@ if (True):
                                                   'KOR': "거래가능"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_REDUCEONLY'] = {'ENG': "RDC-ONLY",
                                                     'KOR': "진입금지"}
-    
     TEXTPACK['ACCOUNTS:POSITIONS_ST_STOPTRADEONFSL'] = {'ENG': "ST-FSL",
                                                         'KOR': "ST-FSL"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_STOPTRADEONUNKNOWNTRADE'] = {'ENG': "ST-UT",
                                                                  'KOR': "ST-UT"}
-    
     TEXTPACK['ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE'] = {'ENG': "CA CODE",
                                                               'KOR': "CA 코드"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE'] = {'ENG': "TC CODE",
@@ -568,6 +566,8 @@ if (True):
                                                                              'KOR': "지정가"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_MARKET'] = {'ENG': "MARKET",
                                                                               'KOR': "시장가"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_ADAPTIVE'] = {'ENG': "ADAPTIVE",
+                                                                                'KOR': "적응형"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'] = {'ENG': "DIRECTION",
                                                                        'KOR': "방향"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'] = {'ENG': "FSL (IMMED)",
@@ -1337,6 +1337,8 @@ if (True):
                                                                                     'KOR': "지정가"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE_MARKET'] = {'ENG': "MARKET",
                                                                                      'KOR': "시장가"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE_ADAPTIVE'] = {'ENG': "ADAPTIVE",
+                                                                                       'KOR': "적응형"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDEROFFSET'] = {'ENG': "ORDER OFFSET",
                                                                                 'KOR': "주문 오프셋"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'] = {'ENG': "DIRECTION",

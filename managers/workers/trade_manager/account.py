@@ -1429,6 +1429,10 @@ class Account:
 
             #[2-4-1]: Order Type & Price Determination
             tc_orderType = tc['orderType']
+            tc_orderType = tc['orderType']
+            if tc_orderType == 'ADAPTIVE': #'ADAPTIVE': LIMIT By Default, MARKET On A TEF Direction Reversal (CLEAR)
+                if th_type == 'CLEAR': tc_orderType = 'MARKET'
+                else:                  tc_orderType = 'LIMIT'
             if tc_orderType == 'LIMIT':
                 tickSize = None
                 for serverFilter in serverFilters:

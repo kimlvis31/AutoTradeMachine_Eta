@@ -679,7 +679,6 @@ class Simulation:
                 if ocr is not None and ocr['result'] is None:
                     func_rOrder(orderCode = ocr['orderCode'])
                     position['_orderCreationRequest'] = None
-                    self.__allocateBalance
                 position['_tradeHandlers'].clear()
             
             #---[3-1-5]: Analysis Generation & Handling
@@ -1427,13 +1426,18 @@ class Simulation:
             tc_orderOffset = tc['orderOffset']
             for thType in tradeHandlers:
                 side = tradeHandler_checkList[thType]
-                if tc_orderType == 'LIMIT':
+                if tc_orderType == 'ADAPTIVE': #('ADAPTIVE': LIMIT By Default, MARKET On A TEF Direction Reversal (CLEAR))
+                    if thType == 'CLEAR': th_orderType = 'MARKET'
+                    else:                 th_orderType = 'LIMIT'
+                else:
+                    th_orderType = tc_orderType
+                if th_orderType == 'LIMIT':
                     if   side == 'BUY':  price = round(cp*(1-tc_orderOffset), precisions['price'])
                     elif side == 'SELL': price = round(cp*(1+tc_orderOffset), precisions['price'])
-                elif tc_orderType == 'MARKET': 
+                else:
                     price = cp
                 th = {'type':      thType, 
-                      'orderType': tc_orderType,
+                      'orderType': th_orderType,
                       'side':      side,
                       'tefVal':    tef_val,
                       'timestamp': timestamp,
