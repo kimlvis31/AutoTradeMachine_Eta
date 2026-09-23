@@ -703,12 +703,14 @@ def __generateObjectFunctions(self):
                 try:
                     with open(os.path.join(rootPath, path), 'r', encoding='utf-8') as f:
                         aaf = json.loads(f.read())
+                    aaf_lID     = aaf['localID']
+                    aaf_genTime = aaf['generationTime_ns']
                 except: continue
 
                 #[3-2-3]: AAF Record
-                if aaf['localID'] in aafs and aaf['generationTime_ns'] < aafs[aaf['localID']]['generationTime_ns']: 
+                if aaf_lID in aafs and aaf_genTime < aafs[aaf_lID]['generationTime_ns']: 
                     continue
-                aafs[aaf['localID']] = aaf
+                aafs[aaf_lID] = aaf
                 
         #[4]: No AAF Found
         if localID not in aafs:
