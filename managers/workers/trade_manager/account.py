@@ -2020,6 +2020,22 @@ class Account:
                 quantity_unfilled      = round(ocr_orderParams['quantity']-eq_reported, precisions['quantity'])
                 quantity_delta_unknown = quantity_delta
 
+            #[2-1]: Pending Attribution Check
+            #---(Account data may reflect a fill before its order response arrives. If the unexplained change fits
+            #---within the live order's outstanding quantity, attribute it to that order and await its response.)
+            if quantity_delta_unknown != 0 and ocr['status'] in ('DISPATCHED', 'RESTING', 'CANCELING'):
+                if   ocr_orderParams['side'] == 'BUY':  isAttributable = (0 < quantity_delta_unknown  and quantity_delta_unknown <= quantity_unfilled)
+                elif ocr_orderParams['side'] == 'SELL': isAttributable = (quantity_delta_unknown < 0  and -quantity_unfilled <= quantity_delta_unknown)
+                else:                                   isAttributable = False
+                if isAttributable:
+                    func_log(message = (f"A Quantity Change Within The Live Order's Outstanding Quantity Detected For {lID}-{symbol}. Awaiting Its Response.\n"
+                                        f" * Order Side:         {ocr_orderParams['side']}\n"
+                                        f" * Q_Delta - Unknown:  {auxiliaries.floatToString(number = quantity_delta_unknown, precision = precisions['quantity'])}\n"
+                                        f" * Q_Delta - Unfilled: {auxiliaries.floatToString(number = quantity_unfilled,      precision = precisions['quantity'])}"), 
+                             logType = 'Update', 
+                             color   = 'light_blue')
+                    quantity_delta_unknown = 0
+
         #[3]: Quantity Deltas Handling
         #---[3-1]: Known Trade
         if ocr is not None:
@@ -2121,25 +2137,25 @@ class Account:
             elif ocr_result['requestType'] == 'CANCEL':
                 ocrHandler = ('TERMINATE', 'CANCEL_FAILED_RETRY')
 
-            #[3-1-3]: Last Result Failed, Can Still Regenerate
-            elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:
-                ocrHandler = ('REGENERATE', 'REJECTED') #Regenerate
-
             #[3-1-4]: Order State Unknown - Regeneration Could Duplicate A Live Order
             elif ocr_result['failType'] == 'ORDERSTATEUNKNOWN':
                 ocrHandler = ('TERMINATE', 'ORDERSTATEUNKNOWN')
 
-            #[3-1-5]: Last Result Failed, Can No Longer Regenerate
-            else:
-                ocrHandler = ('TERMINATE', 'LIMITREACHED_RJ') #Terminate on Failure
+            #[3-1-5]: Last Result Failed, Can Still Regenerate
+            elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:
+                ocrHandler = ('REGENERATE', 'REJECTED')
 
-            #[3-1-6]: Disruption Detected, Terminate
+            #[3-1-6]: Last Result Failed, Can No Longer Regenerate
+            else:
+                ocrHandler = ('TERMINATE', 'LIMITREACHED_RJ')
+
+            #[3-1-7]: Disruption Detected, Terminate
             if quantity_delta_unknown != 0 and ocrHandler[0] in ('REGENERATE', 'WAIT'): 
                 ocrHandler = ('TERMINATE', 'UNKNOWNTRADEDETECTED')  #Terminate on Disruption
 
-            #[3-1-7]: OCR Handling
+            #[3-1-8]: OCR Handling
             oh_type, oh_cause = ocrHandler
-            #---[3-1-7-1]: Termination
+            #---[3-1-8-1]: Termination
             if oh_type == 'TERMINATE':  
                 if ocr['status'] == 'RESTING':
                     self.__orderCreationRequest_cancel(symbol = symbol)
@@ -2157,13 +2173,13 @@ class Account:
                     elif oh_cause == 'ORDERSTATEUNKNOWN':    func_log(message = f"OCR Terminated For {lID}-{symbol} On Unknown Order State. Manual Check Advised.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Warning', color = 'light_red')
                     else:                                    func_log(message = f"OCR Terminated For {lID}-{symbol} On Unhandled Cause: '{oh_cause}'.\n * OCR: {func_gfOCRs(ocr = ocr)}",             logType = 'Warning', color = 'light_red')
 
-            #---[3-1-7-2]: Regeneration
+            #---[3-1-8-2]: Regeneration
             elif oh_type == 'REGENERATE': 
                 self.__orderCreationRequest_regenerate(symbol = symbol, quantity_unfilled = quantity_unfilled)
                 if   oh_cause == 'PARTIALCOMPLETION': func_log(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Partial Completion.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_blue')
                 elif oh_cause == 'REJECTED':          func_log(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Rejection.\n * OCR: {func_gfOCRs(ocr = ocr)}",          logType = 'Update', color = 'light_blue')
 
-            #---[3-1-7-3]: Wait
+            #---[3-1-8-3]: Wait
             elif oh_type == 'WAIT':
                 if   oh_cause == 'RESTING':   func_log(message = f"OCR Waiting For {lID}-{symbol} On Resting Order.\n * OCR: {func_gfOCRs(ocr = ocr)}",   logType = 'Update', color = 'light_blue')
                 elif oh_cause == 'CANCELING': func_log(message = f"OCR Waiting For {lID}-{symbol} On Cancel Response.\n * OCR: {func_gfOCRs(ocr = ocr)}", logType = 'Update', color = 'light_blue')
