@@ -3592,16 +3592,31 @@ class BinanceAPIManager:
                 if not (isComplete or isNewlyExecuted or wasUnconfirmed): #First Confirmation Of An Ambiguous Order Always Dispatches (Moves Account OCR Out Of DISPATCHED)
                     continue
 
-                #[2-4-2-1-2]: Tracker Update
+                #[2-4-2-1-2]: Average Price Completion (avgPrice Removed From Order Responses After CM Migration)
+                if 'avgPrice' in order_fromServer:
+                    averagePrice = float(order_fromServer['avgPrice'])
+                elif executedQuantity == 0:
+                    averagePrice = None #Not Needed Until Execution
+                else:
+                    averagePrice = self.__fetchOrderAveragePrice(client         = self.__binance_client_users[createdOrder['localID']]['accountInstance'], 
+                                                                 positionSymbol = createdOrder['positionSymbol'], 
+                                                                 orderID        = order_fromServer['orderId'])
+                    if averagePrice is None: #Retry On The Next Check - The Order Remains Tracked
+                        self.__logger(message = f"Average price is unavailable for {createdOrder['localID']}-{createdOrder['positionSymbol']}. The dispatch will be re-attempted on the next check.", 
+                                      logType = 'Warning', 
+                                      color   = 'light_magenta')
+                        continue
+
+                #[2-4-2-1-3]: Tracker Update
                 createdOrder['lastExecutedQuantity'] = executedQuantity
 
-                #[2-4-2-1-3]: Confirmation Logging
+                #[2-4-2-1-4]: Confirmation Logging
                 if wasUnconfirmed:
                     self.__logger(message = f"An ambiguous order for {createdOrder['localID']}-{createdOrder['positionSymbol']} has been confirmed to exist on the server. (Status: {order_fromServer['status']})", 
                                   logType = 'Update', 
                                   color   = 'light_blue')
 
-                #[2-4-2-1-4]: Response Dispatch
+                #[2-4-2-1-5]: Response Dispatch
                 self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                    functionResult = {'localID':        createdOrder['localID'], 
                                                      'positionSymbol': createdOrder['positionSymbol'], 
@@ -3611,7 +3626,7 @@ class BinanceAPIManager:
                                                                         'status':           order_fromServer['status'],
                                                                         'type':             order_fromServer['type'],
                                                                         'side':             order_fromServer['side'],
-                                                                        'averagePrice':     float(order_fromServer['avgPrice']),
+                                                                        'averagePrice':     averagePrice,
                                                                         'originalQuantity': float(order_fromServer['origQty']),
                                                                         'executedQuantity': executedQuantity},
                                                      'failType':       None,
@@ -3619,7 +3634,7 @@ class BinanceAPIManager:
                                    requestID = createdOrder['IPCRID'], 
                                    complete  = isComplete)
                 
-                #[2-4-2-1-5]: Completion Handling
+                #[2-4-2-1-6]: Completion Handling
                 if isComplete:
                     completedOrders.append(coID)
 
@@ -3731,7 +3746,30 @@ class BinanceAPIManager:
             return (False, "; ".join(failures))
         return (True, None)
 
+    def __fetchOrderAveragePrice(self, client, positionSymbol, orderID):
+        #[1]: Trades Fetch (avgPrice Removed From Order Responses After CM Migration)
+        if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 5, extraOnly = False, apply = True):
+            return None
+        try:
+            trades = client.futures_account_trades(symbol = positionSymbol)
+        except Exception as e:
+            self.__logger(message = f"Order trades fetch failed for {positionSymbol} (Order ID: {orderID}).\n * {e}", 
+                          logType = 'Warning', 
+                          color   = 'light_magenta')
+            return None
 
+        #[2]: Volume Weighted Average Price Computation
+        notional = 0.0
+        quantity = 0.0
+        for trade in trades:
+            if int(trade['orderId']) != int(orderID): #Filter Explicitly In Case The Server Ignores The orderId Parameter
+                continue
+            t_quantity = float(trade['qty'])
+            notional  += float(trade['price'])*t_quantity
+            quantity  += t_quantity
+        if quantity == 0:
+            return None
+        return notional/quantity
 
     #---System
     def __logger(self, message, logType, color):
@@ -5305,6 +5343,7 @@ class BinanceAPIManager:
         #[6]: Order Cancellation Attempt
         client = self.__binance_client_users[localID]['accountInstance']
         orderResponse = None
+        orderResult   = None
         failType      = None
         errorMsg      = None
         try:
@@ -5342,31 +5381,44 @@ class BinanceAPIManager:
 
         #[7]: Response Dispatch
         if orderResponse is not None:
-            #[7-1]: Created Order Tracker Removal
-            self.__binance_createdOrders.pop(clientOrderID, None)
+            #[7-1]: Response Parsing
+            try:
+                executedQuantity = float(orderResponse['executedQty'])
+                averagePrice     = float(orderResponse['avgPrice']) if 'avgPrice' in orderResponse else None
+                if averagePrice is None and 0 < executedQuantity:
+                    averagePrice = self.__fetchOrderAveragePrice(client         = client, 
+                                                                 positionSymbol = positionSymbol, 
+                                                                 orderID        = orderResponse['orderId'])
+                orderResult = {'clientOrderId':    orderResponse['clientOrderId'],
+                               'status':           orderResponse['status'],
+                               'type':             orderResponse['type'],
+                               'side':             orderResponse['side'],
+                               'averagePrice':     averagePrice,
+                               'originalQuantity': float(orderResponse['origQty']),
+                               'executedQuantity': executedQuantity}
+            except Exception as e:
+                orderResult = None
+                failType    = 'APIERROR'
+                errorMsg    = f"Cancellation Response Parsing Failed: {e} / Raw: {orderResponse}"
 
-            #[7-2]: Response
+        #[7-2]: Response
+        if orderResponse is not None and orderResult is not None:
+            self.__binance_createdOrders.pop(clientOrderID, None)
             self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
                                functionResult = {'localID':        localID, 
                                                  'positionSymbol': positionSymbol, 
                                                  'responseOn':     'CANCELORDER', 
                                                  'result':         True,
-                                                 'orderResult':    {'clientOrderId':    orderResponse['clientOrderId'],
-                                                                    'status':           orderResponse['status'],
-                                                                    'type':             orderResponse['type'],
-                                                                    'side':             orderResponse['side'],
-                                                                    'averagePrice':     float(orderResponse['avgPrice']),
-                                                                    'originalQuantity': float(orderResponse['origQty']),
-                                                                    'executedQuantity': float(orderResponse['executedQty'])},
+                                                 'orderResult':    orderResult,
                                                  'failType':       None,
                                                  'errorMessage':   None},
                                requestID = requestID, 
                                complete  = True)
         else: 
             self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
-                            functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': failType, 'errorMessage': errorMsg}, 
-                            requestID      = requestID, 
-                            complete       = True)
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CANCELORDER', 'result': False, 'orderResult': None, 'failType': failType, 'errorMessage': errorMsg}, 
+                               requestID      = requestID, 
+                               complete       = True)
 
 
 

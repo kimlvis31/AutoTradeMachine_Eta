@@ -2049,7 +2049,7 @@ class Account:
             #[3-1-2]: Last Result Successful
             if ocr_result['result']:
                 #[3-1-2-1]: Trade Result Interpretation
-                if quantity_delta_filled != 0:
+                if quantity_delta_filled != 0 and ocr_orderResult['averagePrice'] is not None:
                     #[3-1-2-1-1]: Quantity
                     quantity_new_ocr      = round(position['quantity']+quantity_delta_filled,  precisions['quantity'])
                     quantity_dirDelta_ocr = round(abs(quantity_new_ocr)-abs(position['quantity']), precisions['quantity'])
@@ -2121,6 +2121,13 @@ class Account:
                     position['quantity']    = quantity_new_ocr
                     position['entryPrice']  = entryPrice_new_ocr
                     ocr['executedQuantity'] = eq_reported
+                    
+                elif quantity_delta_filled != 0:
+                    func_log(message = (f"A Fill Could Not Be Recorded For {lID}-{symbol} Due To An Unavailable Average Price. Manual Check Advised.\n"
+                                        f" * Q_Delta - Filled: {auxiliaries.floatToString(number = quantity_delta_filled, precision = precisions['quantity'])}\n"
+                                        f" * OCR: {func_gfOCRs(ocr = ocr)}"), 
+                             logType = 'Warning', 
+                             color   = 'light_red')
 
                 #[3-1-2-2]: OCR Handler Determination
                 if   ocr['status'] in ('RESTING', 'CANCELING'):                      ocrHandler = ('WAIT',       ocr['status'])
