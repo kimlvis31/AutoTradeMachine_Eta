@@ -780,7 +780,12 @@ To validate the end-to-end system over an extended period, I deployed the applic
    * **Position Direction Display In Chart Drawer Object:**
    Added a position strip along the bottom of the chart that visualizes, based on trade log data, the final long or short position held at the end of each interval. This makes it easy to read the position state across the chart at a glance, alongside the existing trade record markers.
 
+<br>
 
+**Version 1.1.1 Update [2026/09/23]**
+ - **Improvements**
+   * **False Unknown Trade Detection Fix:**
+   Account data and order responses arrive through separate paths, so a fill could appear in the account snapshot before its order response was received. The system previously treated this as external intervention, halting trading on the position. Quantity changes that fall within a live order's outstanding quantity are now attributed to that order and resolved once its response arrives, while genuine external changes are still detected.
 ---
 
 
