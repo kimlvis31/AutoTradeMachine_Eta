@@ -1449,7 +1449,11 @@ class Account:
                 if not tc['postStopLossReentry'] and position['tradeControlTracker']['slExited'] is not None:
                     continue
 
-                #[2-5-1-2]: Balance Commitment Check
+                #[2-5-1-2]: Reduce Only Check
+                if position['reduceOnly']:
+                    continue
+
+                #[2-5-1-3]: Balance Commitment Check
                 balance_allocated = position['allocatedBalance'] or func_allocBal(symbol = symbol, apply = False)
                 balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice'] is not None else 0
                 balance_toCommit  = balance_allocated*abs(th_tefVal)
@@ -1461,7 +1465,7 @@ class Account:
                 if not (0 < balance_toEnter_eff): 
                     continue
 
-                #[2-5-1-3]: Quantity Determination
+                #[2-5-1-4]: Quantity Determination
                 quantity_minUnit = pow(10, -precisions['quantity'])
                 quantity         = round(int((balance_toEnter_eff/position['currentPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                 if quantity < 0: 
@@ -1491,7 +1495,7 @@ class Account:
                                   color   = 'light_yellow')
                     continue
 
-                #[2-5-1-4]: Server Filter Test
+                #[2-5-1-5]: Server Filter Test
                 serverFilterTest = auxiliaries_trade.checkServerFilters(serverFilters = serverFilters,
                                                                         orderType     = tc_orderType,
                                                                         quantity      = quantity,
@@ -1513,7 +1517,7 @@ class Account:
                                   color   = 'light_magenta')
                     continue
 
-                #[2-5-1-5]: Side Confirm
+                #[2-5-1-6]: Side Confirm
                 if not ((position['quantity'] <= 0 and th_side == 'SELL') or \
                         (0 <= position['quantity'] and th_side == 'BUY')): 
                     self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
@@ -1528,7 +1532,7 @@ class Account:
                                   color   = 'light_magenta')
                     continue
 
-                #[2-5-1-6]: Finally
+                #[2-5-1-7]: Finally
                 func_allocBal(symbol = symbol, apply = True)
                 ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol,
                                                                     logicSource     = 'ENTRY',
@@ -2121,7 +2125,7 @@ class Account:
                     position['quantity']    = quantity_new_ocr
                     position['entryPrice']  = entryPrice_new_ocr
                     ocr['executedQuantity'] = eq_reported
-                    
+
                 elif quantity_delta_filled != 0:
                     func_log(message = (f"A Fill Could Not Be Recorded For {lID}-{symbol} Due To An Unavailable Average Price. Manual Check Advised.\n"
                                         f" * Q_Delta - Filled: {auxiliaries.floatToString(number = quantity_delta_filled, precision = precisions['quantity'])}\n"
