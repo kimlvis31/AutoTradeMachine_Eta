@@ -187,6 +187,12 @@ if (True):
                                                   'KOR': "거래가능"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_REDUCEONLY'] = {'ENG': "RDC-ONLY",
                                                     'KOR': "진입금지"}
+    
+    TEXTPACK['ACCOUNTS:POSITIONS_ST_STOPTRADEONFSL'] = {'ENG': "ST-FSL",
+                                                        'KOR': "ST-FSL"}
+    TEXTPACK['ACCOUNTS:POSITIONS_ST_STOPTRADEONUNKNOWNTRADE'] = {'ENG': "ST-UT",
+                                                                 'KOR': "ST-UT"}
+    
     TEXTPACK['ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE'] = {'ENG': "CA CODE",
                                                               'KOR': "CA 코드"}
     TEXTPACK['ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE'] = {'ENG': "TC CODE",
@@ -247,6 +253,10 @@ if (True):
                                                   'KOR': "거래 상태"}
     TEXTPACK['ACCOUNTS:POSITIONS_REDUCEONLY'] = {'ENG': "REDUCE ONLY",
                                                  'KOR': "진입 금지"}
+    TEXTPACK['ACCOUNTS:POSITIONS_STOPTRADEONFSL'] = {'ENG': "ST ON FSL",
+                                                     'KOR': "FSL시 중지"}
+    TEXTPACK['ACCOUNTS:POSITIONS_STOPTRADEONUT'] = {'ENG': "ST ON UT",
+                                                    'KOR': "UT시 중지"}
     TEXTPACK['ACCOUNTS:POSITIONS_APPLY'] = {'ENG': "APPLY",
                                             'KOR': "적용"}
     TEXTPACK['ACCOUNTS:POSITIONS_RESETTRADECONTROLTRACKER'] = {'ENG': "RESET TC TRACKER",

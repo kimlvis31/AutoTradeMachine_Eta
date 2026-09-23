@@ -36,28 +36,30 @@ _ASSETPRECISIONS_XS = {'USDT': 2, 'USDC': 2, 'BTC': 2}
 _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'tradable':                {'BASIC': None, 'TRADER': 2,    'DETAIL': 2},
                                          'tradeStatus':             {'BASIC': 2,    'TRADER': 3,    'DETAIL': 3},
                                          'reduceOnly':              {'BASIC': None, 'TRADER': 4,    'DETAIL': 4},
-                                         'contractType':            {'BASIC': 13,   'TRADER': 5,    'DETAIL': 5},
-                                         'leverage':                {'BASIC': 3,    'TRADER': None, 'DETAIL': 6},
-                                         'isolated':                {'BASIC': 4,    'TRADER': None, 'DETAIL': 7},
-                                         'quantity':                {'BASIC': 5,    'TRADER': None, 'DETAIL': 8},
-                                         'isolatedWalletBalance':   {'BASIC': None, 'TRADER': None, 'DETAIL': 9},
-                                         'positionInitialMargin':   {'BASIC': None, 'TRADER': None, 'DETAIL': 10},
-                                         'openOrderInitialMargin':  {'BASIC': None, 'TRADER': None, 'DETAIL': 11},
-                                         'maintenanceMargin':       {'BASIC': None, 'TRADER': None, 'DETAIL': 12},
-                                         'entryPrice':              {'BASIC': 6,    'TRADER': None, 'DETAIL': 13},
-                                         'currentPrice':            {'BASIC': 7,    'TRADER': None, 'DETAIL': 14},
-                                         'liquidationPrice':        {'BASIC': 9,    'TRADER': None, 'DETAIL': 15},
-                                         'unrealizedPNL':           {'BASIC': 8,    'TRADER': None, 'DETAIL': 16},
-                                         'assumedRatio':            {'BASIC': 10,   'TRADER': 9,    'DETAIL': 17},
-                                         'weightedAssumedRatio':    {'BASIC': None, 'TRADER': None, 'DETAIL': 18},
-                                         'allocatedBalance':        {'BASIC': 11,   'TRADER': None, 'DETAIL': 19},
-                                         'maxAllocatedBalance':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 20},
-                                         'commitmentRate':          {'BASIC': 12,   'TRADER': None, 'DETAIL': 21},
-                                         'riskLevel':               {'BASIC': 13,   'TRADER': None, 'DETAIL': 22},
-                                         'currencyAnalysisCode':    {'BASIC': None, 'TRADER': 6,    'DETAIL': 23},
-                                         'tradeConfigurationCode':  {'BASIC': None, 'TRADER': 7,    'DETAIL': 24},
-                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 25},
-                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 11,   'DETAIL': 26}}
+                                         'stopTradeOnFSL':          {'BASIC': None, 'TRADER': 5,    'DETAIL': 5},
+                                         'stopTradeOnUnknownTrade': {'BASIC': None, 'TRADER': 6,    'DETAIL': 6},
+                                         'contractType':            {'BASIC': 14,   'TRADER': 7,    'DETAIL': 7},
+                                         'leverage':                {'BASIC': 3,    'TRADER': None, 'DETAIL': 8},
+                                         'isolated':                {'BASIC': 4,    'TRADER': None, 'DETAIL': 9},
+                                         'quantity':                {'BASIC': 5,    'TRADER': None, 'DETAIL': 10},
+                                         'isolatedWalletBalance':   {'BASIC': None, 'TRADER': None, 'DETAIL': 11},
+                                         'positionInitialMargin':   {'BASIC': None, 'TRADER': None, 'DETAIL': 12},
+                                         'openOrderInitialMargin':  {'BASIC': None, 'TRADER': None, 'DETAIL': 13},
+                                         'maintenanceMargin':       {'BASIC': None, 'TRADER': None, 'DETAIL': 14},
+                                         'entryPrice':              {'BASIC': 6,    'TRADER': None, 'DETAIL': 15},
+                                         'currentPrice':            {'BASIC': 7,    'TRADER': None, 'DETAIL': 16},
+                                         'liquidationPrice':        {'BASIC': 9,    'TRADER': None, 'DETAIL': 17},
+                                         'unrealizedPNL':           {'BASIC': 8,    'TRADER': None, 'DETAIL': 18},
+                                         'assumedRatio':            {'BASIC': 10,   'TRADER': 10,   'DETAIL': 19},
+                                         'weightedAssumedRatio':    {'BASIC': None, 'TRADER': None, 'DETAIL': 20},
+                                         'allocatedBalance':        {'BASIC': 11,   'TRADER': None, 'DETAIL': 21},
+                                         'maxAllocatedBalance':     {'BASIC': None, 'TRADER': 11,   'DETAIL': 22},
+                                         'commitmentRate':          {'BASIC': 12,   'TRADER': None, 'DETAIL': 23},
+                                         'riskLevel':               {'BASIC': 13,   'TRADER': None, 'DETAIL': 24},
+                                         'currencyAnalysisCode':    {'BASIC': None, 'TRADER': 8,    'DETAIL': 25},
+                                         'tradeConfigurationCode':  {'BASIC': None, 'TRADER': 9,    'DETAIL': 26},
+                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 12,   'DETAIL': 27},
+                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 13,   'DETAIL': 28}}
 
 _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES = {'LEVERAGE', 'UNREALIZEDPNL', 'COMMITMENTRATE', 'RISKLEVEL'}
 _PERIODICPOSITIONSSORTING_INTERVAL_NS         = 5e9
@@ -358,6 +360,8 @@ def setupPage(self):
                                                                                                800, #TRADABLE
                                                                                                800, #TRADING
                                                                                                800, #REDUCE ONLY
+                                                                                               800, #STOP TRADE ON FSL
+                                                                                               800, #STOP TRADE ON UNKNOWN TRADE
                                                                                               1500, #CONTRACT TYPE
                                                                                               1500, #CURRENCY ANALYSIS CODE
                                                                                               1500, #TRADE CONFIGURATION CODE
@@ -371,6 +375,8 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_REDUCEONLY')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_STOPTRADEONFSL')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_STOPTRADEONUNKNOWNTRADE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CONTRACTTYPE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE')},
@@ -380,33 +386,39 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ABRUPTCLEARINGRECORDS')}])
         self.GUIOs["POSITIONS_TRADERMODECACODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=11200, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='W', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODETCCODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=13600, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='W', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=11200, yPos=2550, width=2300, height=1700, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWCURRENCYANALYSISCODE'])
-        self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=13600, yPos=2550, width=2300, height=1700, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWTRADECONFIGURATIONCODE'])
+        self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=11200, yPos=2900, width=2300, height=1350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWCURRENCYANALYSISCODE'])
+        self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=13600, yPos=2900, width=2300, height=1350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWTRADECONFIGURATIONCODE'])
         self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].hide()
         self.GUIOs["POSITIONS_TRADERMODECACODETITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODETCCODETITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].hide()
         self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"].hide()
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=2200, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1850, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1850, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=1850, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOTITLETEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1500, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ASSUMEDRATIO'),           anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"]        = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1500, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"]        = textInputBox_typeA(**inst, groupOrder=1, xPos=14550, yPos=1500, width= 750, height=250, style="styleA", text="", fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_POSITIONS_NEWASSUMEDRATIO'])
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOUNITTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=15400, yPos=1500, width= 500, height=250, style="styleA", text="%",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCETITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1150, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_MAXALLOCATEDBALANCE'),    anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTOLD"] = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1150, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"] = textInputBox_typeA(**inst, groupOrder=1, xPos=14550, yPos=1150, width= 750, height=250, style="styleA", text="", fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_POSITIONS_NEWMAXALLOCATEDBALANCE'])
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEUNITTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=15400, yPos=1150, width= 500, height=250, style="styleA", text="%",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSTITLETEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos= 800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADESTATUS'),            anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSVALUETEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=12300, yPos= 800, width= 600, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"]               = switch_typeB(**inst,       groupOrder=2, xPos=13000, yPos= 800, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_NEWTRADESTATUSSWITCH'])
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYTITLETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=13600, yPos= 800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_REDUCEONLY'),             anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=14700, yPos= 800, width= 600, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"]                = switch_typeB(**inst,       groupOrder=2, xPos=15400, yPos= 800, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_NEWREDUCEONLYSWITCH'])
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=2550, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=2550, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=2550, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=2200, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOTITLETEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1850, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ASSUMEDRATIO'),           anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"]        = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1850, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"]        = textInputBox_typeA(**inst, groupOrder=1, xPos=14550, yPos=1850, width= 750, height=250, style="styleA", text="", fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_POSITIONS_NEWASSUMEDRATIO'])
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOUNITTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=15400, yPos=1850, width= 500, height=250, style="styleA", text="%",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCETITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1500, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_MAXALLOCATEDBALANCE'),    anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTOLD"] = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1500, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"] = textInputBox_typeA(**inst, groupOrder=1, xPos=14550, yPos=1500, width= 750, height=250, style="styleA", text="", fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_POSITIONS_NEWMAXALLOCATEDBALANCE'])
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEUNITTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=15400, yPos=1500, width= 500, height=250, style="styleA", text="%",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSTITLETEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos= 1150, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADESTATUS'),           anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSVALUETEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=12300, yPos= 1150, width= 600, height=250, style="styleA", text="-",                                                                        anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"]               = switch_typeB(**inst,       groupOrder=2, xPos=13000, yPos= 1150, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_NEWTRADESTATUSSWITCH'])
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYTITLETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=13600, yPos= 1150, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_REDUCEONLY'),            anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=14700, yPos= 1150, width= 600, height=250, style="styleA", text="-",                                                                        anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"]                = switch_typeB(**inst,       groupOrder=2, xPos=15400, yPos= 1150, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_NEWREDUCEONLYSWITCH'])
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLTITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos= 800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_STOPTRADEONFSL'),         anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=12300, yPos= 800, width= 600, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"]            = switch_typeB(**inst,       groupOrder=2, xPos=13000, yPos= 800, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_NEWSTOPTRADEONFSLSWITCH'])
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=13600, yPos= 800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_STOPTRADEONUT'),          anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=14700, yPos= 800, width= 600, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"]             = switch_typeB(**inst,       groupOrder=2, xPos=15400, yPos= 800, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_NEWSTOPTRADEONUTSWITCH'])
         self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"]                             = button_typeA(**inst,       groupOrder=1, xPos=11200, yPos= 450, width=2300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_APPLY'),                    fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_APPLYNEWPARAMS'])
         self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"]          = button_typeA(**inst,       groupOrder=1, xPos=13600, yPos= 450, width=2300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_RESETTRADECONTROLTRACKER'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_RESETTRADECONTROLTRACKER'])
         self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODETITLETEXT"].hide()
@@ -429,6 +441,13 @@ def setupPage(self):
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYTITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].hide()
+
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLTITLETEXT"].hide()
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].hide()
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].hide()
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTTITLETEXT"].hide()
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].hide()
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].hide()
         self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].hide()
         self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].hide()
         #---DETAIL MODE
@@ -438,6 +457,8 @@ def setupPage(self):
                                                                                                550, #TRADABLE
                                                                                                550, #TRADING
                                                                                                550, #REDUCE ONLY
+                                                                                               550, #STOP TRADE ON FSL
+                                                                                               550, #STOP TRADE ON UNKNOWN TRADE
                                                                                               1200, #CONTRACT TYPE
                                                                                                700, #LEVERAGE
                                                                                                700, #MARGIN MODE
@@ -466,6 +487,8 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_REDUCEONLY')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_STOPTRADEONFSL')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_STOPTRADEONUNKNOWNTRADE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CONTRACTTYPE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LEVERAGE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MARGINMODE')},
@@ -891,6 +914,12 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYTITLETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLTITLETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTTITLETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].hide()
             self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].hide()
             self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].hide()
             #DETAIL
@@ -926,6 +955,12 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYTITLETEXT"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].show()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLTITLETEXT"].show()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].show()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].show()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTTITLETEXT"].show()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].show()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].show()
             self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].show()
             self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].show()
             self.pageAuxillaryFunctions['SETTRADECONFIGURATIONSLIST']()
@@ -962,6 +997,12 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYTITLETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLTITLETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTTITLETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].hide()
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].hide()
             self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].hide()
             self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].hide()
             #DETAIL
@@ -1052,17 +1093,55 @@ def __generateObjectFunctions(self):
         #Asset
         positionSymbol = self.puVar['positions_selected']
         #Get new values
-        newTradeStatus = self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].getStatus()
+        newReduceOnly = self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].getStatus()
         #Request Dispatch
         self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
                           functionID = 'updatePositionReduceOnly', 
                           functionParams = {'localID':        localID,
                                             'password':       password,
                                             'positionSymbol': positionSymbol,
-                                            'newReduceOnly':  newTradeStatus}, 
+                                            'newReduceOnly':  newReduceOnly}, 
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
         #Buttons Temporary Deactivation
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].deactivate()
+    def __onStatusUpdate_Positions_NewStopTradeOnFSLSwitch(objInstance, **kwargs):
+            #Password
+            localID = self.puVar['accounts_selected']
+            if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
+            else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+            #Asset
+            positionSymbol = self.puVar['positions_selected']
+            #Get new values
+            newStopTradeOnFSL = self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].getStatus()
+            #Request Dispatch
+            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
+                              functionID = 'updatePositionStopTradeOnFSL', 
+                              functionParams = {'localID':           localID,
+                                                'password':          password,
+                                                'positionSymbol':    positionSymbol,
+                                                'newStopTradeOnFSL': newStopTradeOnFSL}, 
+                              farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
+            #Buttons Temporary Deactivation
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].deactivate()
+    def __onStatusUpdate_Positions_NewStopTradeOnUTSwitch(objInstance, **kwargs):
+            #Password
+            localID = self.puVar['accounts_selected']
+            if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
+            else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+            #Asset
+            positionSymbol = self.puVar['positions_selected']
+            #Get new values
+            newStopTradeOnUT = self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].getStatus()
+            #Request Dispatch
+            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
+                              functionID = 'updatePositionStopTradeOnUnknownTrade', 
+                              functionParams = {'localID':                    localID,
+                                                'password':                   password,
+                                                'positionSymbol':             positionSymbol,
+                                                'newStopTradeOnUnknownTrade': newStopTradeOnUT}, 
+                              farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
+            #Buttons Temporary Deactivation
+            self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].deactivate()
     def __onButtonRelease_Positions_ApplyNewParams(objInstance, **kwargs):
         #Password
         localID = self.puVar['accounts_selected']
@@ -1123,6 +1202,8 @@ def __generateObjectFunctions(self):
     objFunctions['ONTEXTUPDATE_POSITIONS_NEWMAXALLOCATEDBALANCE']           = __onTextUpdate_Positions_NewMaxAllocatedBalance
     objFunctions['ONSTATUSUPDATE_POSITIONS_NEWTRADESTATUSSWITCH']           = __onStatusUpdate_Positions_NewTradeStatusSwitch
     objFunctions['ONSTATUSUPDATE_POSITIONS_NEWREDUCEONLYSWITCH']            = __onStatusUpdate_Positions_NewReduceOnlySwitch
+    objFunctions['ONSTATUSUPDATE_POSITIONS_NEWSTOPTRADEONFSLSWITCH']        = __onStatusUpdate_Positions_NewStopTradeOnFSLSwitch
+    objFunctions['ONSTATUSUPDATE_POSITIONS_NEWSTOPTRADEONUTSWITCH']         = __onStatusUpdate_Positions_NewStopTradeOnUTSwitch
     objFunctions['ONBUTTONRELEASE_POSITIONS_APPLYNEWPARAMS']                = __onButtonRelease_Positions_ApplyNewParams
     objFunctions['ONBUTTONRELEASE_POSITIONS_RESETTRADECONTROLTRACKER']      = __onButtonRelease_Positions_ResetTradeControlTracker
 
@@ -1485,8 +1566,32 @@ def __generateAuxillaryFunctions(self):
                     textColor = 'GREEN_LIGHT'
                 nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['reduceOnly'][dispMode]))
+
+            #[3-7-2-1-4]: Stop Trade On FSL
+            elif dKey == 'stopTradeOnFSL':
+                rOnly = position['stopTradeOnFSL']
+                if rOnly: 
+                    text      = 'TRUE'
+                    textColor = 'GREEN_LIGHT'
+                else:                                 
+                    text      = 'FALSE'
+                    textColor = 'ORANGE_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['stopTradeOnFSL'][dispMode]))
+
+            #[3-7-2-1-5]: Stop Trade On Unknown Trade
+            elif dKey == 'stopTradeOnUnknownTrade':
+                rOnly = position['stopTradeOnUnknownTrade']
+                if rOnly: 
+                    text      = 'TRUE'
+                    textColor = 'GREEN_LIGHT'
+                else:                                 
+                    text      = 'FALSE'
+                    textColor = 'ORANGE_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['stopTradeOnUnknownTrade'][dispMode]))
                 
-            #[3-7-2-1-4]: Leverage
+            #[3-7-2-1-6]: Leverage
             elif dKey == 'leverage':
                 leverage = position['leverage']
                 if leverage is None: text = "-"
@@ -1494,7 +1599,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['leverage'][dispMode]))
 
-            #[3-7-2-1-5]: Margin Mode
+            #[3-7-2-1-7]: Margin Mode
             elif dKey == 'isolated':
                 isolated = position['isolated']
                 if   isolated is None: text = '-'
@@ -1503,7 +1608,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['isolated'][dispMode]))
 
-            #[3-7-2-1-6]: Quantity
+            #[3-7-2-1-8]: Quantity
             elif dKey == 'quantity':
                 quantity = position['quantity']
                 if quantity is None : text = "-"
@@ -1511,7 +1616,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['quantity'][dispMode]))
 
-            #[3-7-2-1-7]: Isolated Wallet Balance
+            #[3-7-2-1-9]: Isolated Wallet Balance
             elif dKey == 'isolatedWalletBalance':
                 iwb = position['isolatedWalletBalance']
                 if iwb is None: text = "-"
@@ -1519,7 +1624,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['isolatedWalletBalance'][dispMode]))
 
-            #[3-7-2-1-8]: Position Initial Margin
+            #[3-7-2-1-10]: Position Initial Margin
             elif dKey == 'positionInitialMargin':
                 pim = position['positionInitialMargin']
                 if pim is None: text = "-"
@@ -1527,7 +1632,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['positionInitialMargin'][dispMode]))
 
-            #[3-7-2-1-9]: Open Order Initial Margin
+            #[3-7-2-1-11]: Open Order Initial Margin
             elif dKey == 'openOrderInitialMargin':
                 ooim = position['openOrderInitialMargin']
                 if ooim is None : text = "-"
@@ -1535,7 +1640,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['openOrderInitialMargin'][dispMode]))
 
-            #[3-7-2-1-10]: Maintenance Margin
+            #[3-7-2-1-12]: Maintenance Margin
             elif dKey == 'maintenanceMargin':
                 mm = position['maintenanceMargin']
                 if mm is None: text = "-"
@@ -1543,17 +1648,17 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['maintenanceMargin'][dispMode]))
 
-            #[3-7-2-1-11]: Entry Price
+            #[3-7-2-1-13]: Entry Price
             elif dKey == 'entryPrice':
                 ep = position['entryPrice']
                 cp = position['currentPrice']
                 ep = position['entryPrice']
-                #[3-7-2-1-11-1]: NSBI - Entry Price
+                #[3-7-2-1-13-1]: NSBI - Entry Price
                 if ep is None: text = "-"
                 else:          text = func_fts(number = ep, precision = position['precisions']['price'])
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['entryPrice'][dispMode]))
-                #[3-7-2-1-11-2]: NSBI - Current Price
+                #[3-7-2-1-13-2]: NSBI - Current Price
                 if cp is None: 
                     text      = "-"
                     textColor = 'DEFAULT'
@@ -1569,7 +1674,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text, 'textStyles': [('all', textColor),]}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['currentPrice'][dispMode]))
 
-            #[3-7-2-1-12]: Current Price
+            #[3-7-2-1-14]: Current Price
             elif dKey == 'currentPrice':
                 cp = position['currentPrice']
                 ep = position['entryPrice']
@@ -1588,7 +1693,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text, 'textStyles': [('all', textColor),]}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['currentPrice'][dispMode]))
 
-            #[3-7-2-1-13]: Liquidation Price
+            #[3-7-2-1-15]: Liquidation Price
             elif dKey == 'liquidationPrice':
                 lp = position['liquidationPrice']
                 if lp is None: text = "-"
@@ -1596,7 +1701,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['liquidationPrice'][dispMode]))
 
-            #[3-7-2-1-14]: Unrealized PNL
+            #[3-7-2-1-16]: Unrealized PNL
             elif dKey == 'unrealizedPNL':
                 uPNL = position['unrealizedPNL']
                 pim  = position['positionInitialMargin']
@@ -1611,14 +1716,14 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text, 'textStyles': [('all', textColor),]}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['unrealizedPNL'][dispMode]))
                 
-            #[3-7-2-1-15]: Assumed Ratio
+            #[3-7-2-1-17]: Assumed Ratio
             elif dKey == 'assumedRatio':
                 ar   = position['assumedRatio']
                 text = f"{ar*100:.3f} %"
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['assumedRatio'][dispMode]))
 
-            #[3-7-2-1-16]: Weighted Assumed Ratio
+            #[3-7-2-1-18]: Weighted Assumed Ratio
             elif dKey == 'weightedAssumedRatio':
                 war = position['weightedAssumedRatio']
                 if war is None: text = "N/A"
@@ -1626,14 +1731,14 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['weightedAssumedRatio'][dispMode]))
 
-            #[3-7-2-1-17]: Allocated Balance
+            #[3-7-2-1-19]: Allocated Balance
             elif dKey == 'allocatedBalance':
                 ab   = position['allocatedBalance']
                 text = func_fts(number = ab, precision = _ASSETPRECISIONS_XS[position['quoteAsset']])
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['allocatedBalance'][dispMode]))
 
-            #[3-7-2-1-18]: Max Allocated Balance
+            #[3-7-2-1-20]: Max Allocated Balance
             elif dKey == 'maxAllocatedBalance':
                 mab = position['maxAllocatedBalance']
                 if mab == float('inf'): text = 'INF'
@@ -1641,7 +1746,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['maxAllocatedBalance'][dispMode]))
 
-            #[3-7-2-1-19]: Commitment Rate
+            #[3-7-2-1-21]: Commitment Rate
             elif dKey == 'commitmentRate':
                 cr = position['commitmentRate']
                 if cr is None: 
@@ -1659,7 +1764,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text, 'textStyles': [('all', textColor),]}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['commitmentRate'][dispMode]))
 
-            #[3-7-2-1-20]: Risk Level
+            #[3-7-2-1-22]: Risk Level
             elif dKey == 'riskLevel':
                 rl = position['riskLevel']
                 if rl is None: 
@@ -1675,7 +1780,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text, 'textStyles': [('all', textColor),]}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['riskLevel'][dispMode]))
 
-            #[3-7-2-1-21]: Currency Analysis Code
+            #[3-7-2-1-23]: Currency Analysis Code
             elif dKey == 'currencyAnalysisCode':
                 caCode = position['currencyAnalysisCode']
                 if caCode is None: text = "-"
@@ -1683,7 +1788,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['currencyAnalysisCode'][dispMode]))
 
-            #[3-7-2-1-22]: Trade Configuration Code
+            #[3-7-2-1-24]: Trade Configuration Code
             elif dKey == 'tradeConfigurationCode':
                 tcCode = position['tradeConfigurationCode']
                 if tcCode is None: text = "-"
@@ -1691,14 +1796,14 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradeConfigurationCode'][dispMode]))
 
-            #[3-7-2-1-23]: Trade Control
+            #[3-7-2-1-25]: Trade Control
             elif dKey == 'tradeControlTracker':
                 tcTracker = position['tradeControlTracker']
                 text = json.dumps(tcTracker)
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradeControlTracker'][dispMode]))
 
-            #[3-7-2-1-24]: Abrupt Clearing Records
+            #[3-7-2-1-26]: Abrupt Clearing Records
             elif dKey == 'abruptClearingRecords':
                 acrs = position['abruptClearingRecords']
                 if not acrs: text = '-'
@@ -1706,7 +1811,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['abruptClearingRecords'][dispMode]))
                 
-            #[3-7-2-1-25]: Finally
+            #[3-7-2-1-27]: Finally
             sb = guios[f"POSITIONS_{dispMode}MODESELECTIONBOX"]
             for nsbi, cIdx in nsbis:
                 if cIdx is None:
@@ -1782,6 +1887,30 @@ def __generateAuxillaryFunctions(self):
                         text_color = 'GREEN_LIGHT'
                     guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].updateText(text = text, textStyle = text_color)
                     guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = rOnly, callStatusUpdateFunction = False)
+
+                #[3-7-2-2-1-8]: Stop Trade On FSL
+                elif dKey == 'stopTradeOnFSL':
+                    stoFSL = position['stopTradeOnFSL']
+                    if stoFSL:
+                        text       = 'TRUE'
+                        text_color = 'GREEN_LIGHT'
+                    else:              
+                        text       = 'FALSE'
+                        text_color = 'ORANGE_LIGHT'
+                    guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].updateText(text = text, textStyle = text_color)
+                    guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].setStatus(status = stoFSL, callStatusUpdateFunction = False)
+
+                #[3-7-2-2-1-9]: Stop Trade On Unknown Trade
+                elif dKey == 'stopTradeOnUnknownTrade':
+                    stoUT = position['stopTradeOnUnknownTrade']
+                    if stoUT:
+                        text       = 'TRUE'
+                        text_color = 'GREEN_LIGHT'
+                    else:              
+                        text       = 'FALSE'
+                        text_color = 'ORANGE_LIGHT'
+                    guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].updateText(text = text, textStyle = text_color)
+                    guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].setStatus(status = stoUT, callStatusUpdateFunction = False)
     def __far_onCurrencyAnalysisUpdate(requester, updateType, currencyAnalysisCode):
         if (requester == 'TRADEMANAGER'):
             if (updateType == 'ADDED'):
@@ -2324,30 +2453,38 @@ def __generateAuxillaryFunctions(self):
                 #[4-2-6]: Reduce Only
                 if pos['reduceOnly'] is True: reduceOnly_str, reduceOnly_str_color = 'TRUE', 'ORANGE_LIGHT'
                 else:                         reduceOnly_str, reduceOnly_str_color = 'FALSE', 'GREEN_LIGHT'
-                #[4-2-7]: Contract Type
+                #[4-2-7]: Stop Trade On FSL
+                if pos['stopTradeOnFSL'] is True: stoFSL_str, stoFSL_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                             stoFSL_str, stoFSL_str_color = 'FALSE', 'ORANGE_LIGHT'
+                #[4-2-8]: Stop Trade On Unknown Trade
+                if pos['stopTradeOnUnknownTrade'] is True: stoUT_str, stoUT_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                                      stoUT_str, stoUT_str_color = 'FALSE', 'ORANGE_LIGHT'
+                #[4-2-9]: Contract Type
                 contractType_str = pos['contractType']
-                #[4-2-8]: Currency Analysis Code
+                #[4-2-10]: Currency Analysis Code
                 if (cac := pos['currencyAnalysisCode']) is None: currencyAnalysisCode_str = "-"
                 else:                                            currencyAnalysisCode_str = cac
-                #[4-2-9]: Trade Configuration Code
+                #[4-2-11]: Trade Configuration Code
                 if (tcc := pos['tradeConfigurationCode']) is None: tradeConfigurationCode_str = "-"
                 else:                                              tradeConfigurationCode_str = tcc
-                #[4-2-10]: Assumed Ratio
+                #[4-2-12]: Assumed Ratio
                 assumedRatio_str = f"{pos['assumedRatio'] * 100:.3f} %"
-                #[4-2-11]: Max Allocated Balance
+                #[4-2-13]: Max Allocated Balance
                 if (mab := pos['maxAllocatedBalance']) == float('inf'): maxAllocatedBalance_str = 'INF'
                 else:                                                   maxAllocatedBalance_str = fn_fts(number=mab, precision=quote_prec)
-                #[4-2-12]: Trade Control
+                #[4-2-14]: Trade Control
                 tradeControl_str = json.dumps(pos['tradeControlTracker'])
-                #[4-2-13]: Abrupt Clearing Records
+                #[4-2-15]: Abrupt Clearing Records
                 if not (acr := pos['abruptClearingRecords']): abruptClearingRecords_str = "-"
                 else:                                         abruptClearingRecords_str = str(acr)
-                #[4-2-14]: Finally
+                #[4-2-16]: Finally
                 selList[symbol] = [{'text': index_str},
                                    {'text': symbol_str},
-                                   {'text': tradable_str,               'textStyles': [('all', tradable_str_color)]},
-                                   {'text': trading_str,                'textStyles': [('all', trading_str_color)]},
-                                   {'text': reduceOnly_str,             'textStyles': [('all', reduceOnly_str_color)]},
+                                   {'text': tradable_str,                'textStyles': [('all', tradable_str_color)]},
+                                   {'text': trading_str,                 'textStyles': [('all', trading_str_color)]},
+                                   {'text': reduceOnly_str,              'textStyles': [('all', reduceOnly_str_color)]},
+                                   {'text': stoFSL_str,                  'textStyles': [('all', stoFSL_str_color)]},
+                                   {'text': stoUT_str,                   'textStyles': [('all', stoUT_str_color)]},
                                    {'text': contractType_str},
                                    {'text': currencyAnalysisCode_str},
                                    {'text': tradeConfigurationCode_str},
@@ -2377,33 +2514,39 @@ def __generateAuxillaryFunctions(self):
                 #[4-3-6]: Reduce Only
                 if pos['reduceOnly'] is True: reduceOnly_str, reduceOnly_str_color = 'TRUE', 'ORANGE_LIGHT'
                 else:                         reduceOnly_str, reduceOnly_str_color = 'FALSE', 'GREEN_LIGHT'
-                #[4-3-7]: Contract Type
+                #[4-2-7]: Stop Trade On FSL
+                if pos['stopTradeOnFSL'] is True: stoFSL_str, stoFSL_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                             stoFSL_str, stoFSL_str_color = 'FALSE', 'ORANGE_LIGHT'
+                #[4-2-8]: Stop Trade On Unknown Trade
+                if pos['stopTradeOnUnknownTrade'] is True: stoUT_str, stoUT_str_color = 'TRUE', 'GREEN_LIGHT'
+                else:                                      stoUT_str, stoUT_str_color = 'FALSE', 'ORANGE_LIGHT'
+                #[4-3-9]: Contract Type
                 contractType_str = pos['contractType']
-                #[4-3-8]: Leverage
+                #[4-3-10]: Leverage
                 leverage_str = "-" if pos['leverage'] is None else str(pos['leverage'])
-                #[4-3-9]: Margin Mode
+                #[4-3-11]: Margin Mode
                 if   pos['isolated'] is True:  marginMode_str = 'ISOLATED'
                 elif pos['isolated'] is False: marginMode_str = 'CROSSED'
                 else:                          marginMode_str = '-'
-                #[4-3-10]: Quantity
+                #[4-3-12]: Quantity
                 if (q := pos['quantity']) is None: quantity_str = "-"
                 else:                              quantity_str = fn_fts(number=q, precision=qty_prec)
-                #[4-3-11]: Isolated Wallet Balance
+                #[4-3-13]: Isolated Wallet Balance
                 if (iwb := pos['isolatedWalletBalance']) is None: isolatedWalletBalance_str = "-"
                 else:                                             isolatedWalletBalance_str = fn_fts(number=iwb, precision=quote_prec)
-                #[4-3-12]: Position Initial Margin
+                #[4-3-14]: Position Initial Margin
                 if (pim := pos['positionInitialMargin']) is None: positionInitialMargin_str = "-"
                 else:                                             positionInitialMargin_str = fn_fts(number=pim, precision=quote_prec)
-                #[4-3-13]: Open Order Initial Margin
+                #[4-3-15]: Open Order Initial Margin
                 if (ooim := pos['openOrderInitialMargin']) is None: openOrderInitialMargin_str = "-"
                 else:                                               openOrderInitialMargin_str = fn_fts(number=ooim, precision=quote_prec)
-                #[4-3-14]: Maintenance Margin
+                #[4-3-16]: Maintenance Margin
                 if (mm := pos['maintenanceMargin']) is None: maintenanceMargin_str = "-"
                 else:                                        maintenanceMargin_str = fn_fts(number=mm, precision=quote_prec)
-                #[4-3-15]: Entry Price
+                #[4-3-17]: Entry Price
                 if (ep := pos['entryPrice']) is None: entryPrice_str = "-"
                 else:                                 entryPrice_str = fn_fts(number=ep, precision=price_prec)
-                #[4-3-16]: Current Price
+                #[4-3-18]: Current Price
                 cp = pos['currentPrice']
                 if cp is None:
                     currentPrice_str, currentPrice_str_color = "-", 'DEFAULT'
@@ -2415,10 +2558,10 @@ def __generateAuxillaryFunctions(self):
                     if   pDifferencePerc < 0:  currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'RED_LIGHT'
                     elif pDifferencePerc == 0: currentPrice_str, currentPrice_str_color = f"{cp_formatted} [{pDifferencePerc:.3f} %]", 'DEFAULT'
                     else:                      currentPrice_str, currentPrice_str_color = f"{cp_formatted} [+{pDifferencePerc:.3f} %]", 'GREEN_LIGHT'
-                #[4-3-17]: Liquidation Price
+                #[4-3-19]: Liquidation Price
                 if (lp := pos['liquidationPrice']) is None: liquidationPrice_str = "-"
                 else:                                       liquidationPrice_str = fn_fts(number=lp, precision=price_prec)
-                #[4-3-18]: UnrealizedPNL
+                #[4-3-20]: UnrealizedPNL
                 pnl = pos['unrealizedPNL']
                 pim_pnl = pos['positionInitialMargin']
                 if pnl is None or pim_pnl is None or pim_pnl == 0:
@@ -2429,17 +2572,17 @@ def __generateAuxillaryFunctions(self):
                     if   pnl < 0:  unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'RED_LIGHT'
                     elif pnl == 0: unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [{roi:.3f} %]", 'DEFAULT'
                     else:          unrealizedPNL_str, unrealizedPNL_str_color = f"{pnl_formatted} [+{roi:.3f} %]", 'GREEN_LIGHT'
-                #[4-3-19]: Assumed Ratio
+                #[4-3-21]: Assumed Ratio
                 assumedRatio_str = f"{pos['assumedRatio'] * 100:.3f} %"
-                #[4-3-20]: Weighted Assumed Ratio
+                #[4-3-22]: Weighted Assumed Ratio
                 if (war := pos['weightedAssumedRatio']) is None: weightedAssumedRatio_str = "N/A"
                 else:                                            weightedAssumedRatio_str = f"{war * 100:.3f} %"
-                #[4-3-21]: Allocated Balance
+                #[4-3-23]: Allocated Balance
                 allocatedBalance_str = fn_fts(number=pos['allocatedBalance'], precision=quote_prec)
-                #[4-3-22]: Max Allocated Balance
+                #[4-3-24]: Max Allocated Balance
                 if (mab := pos['maxAllocatedBalance']) == float('inf'): maxAllocatedBalance_str = 'INF'
                 else:                                                   maxAllocatedBalance_str = fn_fts(number=mab, precision=quote_prec)
-                #[4-3-23]: Commitment Rate
+                #[4-3-25]: Commitment Rate
                 cr = pos['commitmentRate']
                 if cr is None:
                     commitmentRate_str, commitmentRate_str_color = "N/A", 'DEFAULT'
@@ -2452,7 +2595,7 @@ def __generateAuxillaryFunctions(self):
                     elif 0.80 <= cr < 0.90: commitmentRate_str_color = 'RED_LIGHT'
                     elif 0.90 <= cr <= 1.0: commitmentRate_str_color = 'RED'
                     else:                   commitmentRate_str_color = 'VIOLET_LIGHT'
-                #[4-3-24]: Risk Level
+                #[4-3-26]: Risk Level
                 rl = pos['riskLevel']
                 if rl is None:
                     riskLevel_str, riskLevel_str_color = "N/A", 'DEFAULT'
@@ -2464,23 +2607,25 @@ def __generateAuxillaryFunctions(self):
                     elif 0.70 <= rl < 0.90: riskLevel_str_color = 'RED_LIGHT'
                     elif 0.90 <= rl <= 1.0: riskLevel_str_color = 'RED'
                     else:                   riskLevel_str_color = 'VIOLET_LIGHT'
-                #[4-3-25]: Currency Analysis Code
+                #[4-3-27]: Currency Analysis Code
                 if (cac := pos['currencyAnalysisCode']) is None: currencyAnalysisCode_str = "-"
                 else:                                            currencyAnalysisCode_str = cac
-                #[4-3-26]: Trade Configuration Code
+                #[4-3-28]: Trade Configuration Code
                 if (tcc := pos['tradeConfigurationCode']) is None: tradeConfigurationCode_str = "-"
                 else:                                              tradeConfigurationCode_str = tcc
-                #[4-3-27]: Trade Control
+                #[4-3-29]: Trade Control
                 tradeControl_str = json.dumps(pos['tradeControlTracker'])
-                #[4-3-28]: Abrupt Clearing Records
+                #[4-3-30]: Abrupt Clearing Records
                 if not (acr := pos['abruptClearingRecords']): abruptClearingRecords_str = "-"
                 else:                                         abruptClearingRecords_str = str(acr)
-                #[4-3-29]: Finally
+                #[4-3-31]: Finally
                 selList[symbol] = [{'text': index_str},
                                    {'text': symbol_str},
-                                   {'text': tradable_str,               'textStyles': [('all', tradable_str_color)]},
-                                   {'text': trading_str,                'textStyles': [('all', trading_str_color)]},
-                                   {'text': reduceOnly_str,             'textStyles': [('all', reduceOnly_str_color)]},
+                                   {'text': tradable_str,                'textStyles': [('all', tradable_str_color)]},
+                                   {'text': trading_str,                 'textStyles': [('all', trading_str_color)]},
+                                   {'text': reduceOnly_str,              'textStyles': [('all', reduceOnly_str_color)]},
+                                   {'text': stoFSL_str,                  'textStyles': [('all', stoFSL_str_color)]},
+                                   {'text': stoUT_str,                   'textStyles': [('all', stoUT_str_color)]},
                                    {'text': contractType_str},
                                    {'text': leverage_str},
                                    {'text': marginMode_str},
@@ -2490,15 +2635,15 @@ def __generateAuxillaryFunctions(self):
                                    {'text': openOrderInitialMargin_str},
                                    {'text': maintenanceMargin_str},
                                    {'text': entryPrice_str},
-                                   {'text': currentPrice_str,           'textStyles': [('all', currentPrice_str_color)]},
+                                   {'text': currentPrice_str,            'textStyles': [('all', currentPrice_str_color)]},
                                    {'text': liquidationPrice_str},
-                                   {'text': unrealizedPNL_str,          'textStyles': [('all', unrealizedPNL_str_color)]},
+                                   {'text': unrealizedPNL_str,           'textStyles': [('all', unrealizedPNL_str_color)]},
                                    {'text': assumedRatio_str},
                                    {'text': weightedAssumedRatio_str},
                                    {'text': allocatedBalance_str},
                                    {'text': maxAllocatedBalance_str},
-                                   {'text': commitmentRate_str,         'textStyles': [('all', commitmentRate_str_color)]},
-                                   {'text': riskLevel_str,              'textStyles': [('all', riskLevel_str_color)]},
+                                   {'text': commitmentRate_str,          'textStyles': [('all', commitmentRate_str_color)]},
+                                   {'text': riskLevel_str,               'textStyles': [('all', riskLevel_str_color)]},
                                    {'text': currencyAnalysisCode_str},
                                    {'text': tradeConfigurationCode_str},
                                    {'text': tradeControl_str},
@@ -2622,6 +2767,12 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].updateText(text = "-")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].deactivate()
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].updateText(text = "-")
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].deactivate()
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].updateText(text = "-")
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].deactivate()
                 #New
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"].updateText(text = "-")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].updateText(text = "")
@@ -2655,6 +2806,14 @@ def __generateAuxillaryFunctions(self):
                 else:                                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].updateText(text = "FALSE", textStyle = 'GREEN_LIGHT')
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = _position['reduceOnly'], callStatusUpdateFunction = False)
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].activate()
+                if (_position['stopTradeOnFSL'] == True): self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].updateText(text = "TRUE",  textStyle = 'GREEN_LIGHT')
+                else:                                     self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLVALUETEXT"].updateText(text = "FALSE", textStyle = 'ORANGE_LIGHT')
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].setStatus(status = _position['stopTradeOnFSL'], callStatusUpdateFunction = False)
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].activate()
+                if (_position['stopTradeOnUnknownTrade'] == True): self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].updateText(text = "TRUE",  textStyle = 'GREEN_LIGHT')
+                else:                                              self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTVALUETEXT"].updateText(text = "FALSE", textStyle = 'ORANGE_LIGHT')
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].setStatus(status = _position['stopTradeOnUnknownTrade'], callStatusUpdateFunction = False)
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].activate()
                 #New
                 caCodes_selected = self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"].getSelected()
                 tcCodes_selected = self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].getSelected()
@@ -2844,21 +3003,39 @@ def __generateAuxillaryFunctions(self):
                         guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = puVar['accounts'][localID]['positions'][symbol]['reduceOnly'], callStatusUpdateFunction = False)
                     guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].activate()
                     
-        #---[3-11]: Position Trader Params Update
+        #---[3-11]: Stop Trade On FSL Update 
+        elif responseOn == 'UPDATEPOSITIONSTOPTRADEONFSL':
+            symbol = functionResult['positionSymbol']
+            if localID == puVar['accounts_selected']:
+                if symbol == puVar['positions_selected']: 
+                    if not requestResult: 
+                        guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].setStatus(status = puVar['accounts'][localID]['positions'][symbol]['stopTradeOnFSL'], callStatusUpdateFunction = False)
+                    guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONFSLSWITCH"].activate()
+                    
+        #---[3-12]: Stop Trade On UT Update 
+        elif responseOn == 'UPDATEPOSITIONSTOPTRADEONUNKNOWNTRADE':
+            symbol = functionResult['positionSymbol']
+            if localID == puVar['accounts_selected']:
+                if symbol == puVar['positions_selected']: 
+                    if not requestResult: 
+                        guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].setStatus(status = puVar['accounts'][localID]['positions'][symbol]['stopTradeOnUnknownTrade'], callStatusUpdateFunction = False)
+                    guios["POSITIONS_TRADERMODESELECTEDSTOPTRADEONUTSWITCH"].activate()
+                    
+        #---[3-13]: Position Trader Params Update
         elif responseOn == 'UPDATEPOSITIONTRADERPARAMS':
             symbol = functionResult['positionSymbol']
             if localID == puVar['accounts_selected']:
                 if symbol == puVar['positions_selected']: 
                     pafs['CHECKIFCANAPPLYNEWPARAMS']()
 
-        #---[3-12]: Reset Trade Control Tracker 
+        #---[3-14]: Reset Trade Control Tracker 
         elif responseOn == 'RESETTRADECONTROLTRACKER':
             symbol = functionResult['positionSymbol']
             if localID == puVar['accounts_selected']:
                 if symbol == puVar['positions_selected']: 
                     guios["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].activate()
 
-        #---[3-13]: Verify Password 
+        #---[3-15]: Verify Password 
         elif responseOn == 'VERIFYPASSWORD':
             if localID == puVar['accounts_selected']:
                 #[3-13-1]: Valid Passwrd

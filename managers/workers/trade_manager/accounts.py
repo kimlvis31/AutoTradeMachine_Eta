@@ -37,20 +37,22 @@ class Accounts:
         self.__virtualAccounts_lastUpdated_ns = 0
         
         #[3]: FAR Handlers
-        ipcA.addFARHandler('addAccount',                 self.__far_addAccount,                 executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('removeAccount',              self.__far_removeAccount,              executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('activateAccount',            self.__far_activateAccount,            executionThread = _IPC_THREADTYPE_MT, immediateResponse = False) #GUI
-        ipcA.addFARHandler('deactivateAccount',          self.__far_deactivateAccount,          executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('setAccountTradeStatus',      self.__far_setAccountTradeStatus,      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('transferBalance',            self.__far_transferBalance,            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('updateAllocationRatio',      self.__far_updateAllocationRatio,      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('forceClearPosition',         self.__far_forceClearPosition,         executionThread = _IPC_THREADTYPE_MT, immediateResponse = False) #GUI
-        ipcA.addFARHandler('updatePositionTradeStatus',  self.__far_updatePositionTradeStatus,  executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('updatePositionReduceOnly',   self.__far_updatePositionReduceOnly,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('updatePositionTraderParams', self.__far_updatePositionTraderParams, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('resetTradeControlTracker',   self.__far_resetTradeControlTracker,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('verifyPassword',             self.__far_verifyPassword,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
-        ipcA.addFARHandler('onAccountDataReceival',      self.__far_onAccountDataReceival,      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #BINANCEAPI
+        ipcA.addFARHandler('addAccount',                            self.__far_addAccount,                            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('removeAccount',                         self.__far_removeAccount,                         executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('activateAccount',                       self.__far_activateAccount,                       executionThread = _IPC_THREADTYPE_MT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('deactivateAccount',                     self.__far_deactivateAccount,                     executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('setAccountTradeStatus',                 self.__far_setAccountTradeStatus,                 executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('transferBalance',                       self.__far_transferBalance,                       executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('updateAllocationRatio',                 self.__far_updateAllocationRatio,                 executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('forceClearPosition',                    self.__far_forceClearPosition,                    executionThread = _IPC_THREADTYPE_MT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('updatePositionTradeStatus',             self.__far_updatePositionTradeStatus,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('updatePositionReduceOnly',              self.__far_updatePositionReduceOnly,              executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('updatePositionStopTradeOnFSL',          self.__far_updatePositionStopTradeOnFSL,          executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('updatePositionStopTradeOnUnknownTrade', self.__far_updatePositionStopTradeOnUnknownTrade, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('updatePositionTraderParams',            self.__far_updatePositionTraderParams,            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('resetTradeControlTracker',              self.__far_resetTradeControlTracker,              executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('verifyPassword',                        self.__far_verifyPassword,                        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #GUI
+        ipcA.addFARHandler('onAccountDataReceival',                 self.__far_onAccountDataReceival,                 executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)  #BINANCEAPI
         
         #[4]: Request Account Data & Announce For Initial PRD Formatting
         ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
@@ -483,6 +485,80 @@ class Accounts:
                     'positionSymbol': positionSymbol,
                     'result':         False, 
                     'message':        f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Failed. '{result['message']}'"}
+
+    def __far_updatePositionStopTradeOnFSL(self, requester, requestID, localID, password, positionSymbol, newStopTradeOnFSL):
+        #[1]: Source Check
+        if requester != 'GUI':
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONFSL', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        'INVALIDREQUESTER'}
+        
+        #[2]: Account Check
+        account = self.__accounts.get(localID, None)
+        if account is None:
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONFSL', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Stop-Trade-On-FSL Update Failed. 'Account Not Found'"}
+
+        #[3]: Update
+        result = account.updatePositionStopTradeOnFSL(password          = password, 
+                                                      symbol            = positionSymbol, 
+                                                      newStopTradeOnFSL = newStopTradeOnFSL)
+
+        #[4]: Result Handling
+        if result['result']:
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONFSL', 
+                    'positionSymbol': positionSymbol,
+                    'result':         True, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Stop-Trade-On-FSL Update Successful!"}
+        else:
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONFSL', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Stop-Trade-On-FSL Update Failed. '{result['message']}'"}
+
+    def __far_updatePositionStopTradeOnUnknownTrade(self, requester, requestID, localID, password, positionSymbol, newStopTradeOnUnknownTrade):
+        #[1]: Source Check
+        if requester != 'GUI':
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONUNKNOWNTRADE', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        'INVALIDREQUESTER'}
+        
+        #[2]: Account Check
+        account = self.__accounts.get(localID, None)
+        if account is None:
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONUNKNOWNTRADE', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Stop-Trade-On-Unknown-Trade Update Failed. 'Account Not Found'"}
+
+        #[3]: Update
+        result = account.updatePositionStopTradeOnUnknownTrade(password                   = password, 
+                                                               symbol                     = positionSymbol, 
+                                                               newStopTradeOnUnknownTrade = newStopTradeOnUnknownTrade)
+
+        #[4]: Result Handling
+        if result['result']:
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONUNKNOWNTRADE', 
+                    'positionSymbol': positionSymbol,
+                    'result':         True, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Stop-Trade-On-Unknown-Trade Update Successful!"}
+        else:
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONSTOPTRADEONUNKNOWNTRADE', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Stop-Trade-On-Unknown-Trade Update Failed. '{result['message']}'"}
     
     def __far_updatePositionTraderParams(self, requester, requestID, localID, password, positionSymbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newAssumedRatio, newMaxAllocatedBalance):
         #[1]: Source Check

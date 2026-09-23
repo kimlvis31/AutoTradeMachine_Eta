@@ -296,8 +296,10 @@ class Account:
             position = positions[symbol]
 
             #[4-2]: Direct Values Import & Formatting
-            position['tradeStatus'] = position_ip['tradeStatus']
-            position['reduceOnly']  = position_ip['reduceOnly']
+            position['tradeStatus']             = position_ip['tradeStatus']
+            position['reduceOnly']              = position_ip['reduceOnly']
+            position['stopTradeOnFSL']          = position_ip['stopTradeOnFSL']
+            position['stopTradeOnUnknownTrade'] = position_ip['stopTradeOnUnknownTrade']
             func_rptca(symbol = symbol, currencyAnalysisCode   = position_ip['currencyAnalysisCode'])
             func_rptc(symbol  = symbol, tradeConfigurationCode = position_ip['tradeConfigurationCode'])
             func_cpt(symbol   = symbol)
@@ -741,6 +743,8 @@ class Account:
                     'precisions':              precisions,
                     'tradeStatus':             False,
                     'reduceOnly':              False,
+                    'stopTradeOnFSL':          True,
+                    'stopTradeOnUnknownTrade': True,
                     'tradable':                False,
                     'currencyAnalysisCode':    None,
                     'tradeConfigurationCode':  None,
@@ -1932,8 +1936,14 @@ class Account:
                                 functionID     = 'editAccountData', 
                                 functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
                                 farrHandler    = None)
+
+        #[4]: Abrupt Clearing Record
+        lSource = ocr['logicSource']
+        if lSource in ('FSLIMMED', 'FSLCLOSE'):
+            self.__trade_onAbruptClearing(symbol       = symbol, 
+                                          clearingType = lSource)
             
-        #[4]: Force Clear Response    
+        #[5]: Force Clear Response    
         if ocr['forceClearRID'] is not None:
             fcComplete = (updateMode == 'onComplete')
             if fcComplete: msg = f"Account '{lID}' Position '{symbol}' Position Force Clear Successful!"
@@ -1947,13 +1957,13 @@ class Account:
                                  requestID      = ocr['forceClearRID'], 
                                  complete       = True)
             
-        #[5]: Trade Handlers Suspension Compensation
+        #[6]: Trade Handlers Suspension Compensation
         if ocr['cancelTime_ns'] is not None:
             suspended_ns = time.time_ns()-ocr['cancelTime_ns']
             for th in position['_tradeHandlers']:
                 th['suspendedTime_ns'] += suspended_ns
 
-        #[6]: OCR Initialization
+        #[7]: OCR Initialization
         position['_orderCreationRequest'] = None
 
     def __orderCreationRequest_cancel(self, symbol):
@@ -2338,32 +2348,18 @@ class Account:
         acrs.append(acr)
 
         #---[2-2]: Expired Removal
-        t_expired_s = t_current_s-86400
+        t_expired_s = t_current_s-86400*30
         while acrs[0][0] <= t_expired_s: 
             acrs.popleft()
 
         #[3]: Trade Stop Evaluation
-        tradeStop = False
-        if clearingType == 'ESCAPE':
-            nESCAPEs = sum(1 for rTime, cType in acrs if cType == 'ESCAPE')
-            if 5 <= nESCAPEs: 
-                tradeStop = True
+        if   clearingType in ('FSLIMMED', 'FSLCLOSE'): tradeStop = position['stopTradeOnFSL']
+        elif clearingType == 'UNKNOWNTRADE':           tradeStop = position['stopTradeOnUnknownTrade']
+        else:                                          tradeStop = True
 
-        elif clearingType == 'FSL':
-            nFSLs = sum(1 for rTime, cType in acrs if cType == 'FSL')
-            if 2 <= nFSLs: 
-                tradeStop = True
-
-        elif clearingType == 'LIQUIDATION':  
-            tradeStop = True
-
-        elif clearingType == 'UNKNOWNTRADE':  
-            tradeStop = True
-
-        #Announcement
+        #[4]: Announcement
         if tradeStop:
             position['tradeStatus'] = False
-            acrs.clear()
             func_sendPRDEDIT(targetProcess = 'GUI', 
                              prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, 'tradeStatus'), 
                              prdContent    = False)
@@ -2379,6 +2375,23 @@ class Account:
                      functionID     = 'editAccountData', 
                      functionParams = {'updates': [((lID, 'positions', symbol, 'abruptClearingRecords'), acrs.copy())]}, 
                      farrHandler    = None)
+
+        #[5]: Logging
+        if   clearingType in ('FSLIMMED', 'FSLCLOSE'): causeStr = "A Full Stop Loss"
+        elif clearingType == 'UNKNOWNTRADE':           causeStr = "An Unknown Trade"
+        else:                                          causeStr = "An Abrupt Clearing"
+        if tradeStop:
+            self.__logger(message = (f"{causeStr} Was Triggered For {lID}-{symbol}. The Position Trade Status Has Been Turned Off.\n"
+                                     f" * Clearing Type: {clearingType}\n"
+                                     f" * Records (30d): {len(acrs)}"),
+                          logType = 'Warning',
+                          color   = 'light_magenta')
+        else:
+            self.__logger(message = (f"{causeStr} Was Triggered For {lID}-{symbol}. Trading Continues As Configured.\n"
+                                     f" * Clearing Type: {clearingType}\n"
+                                     f" * Records (30d): {len(acrs)}"),
+                          logType = 'Update',
+                          color   = 'light_magenta')
     
 
 
@@ -2950,7 +2963,6 @@ class Account:
         #---[3-2]: Abrupt Clearing Records Reset
         if newTradeStatus:
             acr = position['abruptClearingRecords']
-            acr.clear()
             self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
                                 functionID     = 'editAccountData', 
                                 functionParams = {'updates': [((self.__localID, 'positions', symbol, 'abruptClearingRecords'), acr.copy())]}, 
@@ -2982,6 +2994,56 @@ class Account:
         self.__ipcA.sendFAR(targetProcess = 'DATAMANAGER', 
                             functionID = 'editAccountData', 
                             functionParams = {'updates': [((self.__localID, 'positions', symbol, 'reduceOnly'), newReduceOnly)]}, 
+                            farrHandler = None)
+
+        #[3]: Result Return
+        return {'result':  True,
+                'message': None}
+
+    def updatePositionStopTradeOnFSL(self, password, symbol, newStopTradeOnFSL):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+
+        #[2]: Stop Trade On FSL Update & Announcement
+        position = self.__positions[symbol]
+        position['stopTradeOnFSL'] = newStopTradeOnFSL
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress = ('ACCOUNTS', self.__localID, 'positions', symbol, 'stopTradeOnFSL'), 
+                                prdContent = newStopTradeOnFSL)
+        self.__ipcA.sendFAR(targetProcess = 'GUI', 
+                            functionID = 'onAccountUpdate', 
+                            functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (self.__localID, symbol, 'stopTradeOnFSL')}, 
+                            farrHandler = None)
+        self.__ipcA.sendFAR(targetProcess = 'DATAMANAGER', 
+                            functionID = 'editAccountData', 
+                            functionParams = {'updates': [((self.__localID, 'positions', symbol, 'stopTradeOnFSL'), newStopTradeOnFSL)]}, 
+                            farrHandler = None)
+
+        #[3]: Result Return
+        return {'result':  True,
+                'message': None}
+    
+    def updatePositionStopTradeOnUnknownTrade(self, password, symbol, newStopTradeOnUnknownTrade):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+
+        #[2]: Stop Trade On Unknown Trade Update & Announcement
+        position = self.__positions[symbol]
+        position['stopTradeOnUnknownTrade'] = newStopTradeOnUnknownTrade
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress = ('ACCOUNTS', self.__localID, 'positions', symbol, 'stopTradeOnUnknownTrade'), 
+                                prdContent = newStopTradeOnUnknownTrade)
+        self.__ipcA.sendFAR(targetProcess = 'GUI', 
+                            functionID = 'onAccountUpdate', 
+                            functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (self.__localID, symbol, 'stopTradeOnUnknownTrade')}, 
+                            farrHandler = None)
+        self.__ipcA.sendFAR(targetProcess = 'DATAMANAGER', 
+                            functionID = 'editAccountData', 
+                            functionParams = {'updates': [((self.__localID, 'positions', symbol, 'stopTradeOnUnknownTrade'), newStopTradeOnUnknownTrade)]}, 
                             farrHandler = None)
 
         #[3]: Result Return

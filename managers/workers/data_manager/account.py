@@ -188,6 +188,8 @@ class Worker:
                                               json.dumps(newValue['precisions']),
                                               int(newValue['tradeStatus']),
                                               int(newValue['reduceOnly']),
+                                              int(newValue['stopTradeOnFSL']),
+                                              int(newValue['stopTradeOnUnknownTrade']),
                                               newValue['currencyAnalysisCode'],
                                               newValue['tradeConfigurationCode'],
                                               json.dumps(newValue['tradeControlTracker']),
@@ -233,6 +235,8 @@ class Worker:
                                    precisions, 
                                    tradeStatus, 
                                    reduceOnly,
+                                   stopTradeOnFSL,
+                                   stopTradeOnUnknownTrade,
                                    currencyAnalysisCode,
                                    tradeConfigurationCode,
                                    tradeControlTracker,
@@ -244,7 +248,7 @@ class Worker:
                                    assumedRatio,
                                    maxAllocatedBalance,
                                    abruptClearingRecords
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   iParamsList)
         for (table, col), uParamsList in ud_updates.items():
             sqlCursor.executemany(f"UPDATE {table} SET {col} = ? WHERE id = ?", uParamsList)
@@ -452,22 +456,24 @@ class Worker:
                 positions_DB = sqlCursor.fetchall()
                 for positionDesc in positions_DB:
                     symbol = positionDesc[1]
-                    aDesc_announce['positions'][symbol] = {'contractType':           positionDesc[2],
-                                                           'quoteAsset':             positionDesc[3],
-                                                           'precisions':             json.loads(positionDesc[4]),
-                                                           'tradeStatus':            (positionDesc[5] == 1),
-                                                           'reduceOnly':             (positionDesc[6] == 1),
-                                                           'currencyAnalysisCode':   positionDesc[7],
-                                                           'tradeConfigurationCode': positionDesc[8],
-                                                           'tradeControlTracker':    json.loads(positionDesc[9]),
-                                                           'isolatedWalletBalance':  positionDesc[10],
-                                                           'quantity':               positionDesc[11],
-                                                           'entryPrice':             positionDesc[12],
-                                                           'leverage':               positionDesc[13],
-                                                           'isolated':               (positionDesc[14] == 1),
-                                                           'assumedRatio':           positionDesc[15],
-                                                           'maxAllocatedBalance':    positionDesc[16],
-                                                           'abruptClearingRecords':  deque(json.loads(positionDesc[17]))}
+                    aDesc_announce['positions'][symbol] = {'contractType':            positionDesc[2],
+                                                           'quoteAsset':              positionDesc[3],
+                                                           'precisions':              json.loads(positionDesc[4]),
+                                                           'tradeStatus':             (positionDesc[5] == 1),
+                                                           'reduceOnly':              (positionDesc[6] == 1),
+                                                           'stopTradeOnFSL':          (positionDesc[7] == 1),
+                                                           'stopTradeOnUnknownTrade': (positionDesc[8] == 1),
+                                                           'currencyAnalysisCode':    positionDesc[9],
+                                                           'tradeConfigurationCode':  positionDesc[10],
+                                                           'tradeControlTracker':     json.loads(positionDesc[11]),
+                                                           'isolatedWalletBalance':   positionDesc[12],
+                                                           'quantity':                positionDesc[13],
+                                                           'entryPrice':              positionDesc[14],
+                                                           'leverage':                positionDesc[15],
+                                                           'isolated':                (positionDesc[16] == 1),
+                                                           'assumedRatio':            positionDesc[17],
+                                                           'maxAllocatedBalance':     positionDesc[18],
+                                                           'abruptClearingRecords':   deque(json.loads(positionDesc[19]))}
                     aDesc['positions_dbID'][symbol] = positionDesc[0]
 
             #[2-4]: Read Trade Log Data
@@ -528,24 +534,26 @@ class Worker:
                                crossWalletBalance REAL,
                                allocationRatio    REAL)""")
             sqlCursor.execute(f"""CREATE TABLE {tName_positions} 
-                              (id                     INTEGER PRIMARY KEY,
-                               symbol                 TEXT, 
-                               contractType           TEXT,
-                               quoteAsset             TEXT, 
-                               precisions             TEXT, 
-                               tradeStatus            INTEGER, 
-                               reduceOnly             INTEGER, 
-                               currencyAnalysisCode   TEXT,
-                               tradeConfigurationCode TEXT,
-                               tradeControlTracker    TEXT,
-                               isolatedWalletBalance  REAL,
-                               quantity               REAL,
-                               entryPrice             REAL,
-                               leverage               INTEGER,
-                               isolated               INTEGER,
-                               assumedRatio           REAL,
-                               maxAllocatedBalance    REAL,
-                               abruptClearingRecords  TEXT)""")
+                              (id                      INTEGER PRIMARY KEY,
+                               symbol                  TEXT, 
+                               contractType            TEXT,
+                               quoteAsset              TEXT, 
+                               precisions              TEXT, 
+                               tradeStatus             INTEGER, 
+                               reduceOnly              INTEGER,
+                               stopTradeOnFSL          INTEGER,
+                               stopTradeOnUnknownTrade INTEGER,
+                               currencyAnalysisCode    TEXT,
+                               tradeConfigurationCode  TEXT,
+                               tradeControlTracker     TEXT,
+                               isolatedWalletBalance   REAL,
+                               quantity                REAL,
+                               entryPrice              REAL,
+                               leverage                INTEGER,
+                               isolated                INTEGER,
+                               assumedRatio            REAL,
+                               maxAllocatedBalance     REAL,
+                               abruptClearingRecords   TEXT)""")
             sqlCursor.execute(f"""CREATE TABLE {tName_tradeLogs} 
                               (id       INTEGER PRIMARY KEY,
                                tradeLog TEXT)""")
@@ -588,6 +596,8 @@ class Worker:
                                 json.dumps(position['precisions']),
                                 int(position['tradeStatus']),
                                 int(position['reduceOnly']),
+                                int(position['stopTradeOnFSL']),
+                                int(position['stopTradeOnUnknownTrade']),
                                 position['currencyAnalysisCode'],
                                 position['tradeConfigurationCode'],
                                 json.dumps(position['tradeControlTracker']),
@@ -609,6 +619,8 @@ class Worker:
                                    precisions, 
                                    tradeStatus, 
                                    reduceOnly,
+                                   stopTradeOnFSL,
+                                   stopTradeOnUnknownTrade,
                                    currencyAnalysisCode,
                                    tradeConfigurationCode,
                                    tradeControlTracker,
@@ -620,7 +632,7 @@ class Worker:
                                    assumedRatio,
                                    maxAllocatedBalance,
                                    abruptClearingRecords
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   positionsData)
             
             #[3-4]: Save The Description
