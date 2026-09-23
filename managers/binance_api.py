@@ -3487,18 +3487,40 @@ class BinanceAPIManager:
 
     #---Accounts
     def __computeMaximumNumberOfAccountsActivation(self):
+        #[1]: Instances
+        ipSharingNumber = self.config_BinanceAPI['rateLimitIPSharingNumber']
+
+        #[2]: Maximum Activation Number Computation (Per Rate Limit, The Strictest Wins)
+        #---(The Read Interval Is Computed With A 1.1 Safety Margin, So The Same Margin Is Applied Here)
         maxActivationN_min = float('inf')
-        for rateLimit in self.__binance_MarketExchangeInfo_RateLimits['REQUEST_WEIGHT']:
-            maxActivationN = int((rateLimit['limit']/self.config_BinanceAPI['rateLimitIPSharingNumber']*0.5*_BINANCE_ACCOUNTDATAREADINTERVAL_MAX_NS/1e9)/(5*rateLimit['interval_sec']))
+        for rateLimit in self.__binance_MarketExchangeInfo_RateLimits[_BINANCE_RATELIMITTYPE_REQUESTWEIGHT]:
+            limit_budget   = rateLimit['limit']/ipSharingNumber*0.5
+            maxActivationN = int((limit_budget*(_BINANCE_ACCOUNTDATAREADINTERVAL_MAX_NS/1e9))/(5*rateLimit['interval_sec']*1.1))
             maxActivationN_min = min(maxActivationN, maxActivationN_min)
+
+        #[3]: Finally
         self.__binance_activatedAccounts_maxActivation = maxActivationN_min
     
     def __computeActivatedAccountsDataReadInterval(self):
+        #[1]: Instances
+        nActivatedAccounts = len(self.__binance_activatedAccounts_LocalIDs)
+        ipSharingNumber    = self.config_BinanceAPI['rateLimitIPSharingNumber']
+
+        #[2]: Minimum Read Interval Computation (Per Rate Limit, The Strictest Wins)
+        #---(Budget: limit/ipSharingNumber*0.5 Per Interval / Usage: 5*nAccounts Per Read)
         readInterval_s_max = 0
-        for rateLimit in self.__binance_MarketExchangeInfo_RateLimits['REQUEST_WEIGHT']:
-            readInterval_sec = (5*len(self.__binance_activatedAccounts_LocalIDs)*rateLimit['interval_sec'])/(rateLimit['limit']*self.config_BinanceAPI['rateLimitIPSharingNumber']*0.5)*1.1
+        for rateLimit in self.__binance_MarketExchangeInfo_RateLimits[_BINANCE_RATELIMITTYPE_REQUESTWEIGHT]:
+            limit_budget       = rateLimit['limit']/ipSharingNumber*0.5
+            readInterval_sec   = (5*nActivatedAccounts*rateLimit['interval_sec'])/limit_budget*1.1
             readInterval_s_max = max(readInterval_s_max, readInterval_sec)
-        self.__binance_activatedAccounts_readInterval_ns = max(readInterval_s_max*1e9, _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS)
+
+        #[3]: Interval Clamping
+        readInterval_ns = readInterval_s_max*1e9
+        readInterval_ns = max(readInterval_ns, _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS)
+        readInterval_ns = min(readInterval_ns, _BINANCE_ACCOUNTDATAREADINTERVAL_MAX_NS)
+
+        #[4]: Finally
+        self.__binance_activatedAccounts_readInterval_ns = readInterval_ns
     
     def __readActivatedAccountsData(self):
         #[1]: Status
