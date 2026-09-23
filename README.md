@@ -2,7 +2,7 @@
 
 
 
-![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue?style=flat-square)
 ![LOC](https://img.shields.io/badge/LOC-~73K-success?style=flat-square)
 ![Modules](https://img.shields.io/badge/Modules-59-success?style=flat-square)
@@ -27,7 +27,7 @@
 **Auto Trade Machine Eta (ATM-Eta)** is an end-to-end cryptocurrency trading platform that unifies multi-timeframe market analysis and live trade automation in a single application. It is designed to close the gap between strategy research and live deployment — users can develop, validate, and operate trading strategies without leaving the application or switching environments.
 
 #### Core Capabilities
-* **Real-time Market Data Pipeline** — Upon launch, the system automatically connects to the Binance Futures exchange and continuously ingests klines, orderbook snapshots, and trade executions. The collected data is aggregated and persisted into a local TimescaleDB-backed PostgreSQL server, providing low-latency access for both online analysis and offline backtesting.
+* **Real-time Market Data Pipeline** — Upon launch, the system automatically connects to the Binance Futures exchange and continuously ingests klines, orderbook snapshots, trade executions, and derivatives metrics (Open Interest, Long/Short Ratio). The collected data is aggregated and persisted into a local TimescaleDB-backed PostgreSQL server, providing low-latency access for both online analysis and offline backtesting.
 * **Custom Analysis Toolkit** — Beyond standard indicators (MA, PSAR, Bollinger Bands), ATM-Eta provides 7 hybrid analysis tools — **IVP**, **MMACD**, **DMIxADX**, **MFI**, **TPD**, **WOI**, and **NES** — that integrate price, volume, orderbook, and trade execution data into a unified set of signals consumable by the trade controller.
 * **TEF-Based Strategy Formalization** — Trade strategies are expressed through a single normalized scalar called **TEF (Target Exposure Factor)**, ranging from `-1.0` to `+1.0`. The sign indicates direction (negative = SHORT, positive = LONG) and the magnitude indicates target position size relative to the allocated balance. By collapsing direction and sizing into a single bounded value, TEF allows arbitrarily complex analytical logic to be packaged into a clean, standardized strategy interface.
 * **External GPU-Accelerated Optimization** — Analysis data exported from ATM-Eta can be fed into the companion application **TEFFP Seeker**, a GPU-accelerated backtesting engine that runs massive parameter sweeps against user-defined trade strategies in parallel, helping users converge on optimal parameter sets that would be impractical to search on CPU.
@@ -78,7 +78,7 @@ ATM-Eta is built as a multi-process system in which each major responsibility ru
 
 <img src="./docs/applicationArchitecture.png" width="1200">
 
-All processes communicate with each other via the `IPCAssistant` class defined in the `atmEta_IPC.py` module, which provides a unified message-passing interface across the application.
+All processes communicate with each other via the `IPCAssistant` class defined in the `ipc.py` module, which provides a unified message-passing interface across the application.
 
 > **Note on the diagram:** A top-level **Main Process** orchestrates the application lifecycle — spawning all manager processes, assessing system resources, and coordinating graceful shutdown. It is omitted from the diagram above to keep the focus on runtime data flow.
 
@@ -136,31 +136,70 @@ Across the entire pipeline, all market data is collected, processed, and persist
 
 This approach offers two key advantages:
 
-* **Network Footprint** — Only a single 1m stream subscription per symbol is required, regardless of how many timeframes downstream tasks demand. A naive design subscribing to each timeframe independently would multiply WebSocket load by the number of active timeframes.
-* **Storage Efficiency & DB Simplicity** — Storing only the 1m base data minimizes the physical storage footprint. More importantly, this drastically simplifies the database architecture and ingestion logic. The system only needs to maintain a single dataset per symbol, eliminating the complexity and overhead of synchronizing inserts across multiple timeframe-specific tables
+* **Network Footprint** — Each data type requires only a single 1m stream per symbol, regardless of how many timeframes downstream tasks demand. A naive design subscribing to each timeframe independently would multiply WebSocket load by the number of active timeframes.
+* **Storage Efficiency & DB Simplicity** — Storing only the 1m base data minimizes the physical storage footprint. More importantly, this drastically simplifies the database architecture and ingestion logic. The system only needs to maintain a single dataset per symbol, eliminating the complexity and overhead of synchronizing inserts across multiple timeframe-specific tables.
+
+
 
 <br>
+
+
 
 #### Heterogeneous Stream Unification
 
-Binance Futures exposes three distinct market data streams — `kline`, `aggTrade`, and `depth` — each with their own unique data structure. While `kline` already arrives at fixed 1m boundaries, `aggTrade` and `depth` streams are event-driven, generating high-frequency data volumes that are impractical to persist as-is.
+ATM-Eta collects four types of market data, each with its own structure and delivery mechanism:
 
-To unify these heterogeneous streams under the same 1m-base structure, both `aggTrade` and `depth` are **temporally aggregated within the Primary Aggregator** before they leave the Binance API Manager:
+| Data Type | Source | Native Resolution |
+| :--- | :--- | :--- |
+| `kline` | WebSocket | Fixed 1m boundaries |
+| `aggTrade` | WebSocket | Event-driven (per trade) |
+| `depth` | WebSocket | Event-driven (orderbook diffs) |
+| `metric` (Open Interest, Long/Short Ratio) | REST only | 5m |
 
-* `aggTrade` events within the same 1m window are accumulated into per-minute volume and directional pressure summaries.
-* `depth` snapshots are processed by retaining only the final snapshot of the corresponding 1m interval.
+To unify these under the same 1m-base structure, every non-kline type is converted inside the **Primary Aggregator** before it leaves the Binance API Manager:
 
-This produces two compounding benefits. First, the data volume reduction is substantial — multiple orders of magnitude in the case of `aggTrade` and `depth`. Second, all three data types can be processed using structurally identical stream and fetch handling methods, minimizing the need for type-specific branching.
+* `aggTrade` events within the same 1m window are accumulated into buy/sell quantity, trade count, and notional summaries.
+* `depth` diffs are applied to a locally maintained orderbook, which is sampled at most once per second into 12 notional bands: 6 bid and 6 ask bands at fixed distances from the mid price (0.2%, 1%, 2%, 3%, 4%, 5%). The last sample of each minute becomes that minute's record.
+* `metric` values are polled via REST shortly after each 5m boundary and expanded into an internally generated 1m stream, so they flow through the same stream handling path as the WebSocket data.
+
+This produces two compounding benefits. First, the data volume reduction is substantial — multiple orders of magnitude in the case of `aggTrade` and `depth`. Second, all four data types can be processed using structurally identical stream and fetch handling methods, minimizing the need for type-specific branching.
+
+
 
 <br>
+
+
+
+#### Historical Backfill Sources
+
+Historical data is collected from two sources. **Binance Vision** daily archives are preferred for their volume, and the **REST API** covers the ranges not yet archived.
+
+| Data Type | Binance Vision | REST | Otherwise |
+| :--- | :--- | :--- | :--- |
+| `kline` | ✅ | ✅ Any range | — |
+| `depth` | ✅ (re-binned into the same 12 bands) | Current snapshot only | Dummy |
+| `aggTrade` | ✅ | Live stream gaps only | Dummy |
+| `metric` | ✅ | ✅ Last 28 days | Dummy |
+
+Archive files are downloaded in parallel and verified against their SHA-256 checksums before use. Ranges that cannot be recovered from either source are recorded as dummy ranges and can be recovered later (see [Integrity & Recovery](#️-integrity--recovery)).
+
+
+
+<br>
+
+
 
 #### Stream Continuity Guarantee
 
-The Stream Receiver continuously monitors incoming WebSocket data for temporal gaps caused by network disconnects, rate-limit throttling, or exchange-side stream interruptions. When a gap is detected, the missing temporal range is immediately filled with dummy data. From the perspective of downstream consumers, this removes the need for complex gap-recovery logic; they simply need to handle the injected dummy data entries appropriately.
+The Stream Receiver continuously monitors incoming WebSocket data for temporal gaps caused by network disconnects, rate-limit throttling, or exchange-side stream interruptions. When a gap is detected, the missing range is fetched and merged back into the stream in order, and only ranges that cannot be recovered are filled with dummy data. From the perspective of downstream consumers, this removes the need for complex gap-recovery logic; they simply need to handle the injected dummy data entries appropriately.
 
-> Detailed recovery schemes are described in the [Resilience & Recovery](#-resilience--recovery) section.
+> Detailed recovery schemes are described in the [Integrity & Recovery](#️-integrity--recovery) section.
+
+
 
 <br>
+
+
 
 #### Distributed Sub-Pipelines per Data Requester
 
@@ -170,15 +209,23 @@ Each Data Requester (Analyzer, Simulator, GUI, Trade Manager) maintains its **ow
 * **Minimal Data Manager Responsibility** — By keeping aggregation on the consumer side, the Data Manager's responsibility stays focused on three things: persistence, range comparison, and fetch coordination. Task-specific timeframe logic lives where it belongs — next to the task itself.
 * **Independent lifecycle** — A failing or restarting Data Requester does not affect any other Requester's pipeline, since each maintains its own state.
 
+
+
 <br>
+
+
 
 #### Buffered Persistence and TimescaleDB
 
-The Data Manager accumulates incoming data in memory and flushes it to the database in batches. This approach reduces per-transaction overhead and smooths out sudden bursts of data.
+The Data Manager accumulates incoming data in memory and flushes it to the database in batches: streamed data every 5 seconds, and fetched historical data in chunks of up to 10,000 rows. This approach reduces per-transaction overhead and smooths out sudden bursts of data.
 
 For persistent storage, the system utilizes **TimescaleDB**, a time-series extension for PostgreSQL. The primary advantage of this choice is its native time-based compression, which substantially reduces storage costs. In my live deployment, ~98 GB of raw market data was compressed down to ~21 GB (a ~78% reduction).
 
+
+
 <br>
+
+
 
 #### ⚠️ A Note on Storage Hardware
 
@@ -188,28 +235,229 @@ Database workloads — and PostgreSQL in particular — generate sustained rando
 
 For ATM-Eta deployments handling continuous market data ingestion, I strongly recommend hosting the PostgreSQL data directory on either a **CMR (Conventional Magnetic Recording) HDD** or, preferably, an **SSD**.
 
+The Data Manager includes mitigations for this failure mode — it defers writes while the database is waiting on I/O and attempts an automatic `REINDEX` when index corruption is detected — but these only soften the symptoms. They do not replace appropriate storage hardware.
+
 ---
 
 
 
 ### 🛡️ Integrity & Recovery ###
-* **AAF (Account Activation File) System** —
+
+#### **AAF (Account Activation File) System**
+
+Activating an **ACTUAL** account requires a Binance API Key and Secret Key. Typing them in on every launch is tedious and error-prone, while keeping them in a plaintext config file exposes credentials that can place live orders. The **AAF (Account Activation File)** system resolves this trade-off: the keys are encrypted with a key derived from the account password and stored as a portable file, so an account can be reactivated with just the file and the password.
+
+**Generation**
+
+1. The user enters the API Key, Secret Key, and account password on the **Accounts** page.
+2. The password is first verified against the account's stored **bcrypt** hash by the Trade Manager. AAF generation proceeds only if verification succeeds.
+3. A random 16-byte salt is generated, and a 32-byte encryption key is derived from the password using **scrypt** (`n = 2^17`, `r = 8`, `p = 1`).
+4. Both keys are encrypted with **Fernet** (AES-128-CBC + HMAC-SHA256) and written to `data/{localID}.aaf` along with the KDF parameters. The key input fields are cleared immediately afterward.
+
+```json
+{
+    "localID":              "<account local ID>",
+    "generationTime_ns":    1758585600000000000,
+    "scrypt_n":             131072,
+    "scrypt_r":             8,
+    "scrypt_p":             1,
+    "salt_b64":             "<base64 salt>",
+    "api_key_encrypted":    "<Fernet token>",
+    "secret_key_encrypted": "<Fernet token>"
+}
+```
+
+**Activation**
+
+1. When **ACTIVATE BY AAF** is pressed, the GUI scans the root directory of every mounted drive, as well as the project's `data/` folder, for `.aaf` files. Because removable drives are included in the scan, an AAF can be kept on a USB drive and plugged in only when activation is needed.
+2. If multiple AAFs exist for the same account, the most recently generated one (by `generationTime_ns`) is selected.
+3. The encrypted keys and KDF parameters are sent to the Trade Manager, which re-verifies the password, re-derives the key with the stored parameters, and decrypts the credentials **in memory only**.
+4. The decrypted keys are passed to the Binance API Manager, which validates them against the exchange (Futures permission, Binance UID match) before the account is marked `ACTIVE`.
+
+**Security Properties**
+
+* **No plaintext at rest** — API credentials are never written to disk unencrypted. They exist in plaintext only in process memory during activation.
+* **Brute-force resistance** — scrypt's memory-hard key derivation (~128 MB per attempt at the configured parameters) makes offline password guessing against a leaked AAF expensive.
+* **Tamper detection** — Fernet authenticates every token, so a modified or corrupted AAF fails decryption instead of producing garbage credentials.
+* **Credential–account binding** — Even with a valid AAF, activation fails if the keys belong to a different Binance account than the one registered (`UIDMISMATCH`).
+
+
 
 <br>
 
-* **Account Exchange State Reconciliation** —
+
+
+#### **Account Exchange State Reconciliation**
+
+The account model held by the Trade Manager and the actual account state on Binance can drift apart for several reasons: orders left over from a previous session, fills that show up before their order responses arrive, trades placed manually by the user, or requests whose outcome is lost to a network error. ATM-Eta treats the exchange as the single source of truth and reconciles against it at three points: on activation, on every account snapshot, and per order.
+
+**On Activation**
+
+* Before an account is marked `ACTIVE`, the Binance API Manager fetches all open orders and cancels those whose `clientOrderId` starts with `ATMETA`, the prefix carried by every order ATM-Eta places. Orders from a previous session are no longer tracked, so leaving them on the book risks fills the system cannot account for. Orders placed manually by the user are left untouched.
+* An order that is already gone (`-2011`) counts as cleared. Any other cancellation failure aborts the activation (`OPENORDERCLEARFAILED`) rather than starting from an unknown state.
+* Tracking state from the previous session is discarded on both sides: the Binance API Manager drops its order trackers, and the Trade Manager clears in-flight order requests and pending trade handlers.
+* The same cleanup runs on deactivation on a best-effort basis. If it fails, it is retried at the next activation.
+
+**Snapshot Synchronization**
+
+* Account snapshots are read via REST at an adaptive interval (see [API Rate-Limit Handling](#api-rate-limit-handling)), with an immediate read right after activation.
+* Margin, unrealized PNL, leverage, and margin type are always overwritten with exchange values. Position quantity and entry price are overwritten only when no order is in flight. Otherwise, the quantity change must be explained first:
+  * A change matching the in-flight order's reported fills is recorded as that order's trade.
+  * A change that fits within a live order's outstanding quantity, but whose order response has not yet arrived, is held and attributed once the response arrives.
+  * Anything left over is treated as an **Unknown Trade**. It is logged as `UNKNOWN`, trading on the position is halted (manual intervention or liquidation is assumed), and the trade control state is reset.
+* Other forms of drift make a position non-tradable until resolved:
+  * Open-order margin that persists for more than 20 seconds with no ATM-Eta order in flight indicates an externally placed order.
+  * Leverage or margin type that differs from the trade configuration. A correction request is sent automatically once the position is flat with no open orders.
+* After a restart, allocated balances are restored for open positions and scaled down proportionally if their total exceeds the allocatable balance.
+
+**Order State Verification**
+
+| Situation | Handling |
+| :--- | :--- |
+| Definite rejection | Reported as a failure. The Trade Manager may regenerate the order (up to 5 attempts) |
+| Ambiguous result (timeout, network error, server-side errors `-1000`/`-1001`/`-1006`/`-1007`/`-1008`, unparseable response) | Registered as *unconfirmed* and queried by `clientOrderId` every second. No blind retry |
+| Unconfirmed order found on the server | Confirmed and tracked normally |
+| Unconfirmed order never found (600 consecutive checks, ~10 minutes) | Reported as `NOTPLACED`. Safe to regenerate |
+| Previously confirmed order vanishes, or checks keep failing | Reported as `ORDERSTATEUNKNOWN`. Terminated **without** regeneration, manual check advised |
+| Cancellation rejected because the order is no longer on the book (`-2011`) | Final order state is fetched, so fills that happened just before cancellation are still recorded |
+
+Resting orders are polled for progress, and updates are forwarded to the Trade Manager only when the executed quantity increases or the order reaches a terminal state.
+
+
 
 <br>
 
-* **API Rate-Limit Handling** —
+
+
+#### **API Rate-Limit Handling**
+
+Binance enforces request-weight and order-count limits per IP, and exceeding them leads to rejected requests and eventually temporary IP bans. Because market data backfill, account polling, and order execution all share the same IP, ATM-Eta tracks usage locally and distributes the budget by priority.
+
+**Local Limit Tracking**
+
+* Limits are read from the exchange info at runtime rather than hardcoded, covering every `REQUEST_WEIGHT` and `ORDERS` window the exchange reports.
+* Every request declares its weight before it is sent and is checked against all windows of its limit type. If any window would be exceeded, the request is not sent. Counters reset at window boundaries.
+* **Conservative startup** — Usage from before launch is unknown, so each window's tracker starts as fully consumed. The budget opens at the next window boundary.
+* **IP sharing** — `rateLimitIPSharingNumber` (1–5) divides the budget when multiple instances run behind the same IP.
+
+**Priority-Based Budget Reservation**
+
+* Market data fetches are bulk, deferrable work, so they may only use the budget left after reserving headroom for time-critical work:
+  * 1 weight per second as a baseline margin
+  * 5 weight per second per activated account (account polling)
+  * 1 weight per second per tracked order (order verification)
+* When a fetch is refused or fails, a fetch block halts all market data fetching until the next window reset, instead of retrying on every loop.
+* Order creation and cancellation draw from the `ORDERS` limit. If it is exhausted, the request is rejected immediately (`APIRATELIMITREACHED`) rather than queued, leaving the retry decision to the Trade Manager.
+
+**Adaptive Account Polling**
+
+* The account polling interval scales with the number of activated accounts, so that polling consumes at most ~50% of the weight budget (with a 10% margin). It is never faster than once per second.
+* The number of accounts that can be activated is capped so that polling stays within that 50% even at the slowest interval (10 seconds). For example, the current 2,400/min weight limit allows up to 40 accounts.
+
+
 
 <br>
 
-* **Server Disconnection** — 
+
+
+#### **Server Disconnection Recovery**
+
+**Connection Monitoring**
+
+* Every second, the Binance API Manager checks network reachability and the Binance system status (normal / maintenance). All exchange-dependent tasks run only while both checks pass.
+* Requests from the Trade Manager that arrive while the server is unavailable are rejected immediately (`SERVERUNAVAILABLE`) instead of hanging.
+
+**On Disconnect**
+
+* Everything that may have gone stale is discarded: the API client, cached exchange info, the rate-limit table, all WebSocket connections, and per-symbol stream state.
+* Stream subscriptions (which process listens to which symbol) are backed up per symbol.
+* Activated accounts and order trackers are kept, and order verification resumes after reconnection.
+
+**On Reconnect**
+
+* Exchange info is re-read. Since the symbol cache was cleared, every symbol is treated as newly listed, re-registered, and queued for streaming.
+* Stream state is rebuilt from scratch, and subscriptions are restored from the backup so subscribers do not need to re-register.
+* The first message of each stream triggers resynchronization: a fresh orderbook snapshot for `depth`, a backfill from the start of the current interval for `aggTrade`, and a restart of metrics polling.
+* Gaps spanning the outage are detected by the Data Manager, whose continuity state is not reset on disconnect, and are backfilled automatically (see [Market Data Gap Detection](#market-data-gap-detection)).
+* The rate-limit table is re-initialized with the same conservative startup policy.
+
+**WebSocket Connection Lifecycle**
+
+* Symbols are grouped 50 per connection, with 3 streams per symbol, which uses 75% of Binance's recommended 200 streams per connection.
+* **Make-before-break renewal** — Every 15 minutes, each connection is marked expired and its symbols are queued for a new connection. The old connection is closed only after the new one has delivered `kline`, `depth`, and `aggTrade` messages for every symbol. Duplicate messages received during the overlap are dropped by the stream continuity checks.
+* Connection creation is retried up to 3 times. If it still fails, the symbols are re-queued.
+* A message queue overflow or an unexpected WebSocket error tears down and regenerates all connections.
+* Binance Vision downloads retry on 5xx errors with exponential backoff (up to 5 retries).
+
+
 
 <br>
 
-* **Market Data Gap Detection** —
+
+
+#### **Market Data Gap Detection**
+
+Gap detection operates at two layers. The Stream Receiver in the Binance API Manager validates message-level continuity in real time, while the Data Manager validates interval-level continuity of what is actually persisted. Because the Data Manager's state survives stream resets, gaps that the first layer cannot see — such as those spanning a server outage — are still caught.
+
+**Layer 1: Stream Receiver (Message Level)**
+
+| Stream | Continuity Check | On Gap |
+| :--- | :--- | :--- |
+| `kline` | Event time must increase, and each new kline must open exactly one interval after the previous closed one | Missing range is fetched (Binance Vision archive if available, REST otherwise) |
+| `depth` | Each diff's `pu` must equal the previous diff's `u` | A REST orderbook snapshot (1000 levels) is fetched and buffered diffs after its `lastUpdateId` are replayed. Re-fetched if the buffer is still discontinuous |
+| `aggTrade` | Aggregate trade ID must increase by exactly 1 | Missing ID range is fetched via REST. On the first message, trades are backfilled from the start of the current interval |
+| `metric` | Open time continuity of the internally generated 1m stream | Missing range is fetched via REST (limited to the last 28 days) |
+
+While a gap fetch is in progress, live messages are buffered rather than dropped. Fetched data is merged into the buffer in order, so downstream consumers receive a continuous, ordered stream.
+
+**Layer 2: Data Manager (Interval Level)**
+
+* The Data Manager receives only closed intervals and tracks the last open time per symbol and data type. If the next interval does not open exactly one interval later, a fetch request for the missing range is dispatched. Older or duplicate intervals are discarded.
+* Stored coverage is tracked per symbol and data type as two range sets in the `descriptors` table: **available ranges** (intervals that have been processed) and **dummy ranges** (intervals whose data could not be recovered).
+* When historical collection is enabled, the backfill target is the range from the symbol's first listing time to its first streamed interval, minus the available ranges.
+* Fetched results that overlap stored or buffered ranges are rejected, and the fetch targets are recomputed.
+
+**Explicit Data Provenance**
+
+Every interval is tagged with its origin, and the tag determines how it is persisted:
+
+| Tag | Meaning | Persisted |
+| :--- | :--- | :--- |
+| `FETCHED` | Retrieved via REST or Binance Vision | Yes |
+| `STREAMED` | Received via WebSocket | Yes |
+| `EMPTY` | Expected but not returned by the exchange | Yes (as a null-valued row) |
+| `DUMMY` | Unrecoverable gap filled with a placeholder | No, recorded in dummy ranges |
+| `INCOMPLETE` | Interval cut short by a resynchronization | No, recorded in dummy ranges |
+
+When a consumer reads a range from the database, any timestamps without stored rows are returned as `DUMMY` placeholders, so consumers always receive a complete, evenly spaced series.
+
+**Dummy Range Recovery**
+
+Dummy ranges are not permanent. They can be recovered in two ways:
+
+* **Refetch** — Dummy ranges are requested again from Binance, which is useful once Binance Vision has published the daily archives covering them. Only real data replaces dummy ranges.
+* **LAN import** — Data can be imported from another ATM-Eta instance's database on the local network. The import target is the local dummy ranges that the remote instance has actually stored (remote available ranges minus remote dummy ranges).
+
+Refetch and import results exclude each other's ranges to prevent double insertion.
+
+**Archive Integrity**
+
+Every Binance Vision file is verified against its SHA-256 `.CHECKSUM` before use. Mismatched files are discarded and downloaded again.
+
+
+
+<br>
+
+
+
+#### **Database Write Integrity**
+
+* **Batched, transactional writes** — Streamed data is flushed every 5 seconds, and fetched data in chunks of up to 10,000 rows. Data rows and the corresponding range updates in the `descriptors` table are committed in the same transaction, so coverage metadata and stored rows change together.
+* **Overlap guard** — Streamed data that overlaps already stored ranges is discarded before insertion.
+* **Backpressure** — When the fetched-data buffer reaches 14,400 rows (10 days of 1m data), the Binance API Manager is asked to pause fetching and resumes once the buffer drains below the threshold.
+* **I/O-aware scheduling** — A write cycle is skipped while any database backend is waiting on I/O, deferring writes instead of piling them onto a saturated drive.
+* **Writing into compressed history** — TimescaleDB chunks are compressed after 7 days. Backfilled data targeting compressed chunks triggers decompression of only the affected chunks, the insert, and recompression. A recompression failure is non-fatal, since the compression policy picks the chunks up later.
+* **Automatic index repair** — On an index corruption error, the transaction is rolled back, the corrupted index is identified from the error message and rebuilt with `REINDEX`, and the fetched data still in the buffer is written on the next cycle.
 
 ---
 
@@ -225,7 +473,7 @@ The design reflects a core premise: rather than committing the system to a singl
 
 #### Per-Timeframe Analysis
 
-The Secondary Aggregator expands the base-aggregated 1m market data across the active set of timeframes — 1m, 3m, 15m, ..., up to 1M. From there, each timeframe carries its own independent analysis track:
+The Secondary Aggregator expands the base-aggregated 1m market data across the active set of timeframes — 1m, 3m, 5m, 15m, ..., up to 1M. From there, each timeframe carries its own independent analysis track:
 Each timeframe runs against its own **Currency Analysis Configuration** — a declarative specification of which analyses to apply (SMA, PSAR, MMACD, IVP, WOI, NES, etc.) and with what parameters — and produces its own **Analysis Results** bundle. 
 The same indicator can be configured differently across timeframes, giving the strategy access to both fast and slow variants of any signal it cares about.
 
@@ -402,9 +650,41 @@ A trade strategy in this application refers to a set of three processes - curren
   <Summary><b><i> Trade Control Configuration </b></i></Summary>
   <img src="./docs/tradecontrol.png" width="750" height="440">
 
-  The **Trade Control** process generates potential trade orders based on PIP signals derived from currency analysis. It operates by identifying the current position within the trade cycle and applying corresponding pre-determined reaction models.
+  A **Trade Configuration (TC)** defines how a position turns TEF decisions into orders: which strategy to run, how to size and place orders, and when to cut losses. Each position is attached to one TC.
 
-  Currently, two trade control methods are implemented: **TS (Trading Scenario)** and **RQPM (Remaining Quantity Percentage Map)**.
+  | Parameter | Description |
+  | :--- | :--- |
+  | TEF Function | The strategy function type and its parameters. Returns a direction (`LONG` / `SHORT` / none) and a TEF value in `[-1.0, +1.0]` |
+  | Leverage | Leverage applied to the position |
+  | Margin Type | `ISOLATED` or `CROSSED` |
+  | Direction | Allowed entry directions: `BOTH`, `LONG`, or `SHORT` |
+  | Order Type | `MARKET`, or `LIMIT` (post-only, filled at the maker fee rate) |
+  | Order Offset | For `LIMIT` orders, the price offset from the current price, placed away from the market and aligned to the symbol's tick size |
+  | Full Stop Loss (Immediate) | Closes the position as soon as the price touches this distance from the entry price within a kline |
+  | Full Stop Loss (Close) | Closes the position when a kline closes beyond this distance from the entry price |
+  | Post-Stop-Loss Re-entry | Whether re-entry in the same direction is allowed after a stop loss, before the TEF direction changes |
+  <br>
+
+  **From TEF to Trade Handlers**
+
+  Each new analysis result is passed through the TEF function, and the resulting target is compared with the current position to generate up to three **trade handlers**, processed in order:
+
+  | Handler | Condition | Action |
+  | :--- | :--- | :--- |
+  | `CLEAR` | The position is opposite to the TEF direction | Close the entire position |
+  | `EXIT` | The committed balance exceeds the target | Reduce the position toward the target (fully, if TEF is `0`) |
+  | `ENTRY` | The committed balance is below the target, and the direction is allowed | Increase the position toward the target |
+
+  The target is `Position Allocated Balance × |TEF|` (see *Account Control Configuration*). Every order passes quantity precision, exchange filter, and side checks before dispatch.
+
+  **Safeguards**
+
+  * **Stale analysis rejection** — An analysis result is ignored if it does not belong to the previous, current, or next interval, or if the price has moved 0.5% or more since it was computed.
+  * **Handler expiration** — A trade handler that cannot be executed within one fifth of the base interval is discarded, so outdated decisions never reach the exchange. Time spent waiting for an order cancellation is excluded.
+  * **Order replacement** — A resting `LIMIT` order is cancelled and replaced when a newer TEF decision or a stop loss arrives.
+  * **Stop loss precedence** — Stop loss orders are always `MARKET` orders and discard any pending trade handlers generated before them.
+  * **Tradability check** — A position trades only while its currency analysis and TC are attached, its leverage and margin type match the TC, and no external open order is detected.
+  * **Automatic halt** — Trading on a position stops automatically when an unknown trade is detected (see *Account Exchange State Reconciliation*).
 
   </Details>
 
@@ -412,18 +692,43 @@ A trade strategy in this application refers to a set of three processes - curren
   <Summary><b><i> Account Control Configuration </b></i></Summary>
   <img src="./docs/accountcontrol.png" width="750" height="440">
 
-  Account Control achieves portfolio risk management and capital distribution by defining the four parameters below.
+  Account Control distributes capital across positions and bounds each position's exposure through the three parameters below.
 
   | Parameter                 | Target   | Description |
   | :---:                     | :---:    | :--- |
-  | Allocation Ratio          | Asset    | Determines the percentage of the total *Available Balance* to be utilized for trading activities |
-  | Assumed Ratio             | Position | Determines the percentage of the *Asset Allocated Balance* assigned to a specific position |
-  | Priority                  | Position | Defines the funding order. If the sum of all Assumed Ratios exceeds 100%, positions with higher priority (1 being the highest priority) are funded first |
-  | Maximum Allocated Balance | Position | A hard cap limiting the maximum capital allocated to a specific position |
+  | Allocation Ratio          | Asset    | The fraction of the asset's wallet balance made available for trading |
+  | Assumed Ratio             | Position | The fraction of the asset's allocatable balance assigned to a specific position |
+  | Maximum Allocated Balance | Position | A hard cap on the balance a single position can be allocated (unlimited by default) |
   <br>
-  $$\text{Asset Allocated Balance} = \text{Available Balance} \times \color{orange}{\text{Allocation Ratio}}$$
-  $$\text{Position Allocated Balance} = \min(\text{Asset Allocated Balance} \times \color{orange}{\text{Assumed Ratio}}, \color{orange}{\text{Maximum Allocated Balance}})$$
+
+  $$\text{Allocatable Balance} = \max(\text{Wallet Balance},\ 0) \times 0.95 \times \color{orange}{\text{Allocation Ratio}}$$
+  $$\text{Position Allocated Balance} = \max\left(0,\ \min\left(\text{Allocatable Balance} \times \color{orange}{\text{Assumed Ratio}},\ \color{orange}{\text{Maximum Allocated Balance}},\ \text{Remaining Allocatable Balance}\right)\right)$$
   <br>
+
+  The `0.95` factor reserves a 5% buffer of the wallet balance for fees and margin fluctuations.
+
+  **Allocation Lifecycle**
+
+  * Balance is allocated to a position when it first enters, and released back to the asset once the position is fully closed.
+  * There is no priority ordering. If the Assumed Ratios of all positions sum to more than 100%, positions are funded in the order they enter, and later entries receive only the remaining allocatable balance.
+  * If the allocatable balance shrinks below the total already allocated (e.g., after a loss), every position's allocation is scaled down proportionally.
+  * After a restart, open positions have their allocations restored automatically.
+
+  **Connection to TEF**
+
+  The allocated balance is the base the TEF value acts on. The target committed balance of a position is:
+
+  $$\text{Target Committed Balance} = \text{Position Allocated Balance} \times |\text{TEF}|$$
+
+  Entry orders are generated when the committed balance falls below this target, and exit orders when it exceeds it. Entries are additionally bounded by the account's available balance.
+
+  **Derived Risk Metrics**
+
+  | Metric | Definition |
+  | :--- | :--- |
+  | Weighted Assumed Ratio | Assumed Ratio × leverage. The effective exposure the position can reach relative to the allocatable balance |
+  | Commitment Rate | Margin in use (quantity × entry price ÷ leverage) ÷ allocated balance |
+  | Risk Level | Commitment Rate × how far the current price has moved from the entry price toward the liquidation price |
   </Details>
 
 
@@ -734,7 +1039,7 @@ To validate the end-to-end system over an extended period, I deployed the applic
 
 **On the backtest projection.** The 150x figure is almost certainly an inflated result of parameter overfitting against historical data, and I do not treat it as a realistic forward-looking expectation. I deployed the strategy regardless because the goal of this run was **not to generate profit, but to validate that the full pipeline could operate continuously and correctly against a live exchange**.
 
-**What the run actually validated.** Over the 118-day period, the system handled all order executions reliably, maintained position and balance synchronization with the exchange, and recovered automatically from network disconnects, API rate limit events, and data stream interruptions without manual intervention. I considered this a sufficient outcome for a stability validation run rather than a profit demonstration. The realized maximum drawdown stayed well within the backtest's projected level (~35%), and the realized return likewise exceeded the backtest's projection. That said, this is more likely attributable to favorable market conditions during the deployment window than to any inherent strength of the strategy itself.
+**What the run actually validated.** Over the 118-day period, the system handled all order executions reliably, maintained position and balance synchronization with the exchange, and recovered automatically from network disconnects, API rate limit events, and data stream interruptions without manual intervention. I considered this a sufficient outcome for a stability validation run rather than a profit demonstration. The realized maximum drawdown stayed well within the backtest's projected level (~35%), and the realized return likewise exceeded what the backtest projected for the same deployment window. That said, this is more likely attributable to favorable market conditions during the deployment window than to any inherent strength of the strategy itself.
 
 > ⚠️ **Disclaimer** — This application **does not guarantee profit**. It only serves as a platform on which users can build and operate their own strategies. Past performance, whether from backtests or live runs, is not indicative of future results. Cryptocurrency derivatives trading carries substantial risk of loss.
 
@@ -764,33 +1069,60 @@ To validate the end-to-end system over an extended period, I deployed the applic
 ### 🚀 Project Updates
 **Version 1.1.0 Update [2026/09/22]**
  - **New Features**
+
    * **Metrics Market Data Fetching:** 
    Added a data pipeline that collects 5m interval Open Interest and global Long/Short Ratio data via the Binance REST API, with Binance Vision archives used for historical backfill. Since Binance provides no streaming support for these metrics, an internal stream generation logic produces 1m interval data from the 5m source, allowing the metrics to flow through the same pipeline as kline, depth, and aggTrade data with minimal changes to the existing architecture. Only endpoints that require no API key were selected, so metrics collection runs independently of account activation.
 
    * **Limit Price Trading:** 
    Integrated with the existing TEF function to automatically execute limit orders. Orders are placed as post-only (GTX) at a configurable offset from the current price, aligned to each symbol's tick size in the direction away from the market, so every fill is executed at the maker fee rate. A redesigned order lifecycle (DISPATCHED → RESTING → CANCELING → SETTLED/CANCELLED) tracks resting orders across partial fills using cumulative executed quantity, and resting orders are automatically cancelled and replaced when a newer TEF decision or a stop-loss is triggered. Stop-loss and force-clear orders remain market orders to guarantee immediate execution. The virtual trading server was extended to simulate post-only rejections, partial fills, and price-movement-based limit execution, enabling full lifecycle testing before live deployment.
 
- - **Improvements**
+ - **Improvements & Fixes**
+
    * **Analysis System Modularization:** 
    Restructured the monolithic analysis logic so that each indicator lives in its own self-contained module file. This establishes a consistent structure for expanding the analysis system: new indicators plug in as standalone modules rather than extending a single growing codebase, keeping the analysis layer scalable as the number of supported indicators increases.
 
-   * **Improved Orde Tracking Logic:**
+   * **Improved Order Tracking Logic:**
    Order handling now distinguishes between definite rejections and ambiguous failures (timeouts, network errors, unexpected response formats). Ambiguous orders are no longer retried blindly; instead, they are registered for status verification and resolved by querying the exchange, preventing duplicate orders. Orders confirmed absent are safely regenerated, while orders whose state cannot be determined are terminated without regeneration. Cancellation requests rejected because the order already closed now fetch the order's final state, correctly recording fills that occur just before cancellation. Response parsing was hardened against API changes, including the removal of `avgPrice` from order creation responses, which is now retrieved via order queries.
 
    * **Position Direction Display In Chart Drawer Object:**
    Added a position strip along the bottom of the chart that visualizes, based on trade log data, the final long or short position held at the end of each interval. This makes it easy to read the position state across the chart at a glance, alongside the existing trade record markers.
 
+
+
 <br>
 
-**Version 1.1.1 Update [2026/09/23]**
- - **Improvements**
+
+
+**Version 1.2.0 Update [2026/09/23]**
+ - **New Features**
+
+   * **Position-Level Trading Control Parameters:**
+   Reduce-only mode, previously stored but never enforced, now blocks entry orders so a position can only be reduced. Two new per-position parameters were added alongside it: stop-trade-on-FSL and stop-trade-on-unknown-trade, which control whether trading is halted after a full stop loss or an externally-caused position change. Full stop losses are now recorded as abrupt clearing events, which were previously only logged for unknown trades, and these records are retained for 30 days rather than cleared on each halt.
+   
+   * **Adaptive Order Type:**
+     A new `ADAPTIVE` order type places post-only limit orders by default, but switches to market orders when the target exposure factor reverses direction and the position must be cleared. This keeps the maker fee advantage of limit orders for routine entries and partial exits, while ensuring that reversals — where execution speed matters most — are not left resting in the order book.
+
+ - **Improvements & Fixes**
+
    * **False Unknown Trade Detection Fix:**
    Account data and order responses arrive through separate paths, so a fill could appear in the account snapshot before its order response was received. The system previously treated this as external intervention, halting trading on the position. Quantity changes that fall within a live order's outstanding quantity are now attributed to that order and resolved once its response arrives, while genuine external changes are still detected.
+
+   * **Average Fill Price Retrieval:**
+   Binance removed `avgPrice` from order creation responses following the CM migration. The system now falls back to computing a volume-weighted average from the order's trade history whenever the field is absent, and order response parsing is guarded so that a missing or changed field can no longer leave a placed order untracked.
+
+   * **Account Data Read Rate Limit Calculation Fix:**
+   The IP sharing factor was applied as a divisor instead of a multiplier when computing the account data read interval, causing the polling interval to shorten rather than lengthen as the rate limit budget was split across more clients. The interval is now clamped to its configured bounds, and the maximum activation count accounts for the same safety margin used in the interval calculation, so the margin is never truncated at the upper bound.
+   
+   * **AAF Scan Robustness:**
+   The AAF scan now validates each `.aaf` file's contents before use. Previously, a file that parsed as JSON but lacked the expected fields could raise an exception and interrupt the scan. Since the scan covers the root directory of every mounted drive, unrelated files sharing the extension could trigger this. Malformed files are now skipped.
+
+
+
 ---
 
 
 
 ### 📄 Document Info
-* **Last Updated:** September 22nd, 2026  
+* **Last Updated:** September 23rd, 2026  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
