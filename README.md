@@ -466,7 +466,7 @@ When a consumer reads a range from the database, any timestamps without stored r
 Dummy ranges are not permanent. They can be recovered in two ways:
 
 * **Refetch** — Dummy ranges are requested again from Binance, which is useful once Binance Vision has published the daily archives covering them. Only real data replaces dummy ranges.
-* **LAN import** — Data can be imported from another ATM-Eta instance's database on the local network. The import target is the local dummy ranges that the remote instance has actually stored (remote available ranges minus remote dummy ranges).
+* **Local Network Import** — Data can be imported from another ATM-Eta instance's database on the local network. The import target is the local dummy ranges that the remote instance has actually stored (remote available ranges minus remote dummy ranges).
 
 Refetch and import results exclude each other's ranges to prevent double insertion.
 
