@@ -1390,8 +1390,11 @@ class Simulation:
                 continue
     
             #[2-3]: SL Exit Flag
-            if tcTracker['slExited'] != tef_dir: 
-                tcTracker['slExited'] = None
+            tct_sle = tcTracker['slExited']
+            if tct_sle is not None:
+                tct_sle_side, tct_sle_time = tct_sle
+                if tct_sle_time < timestamp and tct_sle_side != tef_dir:
+                    tcTracker['slExited'] = None
     
             #[2-4]: Trade Handlers Determination
             tradeHandler_checkList = {'ENTRY': None,
