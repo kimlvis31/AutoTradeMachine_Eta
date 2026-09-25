@@ -243,13 +243,13 @@ The Data Manager includes mitigations for this failure mode — it defers writes
 
 ### 🛡️ Integrity & Recovery ###
 
-#### **AAF (Account Activation File) System**
+#### **1. AAF (Account Activation File) System**
 
 Activating an **ACTUAL** account requires a Binance API Key and Secret Key. Typing them in on every launch is tedious and error-prone, while keeping them in a plaintext config file exposes credentials that can place live orders. The **AAF (Account Activation File)** system resolves this trade-off: the keys are encrypted with a key derived from the account password and stored as a portable file, so an account can be reactivated with just the file and the password.
 
 <br>
 
- ▸ **Generation**
+ 🔹 **Generation**
 
 1. The user enters the API Key, Secret Key, and account password on the **Accounts** page.
 2. The password is first verified against the account's stored **bcrypt** hash by the Trade Manager. AAF generation proceeds only if verification succeeds.
@@ -271,7 +271,7 @@ Activating an **ACTUAL** account requires a Binance API Key and Secret Key. Typi
 
 <br>
 
- ▸ **Activation**
+ 🔹 **Activation**
 
 1. When **ACTIVATE BY AAF** is pressed, the GUI scans the root directory of every mounted drive, as well as the project's `data/` folder, for `.aaf` files. Because removable drives are included in the scan, an AAF can be kept on a USB drive and plugged in only when activation is needed.
 2. If multiple AAFs exist for the same account, the most recently generated one (by `generationTime_ns`) is selected.
@@ -280,7 +280,7 @@ Activating an **ACTUAL** account requires a Binance API Key and Secret Key. Typi
 
 <br>
 
- ▸ **Security Properties**
+ 🔹 **Security Properties**
 
 * **No plaintext at rest** — API credentials are never written to disk unencrypted. They exist in plaintext only in process memory during activation.
 * **Brute-force resistance** — scrypt's memory-hard key derivation (~128 MB per attempt at the configured parameters) makes offline password guessing against a leaked AAF expensive.
@@ -293,13 +293,13 @@ Activating an **ACTUAL** account requires a Binance API Key and Secret Key. Typi
 
 
 
-#### **Account Exchange State Reconciliation**
+#### **2. Account Exchange State Reconciliation**
 
 The account model held by the Trade Manager and the actual account state on Binance can drift apart for several reasons: orders left over from a previous session, fills that show up before their order responses arrive, trades placed manually by the user, or requests whose outcome is lost to a network error. ATM-Eta treats the exchange as the single source of truth and reconciles against it at three points: on activation, on every account snapshot, and per order.
 
 <br>
 
- ▸ **On Activation**
+ 🔹 **On Activation**
 
 * Before an account is marked `ACTIVE`, the Binance API Manager fetches all open orders and cancels those whose `clientOrderId` starts with `ATMETA`, the prefix carried by every order ATM-Eta places. Orders from a previous session are no longer tracked, so leaving them on the book risks fills the system cannot account for. Orders placed manually by the user are left untouched.
 * An order that is already gone (`-2011`) counts as cleared. Any other cancellation failure aborts the activation (`OPENORDERCLEARFAILED`) rather than starting from an unknown state.
@@ -308,7 +308,7 @@ The account model held by the Trade Manager and the actual account state on Bina
 
 <br>
 
- ▸ **Snapshot Synchronization**
+ 🔹 **Snapshot Synchronization**
 
 * Account snapshots are read via REST at an adaptive interval (see [API Rate-Limit Handling](#api-rate-limit-handling)), with an immediate read right after activation.
 * Margin, unrealized PNL, leverage, and margin type are always overwritten with exchange values. Position quantity and entry price are overwritten only when no order is in flight. Otherwise, the quantity change must be explained first:
@@ -322,7 +322,7 @@ The account model held by the Trade Manager and the actual account state on Bina
 
 <br>
 
- ▸ **Order State Verification**
+ 🔹 **Order State Verification**
 
 | Situation | Handling |
 | :--- | :--- |
@@ -341,13 +341,13 @@ Resting orders are polled for progress, and updates are forwarded to the Trade M
 
 
 
-#### **API Rate-Limit Handling**
+#### **3. API Rate-Limit Handling**
 
 Binance enforces request-weight and order-count limits per IP, and exceeding them leads to rejected requests and eventually temporary IP bans. Because market data backfill, account polling, and order execution all share the same IP, ATM-Eta tracks usage locally and distributes the budget by priority.
 
 <br>
 
- ▸ **Local Limit Tracking**
+ 🔹 **Local Limit Tracking**
 
 * Limits are read from the exchange info at runtime rather than hardcoded, covering every `REQUEST_WEIGHT` and `ORDERS` window the exchange reports.
 * Every request declares its weight before it is sent and is checked against all windows of its limit type. If any window would be exceeded, the request is not sent. Counters reset at window boundaries.
@@ -356,7 +356,7 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
 
 <br>
 
- ▸ **Priority-Based Budget Reservation**
+ 🔹 **Priority-Based Budget Reservation**
 
 * Market data fetches are bulk, deferrable work, so they may only use the budget left after reserving headroom for time-critical work:
   * 1 weight per second as a baseline margin
@@ -367,7 +367,7 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
 
 <br>
 
- ▸ **Adaptive Account Polling**
+ 🔹 **Adaptive Account Polling**
 
 * The account polling interval scales with the number of activated accounts, so that polling consumes at most ~50% of the weight budget (with a 10% margin). It is never faster than once per second.
 * The number of accounts that can be activated is capped so that polling stays within that 50% even at the slowest interval (10 seconds). For example, the current 2,400/min weight limit allows up to 36 accounts.
@@ -378,16 +378,16 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
 
 
 
-#### **Server Disconnection Recovery**
+#### **4. Server Disconnection Recovery**
 
- ▸ **Connection Monitoring**
+ 🔹 **Connection Monitoring**
 
 * Every second, the Binance API Manager checks network reachability and the Binance system status (normal / maintenance). All exchange-dependent tasks run only while both checks pass.
 * Requests from the Trade Manager that arrive while the server is unavailable are rejected immediately (`SERVERUNAVAILABLE`) instead of hanging.
 
 <br>
 
- ▸ **On Disconnect**
+ 🔹 **On Disconnect**
 
 * Everything that may have gone stale is discarded: the API client, cached exchange info, the rate-limit table, all WebSocket connections, and per-symbol stream state.
 * Stream subscriptions (which process listens to which symbol) are backed up per symbol.
@@ -395,7 +395,7 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
 
 <br>
 
- ▸ **On Reconnect**
+ 🔹 **On Reconnect**
 
 * Exchange info is re-read. Since the symbol cache was cleared, every symbol is treated as newly listed, re-registered, and queued for streaming.
 * Stream state is rebuilt from scratch, and subscriptions are restored from the backup so subscribers do not need to re-register.
@@ -405,7 +405,7 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
 
 <br>
 
- ▸ **WebSocket Connection Lifecycle**
+ 🔹 **WebSocket Connection Lifecycle**
 
 * Symbols are grouped 50 per connection, with 3 streams per symbol, which uses 75% of Binance's recommended 200 streams per connection.
 * **Make-before-break renewal** — Every 15 minutes, each connection is marked expired and its symbols are queued for a new connection. The old connection is closed only after the new one has delivered `kline`, `depth`, and `aggTrade` messages for every symbol. Duplicate messages received during the overlap are dropped by the stream continuity checks.
@@ -419,11 +419,11 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
 
 
 
-#### **Market Data Gap Detection**
+#### **5. Market Data Gap Detection**
 
 Gap detection operates at two layers. The Stream Receiver in the Binance API Manager validates message-level continuity in real time, while the Data Manager validates interval-level continuity of what is actually persisted. Because the Data Manager's state survives stream resets, gaps that the first layer cannot see — such as those spanning a server outage — are still caught.
 
- ▸ **Layer 1: Stream Receiver (Message Level)**
+ 🔹 **Layer 1: Stream Receiver (Message Level)**
 
 | Stream | Continuity Check | On Gap |
 | :--- | :--- | :--- |
@@ -436,7 +436,7 @@ While a gap fetch is in progress, live messages are buffered rather than dropped
 
 <br>
 
- ▸ **Layer 2: Data Manager (Interval Level)**
+ 🔹 **Layer 2: Data Manager (Interval Level)**
 
 * The Data Manager receives only closed intervals and tracks the last open time per symbol and data type. If the next interval does not open exactly one interval later, a fetch request for the missing range is dispatched. Older or duplicate intervals are discarded.
 * Stored coverage is tracked per symbol and data type as two range sets in the `descriptors` table: **available ranges** (intervals that have been processed) and **dummy ranges** (intervals whose data could not be recovered).
@@ -445,7 +445,7 @@ While a gap fetch is in progress, live messages are buffered rather than dropped
 
 <br>
 
- ▸ **Explicit Data Provenance**
+ 🔹 **Explicit Data Provenance**
 
 Every interval is tagged with its origin, and the tag determines how it is persisted:
 
@@ -461,7 +461,7 @@ When a consumer reads a range from the database, any timestamps without stored r
 
 <br>
 
- ▸ **Dummy Range Recovery**
+ 🔹 **Dummy Range Recovery**
 
 Dummy ranges are not permanent. They can be recovered in two ways:
 
@@ -472,7 +472,7 @@ Refetch and import results exclude each other's ranges to prevent double inserti
 
 <br>
 
- ▸ **Archive Integrity**
+ 🔹 **Archive Integrity**
 
 Every Binance Vision file is verified against its SHA-256 `.CHECKSUM` before use. Mismatched files are discarded and downloaded again.
 
@@ -482,7 +482,7 @@ Every Binance Vision file is verified against its SHA-256 `.CHECKSUM` before use
 
 
 
-#### **Database Write Integrity**
+#### **6. Database Write Integrity**
 
 * **Batched, transactional writes** — Streamed data is flushed every 5 seconds, and fetched data in chunks of up to 10,000 rows. Data rows and the corresponding range updates in the `descriptors` table are committed in the same transaction, so coverage metadata and stored rows change together.
 * **Overlap guard** — Streamed data that overlaps already stored ranges is discarded before insertion.
