@@ -28,7 +28,7 @@
 
 #### **Core Capabilities**
 * **Real-time Market Data Pipeline** — Upon launch, the system automatically connects to the Binance Futures exchange and continuously ingests klines, orderbook snapshots, trade executions, and derivatives metrics (Open Interest, Long/Short Ratio). The collected data is aggregated and persisted into a local TimescaleDB-backed PostgreSQL server, providing low-latency access for both online analysis and offline backtesting.
-* **Custom Analysis Toolkit** — Beyond standard indicators (MA, PSAR, Bollinger Bands), ATM-Eta provides 7 hybrid analysis tools — **IVP**, **MMACD**, **DMIxADX**, **MFI**, **TPD**, **WOI**, and **NES** — that integrate price, volume, orderbook, and trade execution data into a unified set of signals consumable by TEF functions.
+* **Custom Analysis Toolkit** — Beyond standard indicators (MA, PSAR, Bollinger Bands), ATM-Eta provides a set of hybrid analysis modules that integrate price, volume, orderbook, and trade execution data into a unified set of signals consumable by TEF functions.
 * **TEF-Based Strategy Formalization** — Trade strategies are expressed through a **TEF (Target Exposure Factor)**: a target direction (`LONG` / `SHORT` / none) paired with a bounded value in `[-1.0, +1.0]`, whose magnitude sets the target position size relative to the allocated balance. By collapsing a strategy's decision into a single normalized target, TEF allows arbitrarily complex analytical logic to be packaged into a clean, standardized strategy interface.
 * **External GPU-Accelerated Optimization** — Analysis data exported from ATM-Eta can be fed into the companion application **TEFFP Seeker**, a GPU-accelerated backtesting engine that runs massive parameter sweeps against user-defined trade strategies in parallel, helping users converge on optimal parameter sets that would be impractical to search on CPU.
 * **Neural Network Integration (Experimental)** — Users can design, train, and deploy custom **MLP (Multi-Layer Perceptron)** models against historical market data. Trained models can be plugged into analyzers or simulators as auxiliary signal sources. Currently only MLP architectures are supported.
@@ -488,7 +488,7 @@ This step exists for one reason: **strategy ergonomics**. A nested `{interval: {
 
 #### **TEF-Based Strategy Decoupling**
 
-The boundary between the Analyzer and the Trade Manager is the most deliberate piece of this architecture. The Analyzer's responsibility ends at producing a Linearized Analysis. The Trade Manager then invokes a **user-defined TEF Function**, imported from a user-customized Python module, which consumes the Linearized Analysis and returns the target exposure: a direction (`LONG` / `SHORT` / none) and a TEF value in `[-1.0, +1.0]` whose magnitude sets the relative position size. **Trade handlers** then keep the position's **commitment rate** in sync with this target, issuing orders only when the two diverge (see *Trade Control Configuration*).
+The boundary between the Analyzer and the Trade Manager is the most deliberate piece of this architecture. The Analyzer's responsibility ends at producing a Linearized Analysis. The Trade Manager then invokes a **user-defined TEF Function**, imported from a user-customized Python module, which consumes the Linearized Analysis and returns the target exposure: a direction (`LONG` / `SHORT` / none) and a TEF value in `[-1.0, +1.0]` whose magnitude sets the relative position size. **Trade handlers** then keep the position's **commitment rate** in sync with this target, issuing orders only when the two diverge (see *Trade Configuration*).
 
 This separation produces three concrete benefits:
 
@@ -508,7 +508,7 @@ A trade strategy in ATM-Eta is defined by three configurations: a **Currency Ana
 * <Details>
   <Summary><b><i> Currency Analysis Configuration </b></i></Summary>
 
-  Beyond standard technical analysis tools such as MAs, PSAR, and Bollinger Bands, this module incorporates 7 hybrid analysis tools designed for enhanced signal clarity.
+  Beyond standard technical analysis tools such as MAs, PSAR, and Bollinger Bands, ATM-Eta ships with a set of built-in hybrid analysis modules. Four of them, **IVP**, **MMACD**, **DMIxADX**, and **MFI**, are described below as representative examples.
 
   The analysis results are linearized and passed to the TEF function of the position's Trade Configuration (see *Multi-timeframe Analysis*).
 
@@ -600,51 +600,11 @@ A trade strategy in ATM-Eta is defined by three configurations: a **Currency Ana
 
     </Details>
 
-  * <Details> 
-    <Summary><b><i> WOI (Weighted Order Imbalance) </b></i></Summary>
-    
-    The **WOI (Weighted Order Imbalance)** is an orderbook-based indicator, designed to quantify the disparity between average buying and selling pressure.
-
-     **Gaussian Filtering**
-    Since raw high-frequency orderbook data is inherently noise-heavy, the output is aggregated over the same **temporal interval** as the active candlestick. Then, **Gaussian Filtering** is applied to smooth out micro-fluctuations, generating a cleaner trend signal.
-    
-    
-    The table below outlines the configuration parameters for WOI.  
-    | Parameter | Description |
-    | :---:     | :--- |
-    | Interval  | Number of samples (interval block) for the Gaussian Filter |
-    | Sigma     | Determines the standard deviation of the Gaussian Filter |
-    <br>
-
-    > **Note:** This analysis tool is an experimental approach to integrating Level 2 (Orderbook) data into the currency analysis process.
-
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> NES (Net Execution Strength) </b></i></Summary>
-    
-    The **NES (Net Execution Strength)** is a volume-based indicator derived from real-time trade execution data (`aggTrades`). Unlike orderbook metrics which represent intent, NES quantifies the **actual executed buying and selling momentum**.
-
-    **Gaussian Filtering**
-    Similar to the **WOI** indicator, raw execution data is aggregated and processed using **Gaussian Filtering**. This technique smoothens high-frequency trade noise to generate a coherent and interpretable trend signal.
-    
-    The table below outlines the configuration parameters for NES.  
-    | Parameter | Description |
-    | :---:     | :--- |
-    | Interval  | Number of samples (interval block) for the Gaussian Filter |
-    | Sigma     | Determines the standard deviation of the Gaussian Filter |
-    <br>
-
-    > **Note:** This analysis tool is an experimental approach to integrating trade execution data into the currency analysis process.
-
-    </Details>
-
   
-
   </Details>
 
 * <Details>
-  <Summary><b><i> Trade Control Configuration </b></i></Summary>
+  <Summary><b><i> Trade Configuration </b></i></Summary>
   <img src="./docs/tradecontrol.png" width="750" height="440">
 
   A **Trade Configuration (TC)** defines how a position turns TEF decisions into orders: which strategy to run, how to size and place orders, and when to cut losses. Each position is attached to one TC.
@@ -883,7 +843,7 @@ A trade strategy in ATM-Eta is defined by three configurations: a **Currency Ana
       <img src="./docs/feat1_1.png">
       <br>
 
-      2\. Select a target position.  
+      2\. Select a target symbol.  
       3\. Click the settings button on the chart drawer.
       <img src="./docs/feat1_2.png"> 
       <br>
@@ -909,12 +869,12 @@ A trade strategy in ATM-Eta is defined by three configurations: a **Currency Ana
       <br>
 
       2\. Configure currency analysis parameters.  
-      3\. Name the configuration (auto-generated if left blank)and click **ADD**.
+      3\. Name the configuration (auto-generated if left blank) and click **ADD**.
       <img src="./docs/feat2_2.png">
       <br>
 
-      4\. Select a target position from the market list.  
-      5\. Select a CAC to apply, name the analysis instance (auto-generated if left blank)and click **ADD**.  
+      4\. Select a target symbol from the market list.  
+      5\. Select a CAC to apply, name the analysis instance (auto-generated if left blank) and click **ADD**.  
       <img src="./docs/feat2_3.png">
       <br>
 
@@ -929,14 +889,14 @@ A trade strategy in ATM-Eta is defined by three configurations: a **Currency Ana
     </Details>
 
   * <Details>
-    <Summary><b><i> Adding a Trade Control Configuration </b></i></Summary>
+    <Summary><b><i> Adding a Trade Configuration </b></i></Summary>
 
       1\. Navigate to the **AutoTrade** page.  
       <img src="./docs/feat3_1.png">
       <br>
 
-      2\. Configure trade control parameters.  
-      3\. Name the configuration (auto-generated if left blank)and click **ADD**.  
+      2\. Configure trade configuration parameters.  
+      3\. Name the configuration (auto-generated if left blank) and click **ADD**.  
       <img src="./docs/feat3_2.png">
       <br>
 
@@ -950,16 +910,15 @@ A trade strategy in ATM-Eta is defined by three configurations: a **Currency Ana
       <br>
 
       2\. Set the simulation name (auto-generated if left blank) and range.  
-      &nbsp; Once all the configurations are completed, click **ADD** (Once step 3 and 4 are done).  
-      &nbsp; Once the simulation is completed, move to **SIMULATION RESULT** page either by clicking **VIEW RESULT** or navigating from **DASHBOARD**.  
-      3\. Configure position-specific strategies (Currency Analysis, Trade Control, Account Control)  
+      3\. Configure position-specific strategies (Currency Analysis, Trade Configuration, Account Control).  
       4\. Determine account-level parameters.  
+      5\. Click **ADD** to start the simulation. Once it is completed, move to the **SIMULATION RESULT** page either by clicking **VIEW RESULT** or navigating from the **DASHBOARD**.  
       <img src="./docs/feat4_2.png">
       <br>
 
-      5\. Select a simulation.  
-      6\. View the simulation result summary.  
-      7\. Inspect the simulation result details.  
+      6\. Select a simulation.  
+      7\. View the simulation result summary.  
+      8\. Inspect the simulation result details.  
       <img src="./docs/feat4_3.png">
       <br>
 
@@ -978,9 +937,9 @@ A trade strategy in ATM-Eta is defined by three configurations: a **Currency Ana
       <br>
 
       3\. View the selected account's information.  
-      &nbsp; [ACTUAL ONLY] Activate the account by entering your Binance API Key and Secret Key. This will synchronize the local account instance with the real account in Binance.  
+      &nbsp; [ACTUAL ONLY] Activate the account by entering your Binance API Key and Secret Key, or by using an **AAF** (see *Integrity & Recovery*). This will synchronize the local account instance with the real account in Binance.  
       4\. Monitor asset information and position status.  
-      5\. Monitor and configure trade strategies for specific positions.
+      5\. For each position to trade, assign a Currency Analysis, a Trade Configuration, and an Assumed Ratio, then enable the position's trade status. Automated trading runs only while both the account's and the position's trade status are enabled.
       <img src="./docs/feat5_3.png">
       <br>
 
