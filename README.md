@@ -310,7 +310,7 @@ The account model held by the Trade Manager and the actual account state on Bina
 
  🔹 **Snapshot Synchronization**
 
-* Account snapshots are read via REST at an adaptive interval (see [API Rate-Limit Handling](#api-rate-limit-handling)), with an immediate read right after activation.
+* Account snapshots are read via REST at an adaptive interval (see [API Rate-Limit Handling](#3-api-rate-limit-handling)), with an immediate read right after activation.
 * Margin, unrealized PNL, leverage, and margin type are always overwritten with exchange values. Position quantity and entry price are overwritten only when no order is in flight. Otherwise, the quantity change must be explained first:
   * A change matching the in-flight order's reported fills is recorded as that order's trade.
   * A change that fits within a live order's outstanding quantity, but whose order response has not yet arrived, is held and attributed once the response arrives.
@@ -408,7 +408,7 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
  🔹 **WebSocket Connection Lifecycle**
 
 * Symbols are grouped 50 per connection, with 3 streams per symbol, which uses 75% of Binance's recommended 200 streams per connection.
-* **Make-before-break renewal** — Every 15 minutes, each connection is marked expired and its symbols are queued for a new connection. The old connection is closed only after the new one has delivered `kline`, `depth`, and `aggTrade` messages for every symbol. Duplicate messages received during the overlap are dropped by the stream continuity checks.
+* **Make-before-break renewal** — Every 4 Hours, each connection is marked expired and its symbols are queued for a new connection. The old connection is closed only after the new one has delivered `kline`, `depth`, and `aggTrade` messages for every symbol. Duplicate messages received during the overlap are dropped by the stream continuity checks.
 * Connection creation is retried up to 3 times. If it still fails, the symbols are re-queued.
 * A message queue overflow or an unexpected WebSocket error tears down and regenerates all connections.
 * Binance Vision downloads retry on 5xx errors with exponential backoff (up to 5 retries).
