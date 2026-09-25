@@ -26,10 +26,10 @@
 
 **Auto Trade Machine Eta (ATM-Eta)** is an end-to-end cryptocurrency trading platform that unifies multi-timeframe market analysis and live trade automation in a single application. It is designed to close the gap between strategy research and live deployment — users can develop, validate, and operate trading strategies without leaving the application or switching environments.
 
-#### Core Capabilities
+#### **Core Capabilities**
 * **Real-time Market Data Pipeline** — Upon launch, the system automatically connects to the Binance Futures exchange and continuously ingests klines, orderbook snapshots, trade executions, and derivatives metrics (Open Interest, Long/Short Ratio). The collected data is aggregated and persisted into a local TimescaleDB-backed PostgreSQL server, providing low-latency access for both online analysis and offline backtesting.
-* **Custom Analysis Toolkit** — Beyond standard indicators (MA, PSAR, Bollinger Bands), ATM-Eta provides 7 hybrid analysis tools — **IVP**, **MMACD**, **DMIxADX**, **MFI**, **TPD**, **WOI**, and **NES** — that integrate price, volume, orderbook, and trade execution data into a unified set of signals consumable by the trade controller.
-* **TEF-Based Strategy Formalization** — Trade strategies are expressed through a single normalized scalar called **TEF (Target Exposure Factor)**, ranging from `-1.0` to `+1.0`. The sign indicates direction (negative = SHORT, positive = LONG) and the magnitude indicates target position size relative to the allocated balance. By collapsing direction and sizing into a single bounded value, TEF allows arbitrarily complex analytical logic to be packaged into a clean, standardized strategy interface.
+* **Custom Analysis Toolkit** — Beyond standard indicators (MA, PSAR, Bollinger Bands), ATM-Eta provides 7 hybrid analysis tools — **IVP**, **MMACD**, **DMIxADX**, **MFI**, **TPD**, **WOI**, and **NES** — that integrate price, volume, orderbook, and trade execution data into a unified set of signals consumable by TEF functions.
+* **TEF-Based Strategy Formalization** — Trade strategies are expressed through a **TEF (Target Exposure Factor)**: a target direction (`LONG` / `SHORT` / none) paired with a bounded value in `[-1.0, +1.0]`, whose magnitude sets the target position size relative to the allocated balance. By collapsing a strategy's decision into a single normalized target, TEF allows arbitrarily complex analytical logic to be packaged into a clean, standardized strategy interface.
 * **External GPU-Accelerated Optimization** — Analysis data exported from ATM-Eta can be fed into the companion application **TEFFP Seeker**, a GPU-accelerated backtesting engine that runs massive parameter sweeps against user-defined trade strategies in parallel, helping users converge on optimal parameter sets that would be impractical to search on CPU.
 * **Neural Network Integration (Experimental)** — Users can design, train, and deploy custom **MLP (Multi-Layer Perceptron)** models against historical market data. Trained models can be plugged into analyzers or simulators as auxiliary signal sources. Currently only MLP architectures are supported.
 * **Process-Isolated Architecture** — The application consists of 9+ processes (Main, GUI, BinanceAPI, DataManager, TradeManager, SimulationManager, Analyzers, Simulators, NeuralNetwork) connected via a custom IPC module. GUI rendering, data ingestion, analysis, simulation, and live execution operate independently and never block each other.
@@ -43,12 +43,12 @@ The platform is built around a **'Build → Test → Execute'** workflow, allowi
 ### ▶️ How To Run ###
 Before running the application, **Docker** must be installed and running on your system. The application will automatically pull and configure a PostgreSQL (TimescaleDB) server container on first launch.
 
-#### Windows 🪟
+#### **Windows** 🪟
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and ensure it is running.
 2. Run `setup.bat` in the root directory. This will setup `.venv` and install any necessary libraries for this application.
 3. Run `run.bat` in the root directory. This will start the application.
 
-#### Linux 🐧
+#### **Linux** 🐧
 1. Install [Docker Engine](https://docs.docker.com/engine/install/) and ensure the Docker daemon is active (`sudo systemctl start docker`).
 2. Execute the command `chmod +x setup.sh run.sh` in the terminal.
 3. Run `setup.sh` in the root directory. This will setup `.venv` and install any necessary libraries for this application.
@@ -82,7 +82,7 @@ All processes communicate with each other via the `IPCAssistant` class defined i
 
 > **Note on the diagram:** A top-level **Main Process** orchestrates the application lifecycle — spawning all manager processes, assessing system resources, and coordinating graceful shutdown. It is omitted from the diagram above to keep the focus on runtime data flow.
 
-#### Process Responsibilities
+#### **Process Responsibilities**
 
 | Process                | Responsibilities |
 | :---:                  | :--- |
@@ -96,7 +96,7 @@ All processes communicate with each other via the `IPCAssistant` class defined i
 | **Simulator**              | Performs simulation (backtesting) tasks as assigned by the **Simulation Manager** |
 | **Neural Network Manager** | Enables users to configure, train, and deploy models on historical data. Trained models can later be imported by **Analyzers** or **Simulators** to generate auxiliary reference signals |
 
-#### Worker Process Allocation
+#### **Worker Process Allocation**
 
 The number of **Analyzer** and **Simulator** worker processes is configured by the user in the `programConfig.config` file via the `nAnalyzers` and `nSimulators` parameters. The application then bounds these values by the number of available CPU cores at runtime, ensuring that the configured worker count never exceeds what the host machine can sustain.
 
@@ -130,7 +130,7 @@ The pipeline is structured around several design decisions made specifically to 
   
 <br>
    
-#### Single Base Interval, On-Demand Aggregation
+#### **Single Base Interval, On-Demand Aggregation**
 
 Across the entire pipeline, all market data is collected, processed, and persisted at a **1-minute base interval**. Higher timeframes (5m, 15m, 1h, 4h, ..., up to 1M) are **not stored separately**; instead, they are derived **on-demand** by the Secondary Aggregator inside each Data Requester whenever a task actually needs them.
 
@@ -145,7 +145,7 @@ This approach offers two key advantages:
 
 
 
-#### Heterogeneous Stream Unification
+#### **Heterogeneous Stream Unification**
 
 ATM-Eta collects four types of market data, each with its own structure and delivery mechanism:
 
@@ -170,7 +170,7 @@ This produces two compounding benefits. First, the data volume reduction is subs
 
 
 
-#### Historical Backfill Sources
+#### **Historical Backfill Sources**
 
 Historical data is collected from two sources. **Binance Vision** daily archives are preferred for their volume, and the **REST API** covers the ranges not yet archived.
 
@@ -189,7 +189,7 @@ Archive files are downloaded in parallel and verified against their SHA-256 chec
 
 
 
-#### Stream Continuity Guarantee
+#### **Stream Continuity Guarantee**
 
 The Stream Receiver continuously monitors incoming WebSocket data for temporal gaps caused by network disconnects, rate-limit throttling, or exchange-side stream interruptions. When a gap is detected, the missing range is fetched and merged back into the stream in order, and only ranges that cannot be recovered are filled with dummy data. From the perspective of downstream consumers, this removes the need for complex gap-recovery logic; they simply need to handle the injected dummy data entries appropriately.
 
@@ -201,7 +201,7 @@ The Stream Receiver continuously monitors incoming WebSocket data for temporal g
 
 
 
-#### Distributed Sub-Pipelines per Data Requester
+#### **Distributed Sub-Pipelines per Data Requester**
 
 Each Data Requester (Analyzer, Simulator, GUI, Trade Manager) maintains its **own self-contained sub-pipeline** —  an Aggregated Base Stream Receiver, an Internal Fetch Request Generator, a Secondary Aggregator, and a Task Handler — rather than depending on a centralized aggregation service inside the Data Manager. This decision is intentional and addresses three concerns:
 
@@ -215,7 +215,7 @@ Each Data Requester (Analyzer, Simulator, GUI, Trade Manager) maintains its **ow
 
 
 
-#### Buffered Persistence and TimescaleDB
+#### **Buffered Persistence and TimescaleDB**
 
 The Data Manager accumulates incoming data in memory and flushes it to the database in batches: streamed data every 5 seconds, and fetched historical data in chunks of up to 10,000 rows. This approach reduces per-transaction overhead and smooths out sudden bursts of data.
 
@@ -227,7 +227,7 @@ For persistent storage, the system utilizes **TimescaleDB**, a time-series exten
 
 
 
-#### ⚠️ A Note on Storage Hardware
+#### ⚠️ **A Note on Storage Hardware**
 
 Selecting **TimescaleDB** is not the end of the storage decision. The **physical drive that hosts the PostgreSQL data directory** also matters, and this point is worth flagging because it is easy to overlook until things start failing in subtle ways.
 
@@ -304,7 +304,7 @@ The account model held by the Trade Manager and the actual account state on Bina
 * Margin, unrealized PNL, leverage, and margin type are always overwritten with exchange values. Position quantity and entry price are overwritten only when no order is in flight. Otherwise, the quantity change must be explained first:
   * A change matching the in-flight order's reported fills is recorded as that order's trade.
   * A change that fits within a live order's outstanding quantity, but whose order response has not yet arrived, is held and attributed once the response arrives.
-  * Anything left over is treated as an **Unknown Trade**. It is logged as `UNKNOWN`, trading on the position is halted (manual intervention or liquidation is assumed), and the trade control state is reset.
+  * Anything left over is treated as an **Unknown Trade**. It is logged as `UNKNOWN`, the trade control state is reset, and, if *Stop Trade On Unknown Trade* is enabled (default), trading on the position is halted (manual intervention or liquidation is assumed).
 * Other forms of drift make a position non-tradable until resolved:
   * Open-order margin that persists for more than 20 seconds with no ATM-Eta order in flight indicates an externally placed order.
   * Leverage or margin type that differs from the trade configuration. A correction request is sent automatically once the position is flat with no open orders.
@@ -352,7 +352,7 @@ Binance enforces request-weight and order-count limits per IP, and exceeding the
 **Adaptive Account Polling**
 
 * The account polling interval scales with the number of activated accounts, so that polling consumes at most ~50% of the weight budget (with a 10% margin). It is never faster than once per second.
-* The number of accounts that can be activated is capped so that polling stays within that 50% even at the slowest interval (10 seconds). For example, the current 2,400/min weight limit allows up to 40 accounts.
+* The number of accounts that can be activated is capped so that polling stays within that 50% even at the slowest interval (10 seconds). For example, the current 2,400/min weight limit allows up to 36 accounts.
 
 
 
@@ -471,15 +471,14 @@ The design reflects a core premise: rather than committing the system to a singl
 
 <img src="./docs/mtfanalysis.png" width="800">
 
-#### Per-Timeframe Analysis
+#### **Per-Timeframe Analysis**
 
-The Secondary Aggregator expands the base-aggregated 1m market data across the active set of timeframes — 1m, 3m, 5m, 15m, ..., up to 1M. From there, each timeframe carries its own independent analysis track:
-Each timeframe runs against its own **Currency Analysis Configuration** — a declarative specification of which analyses to apply (SMA, PSAR, MMACD, IVP, WOI, NES, etc.) and with what parameters — and produces its own **Analysis Results** bundle. 
+The Secondary Aggregator expands the base-aggregated 1m market data across the active set of timeframes — 1m, 3m, 5m, 15m, ..., up to 1M — and each timeframe carries its own independent analysis track. Each track runs against its own **Currency Analysis Configuration** — a declarative specification of which analyses to apply (SMA, PSAR, MMACD, IVP, WOI, NES, etc.) and with what parameters — and produces its own **Analysis Results** bundle.
 The same indicator can be configured differently across timeframes, giving the strategy access to both fast and slow variants of any signal it cares about.
 
 <br>
 
-#### Analysis Linearization
+#### **Analysis Linearization**
 
 The analysis bundles are then collapsed by the **Analysis Linearizer** into a single flat dictionary — the **Linearized Analysis** — where every (timeframe, analysis code, sub-field) combination is mapped to a unique top-level key.
 
@@ -487,14 +486,14 @@ This step exists for one reason: **strategy ergonomics**. A nested `{interval: {
 
 <br>
 
-#### TEF-Based Strategy Decoupling
+#### **TEF-Based Strategy Decoupling**
 
-The boundary between the Analyzer and the Trade Manager is the most deliberate piece of this architecture. The Analyzer's responsibility ends at producing a Linearized Analysis. The Trade Manager then invokes a **user-defined TEF Function**, imported from a user-customized Python module, which consumes the Linearized Analysis and returns a single scalar in `[-1.0, +1.0]` representing the target exposure — sign for direction (SHORT / LONG), magnitude for relative position size. The Decision Maker then keeps the position's **commitment rate** continuously in sync with this TEF value, issuing trades only when the two diverge.
+The boundary between the Analyzer and the Trade Manager is the most deliberate piece of this architecture. The Analyzer's responsibility ends at producing a Linearized Analysis. The Trade Manager then invokes a **user-defined TEF Function**, imported from a user-customized Python module, which consumes the Linearized Analysis and returns the target exposure: a direction (`LONG` / `SHORT` / none) and a TEF value in `[-1.0, +1.0]` whose magnitude sets the relative position size. **Trade handlers** then keep the position's **commitment rate** in sync with this target, issuing orders only when the two diverge (see *Trade Control Configuration*).
 
 This separation produces three concrete benefits:
 
 * **Strategy interchangeability** — Switching strategies is as simple as pointing to a different TEF function file. The Analyzer, the data pipeline, and the order execution path remain untouched.
-* **Portable across CPU and GPU** — TEFFP Seeker requires the strategy to be rewritten as a Triton kernel for GPU acceleration, but the TEF interface contract (Linearized Analysis in, scalar out) stays the same on both sides.
+* **Portable across CPU and GPU** — TEFFP Seeker requires the strategy to be rewritten as a Triton kernel for GPU acceleration, but the TEF interface contract (Linearized Analysis in, target exposure out) stays the same on both sides.
 * **Bounded, normalized strategy interface** — Because every strategy is contractually required to output a value in `[-1.0, +1.0]`, downstream position sizing, leverage allocation, and risk-control logic can be written once and reused across every strategy, regardless of how complex the strategy's internal logic is.
 
 ---
@@ -504,16 +503,14 @@ This separation produces three concrete benefits:
 ### 🧠 Trade Logic Pipeline ### 
 <img src="./docs/tradestrategy_0.png" width="1000">
 
-A trade strategy in this application refers to a set of three processes - currency analysis, trade control, and account control. Starting from raw market data, each of these processes uses a pre-defined model and configuration to eventually generate order requests that are sent to the exchange server to be executed.
+A trade strategy in ATM-Eta is defined by three configurations: a **Currency Analysis Configuration** (what to analyze), a **Trade Configuration** (how TEF decisions become orders), and **Account Control** settings (how much capital each position may use). Starting from raw market data, these configurations together determine the order requests that are sent to the exchange.
 
 * <Details>
   <Summary><b><i> Currency Analysis Configuration </b></i></Summary>
 
-  Beyond standard technical analysis tools such as MAs, PSAR, and Bollinger Bands, this module incorporates 6 hybrid analysis tools designed for enhanced signal clarity.  
+  Beyond standard technical analysis tools such as MAs, PSAR, and Bollinger Bands, this module incorporates 7 hybrid analysis tools designed for enhanced signal clarity.
 
-  These individual signals are aggregated and interpreted by the PIP (Potential Investment Plan) tool. PIP acts as a high-level signal aggregator, uniquely designed to interpret and translate raw analytical data.  
-
-  The resulting PIP signal is then captured by the **Trade Control** process to generate actionable execution signals.
+  The analysis results are linearized and passed to the TEF function of the position's Trade Configuration (see *Multi-timeframe Analysis*).
 
   * <Details> 
     <Summary><b><i> IVP (Interpreted Volume Profile) </b></i></Summary>
@@ -658,11 +655,22 @@ A trade strategy in this application refers to a set of three processes - curren
   | Leverage | Leverage applied to the position |
   | Margin Type | `ISOLATED` or `CROSSED` |
   | Direction | Allowed entry directions: `BOTH`, `LONG`, or `SHORT` |
-  | Order Type | `MARKET`, or `LIMIT` (post-only, filled at the maker fee rate) |
-  | Order Offset | For `LIMIT` orders, the price offset from the current price, placed away from the market and aligned to the symbol's tick size |
+  | Order Type | `MARKET`, `LIMIT` (post-only, filled at the maker fee rate), or `ADAPTIVE` (post-only limits by default, switching to market orders whenever the position must be cleared) |
+  | Order Offset | For `LIMIT` and `ADAPTIVE` orders, the price offset from the current price, placed away from the market and aligned to the symbol's tick size |
   | Full Stop Loss (Immediate) | Closes the position as soon as the price touches this distance from the entry price within a kline |
   | Full Stop Loss (Close) | Closes the position when a kline closes beyond this distance from the entry price |
   | Post-Stop-Loss Re-entry | Whether re-entry in the same direction is allowed after a stop loss, before the TEF direction changes |
+  <br>
+
+  **Position-Level Controls**
+
+  In addition to the TC, each position has its own trading controls:
+
+  | Parameter | Default | Description |
+  | :--- | :---: | :--- |
+  | Reduce Only | Off | Blocks entry orders, so the position can only be reduced |
+  | Stop Trade On FSL | On | Halts trading on the position after a full stop loss |
+  | Stop Trade On Unknown Trade | On | Halts trading on the position after an externally caused position change |
   <br>
 
   **From TEF to Trade Handlers**
@@ -671,9 +679,9 @@ A trade strategy in this application refers to a set of three processes - curren
 
   | Handler | Condition | Action |
   | :--- | :--- | :--- |
-  | `CLEAR` | The position is opposite to the TEF direction | Close the entire position |
-  | `EXIT` | The committed balance exceeds the target | Reduce the position toward the target (fully, if TEF is `0`) |
-  | `ENTRY` | The committed balance is below the target, and the direction is allowed | Increase the position toward the target |
+  | `CLEAR` | The position is not in the TEF direction (opposite, or TEF has no direction) | Close the entire position |
+  | `EXIT` | The committed balance exceeds the target | Reduce the position toward the target (fully, if the TEF value is `0`) |
+  | `ENTRY` | The committed balance is below the target, the direction is allowed by the TC, and the position is not reduce-only | Increase the position toward the target |
 
   The target is `Position Allocated Balance × |TEF|` (see *Account Control Configuration*). Every order passes quantity precision, exchange filter, and side checks before dispatch.
 
@@ -681,10 +689,10 @@ A trade strategy in this application refers to a set of three processes - curren
 
   * **Stale analysis rejection** — An analysis result is ignored if it does not belong to the previous, current, or next interval, or if the price has moved 0.5% or more since it was computed.
   * **Handler expiration** — A trade handler that cannot be executed within one fifth of the base interval is discarded, so outdated decisions never reach the exchange. Time spent waiting for an order cancellation is excluded.
-  * **Order replacement** — A resting `LIMIT` order is cancelled and replaced when a newer TEF decision or a stop loss arrives.
-  * **Stop loss precedence** — Stop loss orders are always `MARKET` orders and discard any pending trade handlers generated before them.
+  * **Order replacement** — A resting limit order is cancelled and replaced when a newer TEF decision or a stop loss arrives.
+  * **Stop loss precedence** — Stop loss orders are always market orders, regardless of the TC's order type, and discard any pending trade handlers generated before them.
   * **Tradability check** — A position trades only while its currency analysis and TC are attached, its leverage and margin type match the TC, and no external open order is detected.
-  * **Automatic halt** — Trading on a position stops automatically when an unknown trade is detected (see *Account Exchange State Reconciliation*).
+  * **Automatic halt** — Full stop losses and unknown trades are recorded as abrupt clearing events and retained for 30 days. Depending on the position-level controls, trading on the position is halted when either occurs.
 
   </Details>
 
@@ -834,11 +842,12 @@ A trade strategy in this application refers to a set of three processes - curren
   * <Details> 
       <Summary><b><i> Database </b></i></Summary>
       <img src="./docs/database_0.png" width="960" height="540">
-      Run backtests to verify the performances of customized trade strategies.
+      Manage the local market database.
 
-      1\. View the list of completed and processing simulations.  
-      2\. Import trade configurations from existing simulations.  
-      3\. Backtest specific strategies, variables, and ranges on target positions.  
+      1\. Monitor database and drive usage, including compression statistics.  
+      2\. Configure stream and historical data collection per symbol.  
+      3\. Compress the database, or reset market data for selected symbols.  
+      4\. Recover dummy ranges by refetching from Binance or importing from another ATM-Eta instance on the local network.  
     </Details>
 
   * <Details> 
@@ -1111,7 +1120,7 @@ To validate the end-to-end system over an extended period, I deployed the applic
    Binance removed `avgPrice` from order creation responses following the CM migration. The system now falls back to computing a volume-weighted average from the order's trade history whenever the field is absent, and order response parsing is guarded so that a missing or changed field can no longer leave a placed order untracked.
 
    * **Account Data Read Rate Limit Calculation Fix:**
-   The IP sharing factor was applied as a divisor instead of a multiplier when computing the account data read interval, causing the polling interval to shorten rather than lengthen as the rate limit budget was split across more clients. The interval is now clamped to its configured bounds, and the maximum activation count accounts for the same safety margin used in the interval calculation, so the margin is never truncated at the upper bound.
+   The IP sharing factor was applied as a multiplier instead of a divisor when computing the account data read interval, causing the polling interval to shorten rather than lengthen as the rate limit budget was split across more clients. The interval is now clamped to its configured bounds, and the maximum activation count accounts for the same safety margin used in the interval calculation, so the margin is never truncated at the upper bound.
    
    * **AAF Scan Robustness:**
    The AAF scan now validates each `.aaf` file's contents before use. Previously, a file that parsed as JSON but lacked the expected fields could raise an exception and interrupt the scan. Since the scan covers the root directory of every mounted drive, unrelated files sharing the extension could trigger this. Malformed files are now skipped.
@@ -1123,6 +1132,6 @@ To validate the end-to-end system over an extended period, I deployed the applic
 
 
 ### 📄 Document Info
-* **Last Updated:** September 23rd, 2026  
+* **Last Updated:** September 25th, 2026  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
