@@ -207,7 +207,7 @@ Each Data Requester (Analyzer, Simulator, GUI, Trade Manager) maintains its **ow
 
 * **Heterogeneous Timeframe Needs** — Different requesters need different timeframes simultaneously. An Analyzer monitoring 5m may run concurrently with a Simulator backtesting on 4h. Centralized aggregation would force the Data Manager to maintain N parallel timeframe pipelines per symbol per consumer, with significant coordination overhead.
 * **Minimal Data Manager Responsibility** — By keeping aggregation on the consumer side, the Data Manager's responsibility stays focused on three things: persistence, range comparison, and fetch coordination. Task-specific timeframe logic lives where it belongs — next to the task itself.
-* **Independent lifecycle** — A failing or restarting Data Requester does not affect any other Requester's pipeline, since each maintains its own state.
+* **Independent Life Cycle** — A failing or restarting Data Requester does not affect any other Requester's pipeline, since each maintains its own state.
 
 
 
