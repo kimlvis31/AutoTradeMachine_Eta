@@ -1118,11 +1118,26 @@ To validate the end-to-end system over an extended period, I deployed the applic
 
 
 
+<br>
+
+
+
+**Version 1.2.1 Update [2026/09/28]**
+ - **Improvements & Fixes**
+
+   * **Slippage Consideration On/Off Switch:**
+   Users can now turn on or off slippage consideration during simulations. Since previous simulation results are no longer compatible, previous `atmEta_simulations.db` file under `/data/db` directory must be deleted and regenerated.
+
+   * **Analysis Module Import Target Auto-Selection:**
+   The system now detects importable analysis modules under `/analysis` directory. Previously, users had to manually edit `analyzers.py` file to explicitly declare what files to import. This is no longer necessary.
+
+
+
 ---
 
 
 
 ### 📄 Document Info
-* **Last Updated:** September 25th, 2026  
+* **Last Updated:** September 28th, 2026  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
