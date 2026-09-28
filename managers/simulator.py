@@ -139,22 +139,23 @@ class Simulator:
             return
         ctSim.setActivation(activation = activation)
     
-    def __far_addSimulation(self, requester, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
+    def __far_addSimulation(self, requester, simulationCode, simulationRange, considerSlippage, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
         #[1]: Requester Check
         if requester != 'SIMULATIONMANAGER': return
         
         #[2]: Simulation Generation
         sim = simulation.Simulation(path_project                   = self.path_project,
-                                                  simulatorIndex                 = self.simulatorIndex,
-                                                  ipcA                           = self.ipcA,
-                                                  simulationCode                 = simulationCode, 
-                                                  simulationRange                = simulationRange, 
-                                                  analysisExport                 = analysisExport, 
-                                                  assets                         = assets, 
-                                                  positions                      = positions, 
-                                                  currencyAnalysisConfigurations = currencyAnalysisConfigurations, 
-                                                  tradeConfigurations            = tradeConfigurations, 
-                                                  creationTime                   = creationTime)
+                                    simulatorIndex                 = self.simulatorIndex,
+                                    ipcA                           = self.ipcA,
+                                    simulationCode                 = simulationCode, 
+                                    simulationRange                = simulationRange, 
+                                    considerSlippage               = considerSlippage,
+                                    analysisExport                 = analysisExport, 
+                                    assets                         = assets, 
+                                    positions                      = positions, 
+                                    currencyAnalysisConfigurations = currencyAnalysisConfigurations, 
+                                    tradeConfigurations            = tradeConfigurations, 
+                                    creationTime                   = creationTime)
         self.__simulations[simulationCode] = sim
         self.__simulations_handlingQueue.append(simulationCode)
     

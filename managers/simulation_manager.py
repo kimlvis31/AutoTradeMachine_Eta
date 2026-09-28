@@ -77,6 +77,7 @@ class SimulationManager:
         dim_sims = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'SIMULATIONS')
         for simCode, sim in dim_sims.items():
             self.__simulations[simCode] = {'simulationRange':                sim['simulationRange'],
+                                           'considerSlippage':               sim['considerSlippage'],
                                            'analysisExport':                 sim['analysisExport'],
                                            'assets':                         sim['assets'],
                                            'positions':                      sim['positions'],
@@ -152,7 +153,7 @@ class SimulationManager:
                 'result':     activation, 
                 'message':    responseMessage}
     
-    def __addSimulation(self, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
+    def __addSimulation(self, simulationCode, simulationRange, considerSlippage, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
         #[1]: Instances
         simulations = self.__simulations
         simulators  = self.__simulators
@@ -191,6 +192,7 @@ class SimulationManager:
         #[5]: Local Simulation Instance
         cTime = time.time()
         sim = {'simulationRange':                simulationRange,
+               'considerSlippage':               considerSlippage,
                'analysisExport':                 analysisExport,
                'assets':                         assets,
                'positions':                      positions,
@@ -208,6 +210,7 @@ class SimulationManager:
                      functionID     = 'addSimulation',
                      functionParams = {'simulationCode':                 simCode,
                                        'simulationRange':                simulationRange,
+                                       'considerSlippage':               considerSlippage,
                                        'analysisExport':                 analysisExport,
                                        'assets':                         assets,
                                        'positions':                      positions,
@@ -334,13 +337,14 @@ class SimulationManager:
         #[2]: Request Handling
         return self.__setSimulatorActivation(targetSimulatorIndex = targetSimulatorIndex, activation = activation)
     
-    def __far_addSimulation(self, requester, requestID, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
+    def __far_addSimulation(self, requester, requestID, simulationCode, simulationRange, considerSlippage, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
         #[1]: Source Check
         if requester != 'GUI': return None
 
         #[2]: Request Handling
         return self.__addSimulation(simulationCode                 = simulationCode,
                                     simulationRange                = simulationRange,
+                                    considerSlippage               = considerSlippage,
                                     analysisExport                 = analysisExport,
                                     assets                         = assets, 
                                     positions                      = positions,

@@ -116,7 +116,7 @@ PERIODICREPORT_INTERVALID = auxiliaries.KLINE_INTERVAL_ID_1h
 
 class Simulation:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def __init__(self, path_project, simulatorIndex, ipcA, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
+    def __init__(self, path_project, simulatorIndex, ipcA, simulationCode, simulationRange, considerSlippage, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
         #[1]: Instances
         self.path_project   = path_project
         self.simulatorIndex = simulatorIndex
@@ -127,6 +127,7 @@ class Simulation:
         self.__simulationCode                 = simulationCode
         self.__simulationRange                = (auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = simulationRange[0], nTicks = 0),
                                                  auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = simulationRange[1], nTicks = 1)-1)
+        self.__considerSlippage               = considerSlippage
         self.__analysisExport                 = analysisExport
         self.__assets_def                     = assets
         self.__positions_def                  = positions
@@ -709,6 +710,7 @@ class Simulation:
                                                     'simulationRange':                self.__simulationRange,
                                                     'currencyAnalysisConfigurations': self.__currencyAnalysisConfigurations,
                                                     'tradeConfigurations':            self.__tradeConfigurations,
+                                                    'considerSlippage':               self.__considerSlippage,
                                                     'analysisExport':                 self.__analysisExport,
                                                     'assets':                         self.__assets_def,
                                                     'positions':                      self.__positions_def,
@@ -1024,11 +1026,15 @@ class Simulation:
         elif processTarget == 'ORDER':
             #[6-2-1]: Trade Parameters Determination
             if   o_orderType == 'LIMIT':  t_price = o_price
-            elif o_orderType == 'MARKET': t_price = auxiliaries_trade.getSlippedPrice(side            = o_side,
-                                                                                      quantity        = o_quantity,
-                                                                                      reference_price = o_price,
-                                                                                      depth           = depth_prev,
-                                                                                      precision_price = precisions['price'])
+            elif o_orderType == 'MARKET': 
+                if self.__considerSlippage:
+                    t_price = auxiliaries_trade.getSlippedPrice(side            = o_side,
+                                                                quantity        = o_quantity,
+                                                                reference_price = o_price,
+                                                                depth           = depth_prev,
+                                                                precision_price = precisions['price'])
+                else:
+                    t_price = o_price
 
             #[6-2-2]: Simulated Trade Processing
             self.__processTrade(timestamp = timestamp,

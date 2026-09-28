@@ -134,6 +134,7 @@ class Worker:
             sqlCursor.execute("""CREATE TABLE simulationDescriptions (id INTEGER PRIMARY KEY, 
                                                                       simulationCode                          TEXT, 
                                                                       simulationRange                         TEXT,
+                                                                      considerSlippage                        INTEGER,
                                                                       analysisExport                          INTEGER,
                                                                       creationTime                            REAL,
                                                                       simulationSummary                       TEXT,
@@ -153,15 +154,16 @@ class Worker:
             dbID                                    = summaryRow[0]
             simulationCode                          = summaryRow[1]
             simulationRange                         = json.loads(summaryRow[2])
-            analysisExport                          = (summaryRow[3] == 1)
-            creationTime                            = summaryRow[4]
-            simulationSummary                       = json.loads(summaryRow[5])
-            currencyAnalysisConfigurationsTableName = summaryRow[6]
-            tradeConfigurationsTableName            = summaryRow[7]
-            assetsTableName                         = summaryRow[8]
-            positionsTableName                      = summaryRow[9]
-            tradeLogsTableName                      = summaryRow[10]
-            periodicReportsTableName                = summaryRow[11]
+            considerSlippage                        = (summaryRow[3] == 1)
+            analysisExport                          = (summaryRow[4] == 1)
+            creationTime                            = summaryRow[5]
+            simulationSummary                       = json.loads(summaryRow[6])
+            currencyAnalysisConfigurationsTableName = summaryRow[7]
+            tradeConfigurationsTableName            = summaryRow[8]
+            assetsTableName                         = summaryRow[9]
+            positionsTableName                      = summaryRow[10]
+            tradeLogsTableName                      = summaryRow[11]
+            periodicReportsTableName                = summaryRow[12]
             if currencyAnalysisConfigurationsTableName not in tables: currencyAnalysisConfigurationsTableName = None
             if tradeConfigurationsTableName            not in tables: tradeConfigurationsTableName            = None
             if assetsTableName                         not in tables: assetsTableName                         = None
@@ -249,6 +251,7 @@ class Worker:
             sDescs[simulationCode] = {'simulationRange':                         simulationRange,
                                       'currencyAnalysisConfigurations':          currencyAnalysisConfigurations,
                                       'tradeConfigurations':                     tradeConfigurations,
+                                      'considerSlippage':                        considerSlippage,
                                       'analysisExport':                          analysisExport,
                                       'assets':                                  assets,
                                       'positions':                               positions,
@@ -314,6 +317,7 @@ class Worker:
         simulationRange                = tParams['simulationRange']
         currencyAnalysisConfigurations = tParams['currencyAnalysisConfigurations']
         tradeConfigurations            = tParams['tradeConfigurations']
+        considerSlippage               = tParams['considerSlippage']
         analysisExport                 = tParams['analysisExport']
         assets                         = tParams['assets']
         positions                      = tParams['positions']
@@ -335,6 +339,7 @@ class Worker:
         sDesc = {'simulationRange':                simulationRange,
                  'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
                  'tradeConfigurations':            tradeConfigurations,
+                 'considerSlippage':               considerSlippage,
                  'analysisExport':                 analysisExport,
                  'assets':                         assets,
                  'positions':                      positions,
@@ -457,6 +462,7 @@ class Worker:
                               (id, 
                                simulationCode, 
                                simulationRange,
+                               considerSlippage,
                                analysisExport,
                                creationTime,
                                simulationSummary,
@@ -466,11 +472,12 @@ class Worker:
                                positionsTableName, 
                                tradeLogsTableName,
                                periodicReportsTableName
-                              ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                              ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                               (simulationDescription_dbID, 
                                simulationCode,
                                json.dumps(simulationRange),
-                               1 if analysisExport else 0,
+                               1 if considerSlippage else 0,
+                               1 if analysisExport   else 0,
                                creationTime,
                                json.dumps(simulationSummary),
                                currencyAnalysisConfigurationsTableName,
@@ -698,7 +705,7 @@ class Worker:
                }
         self.__taskQueue.put(task)
     
-    def __far_saveData(self, requester, requestID, simulationCode, simulationRange, currencyAnalysisConfigurations, tradeConfigurations, analysisExport, assets, positions, creationTime, tradeLogs, periodicReports, simulationSummary):
+    def __far_saveData(self, requester, requestID, simulationCode, simulationRange, currencyAnalysisConfigurations, tradeConfigurations, considerSlippage, analysisExport, assets, positions, creationTime, tradeLogs, periodicReports, simulationSummary):
         #[1]: Source Check
         if not requester.startswith('SIMULATOR'):
             self.__ipcA.sendFARR(targetProcess  = requester, 
@@ -717,6 +724,7 @@ class Worker:
                               'simulationRange':                simulationRange,
                               'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
                               'tradeConfigurations':            tradeConfigurations,
+                              'considerSlippage':               considerSlippage,
                               'analysisExport':                 analysisExport,
                               'assets':                         assets,
                               'positions':                      positions,

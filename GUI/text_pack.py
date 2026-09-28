@@ -955,6 +955,8 @@ if (True):
                                                     'KOR': "정지중"}
     TEXTPACK['SIMULATION:GENERAL_STATUS_ERROR'] = {'ENG': "ERROR",
                                                    'KOR': "에러"}
+    TEXTPACK['SIMULATION:GENERAL_CONSIDERSLIPPAGE'] = {'ENG': "CONSIDER SLIPPAGE",
+                                                       'KOR': "슬리피지 고려"}
     TEXTPACK['SIMULATION:GENERAL_ANALYSISEXPORT'] = {'ENG': "ANALYSIS EXPORT",
                                                      'KOR': "분석 내보내기"}
     TEXTPACK['SIMULATION:GENERAL_REPLICATECONFIGURATION'] = {'ENG': "REPLICATE CONFIGURATION",
