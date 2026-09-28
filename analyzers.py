@@ -73,33 +73,20 @@ DEPTHBINS_MAX = max(db[1] for db in DEPTHBINS.values())
 #Search & Import Analysis Function Files ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 path_PROJECT                = os.path.dirname(os.path.realpath(__file__))
 ANALYSES                    = dict()
-ANALYSIS_MODULES_IMPORT = ('volume.py',
-                           'moving_average_simple.py',
-                           'moving_average_weighted.py',
-                           'moving_average_exponential.py',
-                           'parabolic_stop_and_reverse.py',
-                           'bollinger_band.py',
-                           'interpreted_volume_profile.py',
-                           'swing.py',
-                           'weighted_order_imbalance.py',
-                           'net_execution_strength.py',
-                           'neural_network_analysis.py',
-                           'directional_movement_index_average_directional_index.py',
-                           'money_flow_index.py',
-                           'temporal_probability_distribution.py',
-                           'multi_moving_average_convergence_divergence.py'
-                          )
 
 analysis_modules_dir = os.listdir(os.path.join(path_PROJECT, 'analysis'))
-for name_file in ANALYSIS_MODULES_IMPORT:
+for file in analysis_modules_dir:
     #File Type & Template Check
-    if name_file not in analysis_modules_dir:
+    try:
+        file_name, file_type = file.split(".")
+        if file_type != 'py':       continue
+        if file_name == 'template': continue
+    except:
         continue
 
     #File Read
-    name_analysis_file = name_file[:-3]
     try:
-        module        = importlib.import_module(f"analysis.{name_analysis_file}")
+        module        = importlib.import_module(f"analysis.{file_name}")
         analysis_code = getattr(module, 'ANALYSIS_CODE')
         ANALYSES[analysis_code] = {#DEFINING PARAMETERS
                                    'CODE':      analysis_code,
